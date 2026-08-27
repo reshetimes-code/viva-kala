@@ -1,0 +1,385 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import DesktopPhoneWrapper from "@/components/DesktopPhoneWrapper";
+import AiInviteGenerator from "@/components/AiInviteGenerator";
+
+const PARTY_TYPES = [
+  "יום ההולדת", "מסיבה", "הצגה", "הפנינג", "יום גיבוש", "יום פעילות", "מופע",
+  "סדנא", "הרצאה", "יום כיף", "בר המצווה", "בת מצווה", "ברית", "בריתה",
+  "מסיבת חינה", "חינה", "חתונה", "מקווה", "הצעת נישואין", "מסיבת אירוסין",
+  "מסיבת הודיה", "שבת חתן", "מסיבת הפתעה",
+];
+
+interface Celebrant {
+  name: string;
+  gender: string;
+  age: string;
+}
+
+export interface ImageInviteInitialData {
+  invitedAs: string;
+  partyType: string;
+  celebrants: Celebrant[];
+  willBe: string;
+  eventDate: string;
+  eventStart: string;
+  meetAt: string;
+  address: string;
+  showNavBtn: boolean;
+  imgOrBe: string;
+  gladSee: string;
+  notes: string;
+  imageUrl: string;
+  wantRsvp: boolean;
+}
+
+export default function CreateInvitePage({
+  editInviteId,
+  initialData,
+}: {
+  editInviteId?: string;
+  initialData?: ImageInviteInitialData;
+}) {
+  const router = useRouter();
+
+  const [invitedAs, setInvitedAs] = useState(initialData?.invitedAs ?? "הנכם מוזמנים");
+  const [partyType, setPartyType] = useState(initialData?.partyType ?? PARTY_TYPES[0]);
+  const [celebrants, setCelebrants] = useState<Celebrant[]>(
+    initialData?.celebrants && initialData.celebrants.length > 0
+      ? initialData.celebrants
+      : [{ name: "", gender: "", age: "" }]
+  );
+  const [willBe, setWillBe] = useState(initialData?.willBe ?? "שיתקיים");
+  const [eventDate, setEventDate] = useState(initialData?.eventDate ?? "");
+  const [eventStart, setEventStart] = useState(initialData?.eventStart ?? "");
+  const [meetAt, setMeetAt] = useState(initialData?.meetAt ?? "נפגשים");
+  const [address, setAddress] = useState(initialData?.address ?? "");
+  const [imgOrBe, setImgOrBe] = useState(initialData?.imgOrBe ?? "עם");
+  const [gladSee, setGladSee] = useState(initialData?.gladSee ?? "נשמח לראותך");
+  const [notes, setNotes] = useState(initialData?.notes ?? "");
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(initialData?.imageUrl ?? null);
+  const [imageSource, setImageSource] = useState<"upload" | "ai">("upload");
+
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  function updateCelebrant(i: number, field: keyof Celebrant, value: string) {
+    setCelebrants((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
+  }
+
+  function addCelebrant() {
+    setCelebrants((prev) => [...prev, { name: "", gender: "", age: "" }]);
+  }
+
+  function removeCelebrant(i: number) {
+    setCelebrants((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setImageDataUrl(reader.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    if (!celebrants.some((c) => c.name.trim())) {
+      setError("נא להזין שם מלא לפחות לחוגג אחד");
+      return;
+    }
+    if (!eventDate || !eventStart) {
+      setError("נא למלא תאריך ושעת התחלה");
+      return;
+    }
+    if (!imageDataUrl) {
+      setError("נא להעלות תמונת הזמנה");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const isEdit = !!editInviteId;
+      const res = await fetch(isEdit ? `/api/invites/${editInviteId}` : "/api/invites", {
+        method: isEdit ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invitedAs,
+          partyType,
+          celebrants: celebrants.filter((c) => c.name.trim()),
+          willBe,
+          eventDate,
+          eventStart,
+          meetAt,
+          address,
+          showNavBtn: true,
+          imgOrBe,
+          gladSee,
+          notes,
+          imageDataUrl,
+          wantRsvp: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "שגיאה בשמירת ההזמנה");
+        setSubmitting(false);
+        return;
+      }
+      router.push(isEdit ? "/dashboard" : `/i/${data.id}`);
+    } catch {
+      setError("שגיאת רשת - נסה שוב");
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <DesktopPhoneWrapper title={editInviteId ? "עריכת ההזמנה" : "יצירת הזמנה"}>
+    <div className="create-page">
+      <div className="create-wrapper">
+        <div className="mb-4">
+          <a href="/create" className="create-back-link">
+            → חזרה
+          </a>
+        </div>
+
+        <h2 className="create-title">יצירת הזמנת תמונה</h2>
+
+        <form onSubmit={handleSubmit}>
+          {/* Basic info */}
+          <div className="category-section basic-info-section">
+            <h3 className="category-title">📋 פרטים בסיסיים</h3>
+
+            <div>
+              <label className="upper-section-text">בחירה מוזמנים או מוזמנות</label>
+              <select
+                className="inputs-fields"
+                value={invitedAs}
+                onChange={(e) => setInvitedAs(e.target.value)}
+              >
+                <option>הנכם מוזמנים</option>
+                <option>הנכן מוזמנות</option>
+                <option>ילדי הגן מוזמנים</option>
+                <option>ילדי הצהרון מוזמנים</option>
+              </select>
+            </div>
+
+            <p className="my-3 text-center text-lg" style={{ opacity: 0.7 }}>ל</p>
+
+            <div>
+              <label className="upper-section-text">סוג ארוע</label>
+              <select
+                className="inputs-fields"
+                value={partyType}
+                onChange={(e) => setPartyType(e.target.value)}
+              >
+                {PARTY_TYPES.map((t) => (
+                  <option key={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+
+            <p className="mt-4 mb-3 text-center text-lg" style={{ opacity: 0.7 }}>של</p>
+
+            <div>
+              {celebrants.map((c, i) => (
+                <div key={i} className="celebrate-box">
+                  <div>
+                    <label className="bottom-section-text">שם מלא</label>
+                    <input
+                      className="inputs-fields"
+                      type="text"
+                      placeholder="שם מלא"
+                      value={c.name}
+                      onChange={(e) => updateCelebrant(i, "name", e.target.value)}
+                    />
+                  </div>
+                  <div className="mt-3">
+                    <label className="bottom-section-text">בן או בת? (אופציונלי)</label>
+                    <select
+                      className="inputs-fields"
+                      value={c.gender}
+                      onChange={(e) => updateCelebrant(i, "gender", e.target.value)}
+                    >
+                      <option value="">בחר אפשרות (אופציונלי)</option>
+                      <option value="בן">בן</option>
+                      <option value="בת">בת</option>
+                      <option value="בני">בני</option>
+                      <option value="בנות">בנות</option>
+                    </select>
+                  </div>
+                  <div className="mt-3">
+                    <label className="bottom-section-text">גיל (אופציונלי)</label>
+                    <input
+                      className="inputs-fields"
+                      type="text"
+                      placeholder="גיל"
+                      value={c.age}
+                      onChange={(e) => updateCelebrant(i, "age", e.target.value)}
+                    />
+                  </div>
+                  {celebrants.length > 1 && (
+                    <div className="mt-3 text-center">
+                      <button type="button" className="del-celebrate-row" onClick={() => removeCelebrant(i)}>
+                        🗑 מחיקת חוגג/ת
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <button type="button" className="btn-gradient-success" onClick={addCelebrant}>
+              ➕ הוספת חוגג/ת
+            </button>
+
+            <div className="mt-3">
+              <label className="bottom-section-text">שיתקיים או שתתקיים</label>
+              <select className="inputs-fields" value={willBe} onChange={(e) => setWillBe(e.target.value)}>
+                <option>שיתקיים</option>
+                <option>שתתקיים</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Date & time */}
+          <div className="category-section datetime-section">
+            <h3 className="category-title">📅 תאריך ושעה</h3>
+            <div className="mt-3">
+              <label className="bottom-section-text">מהו תאריך הארוע?</label>
+              <input
+                className="inputs-fields"
+                type="date"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
+              />
+            </div>
+            <div className="mt-3">
+              <label className="bottom-section-text">שעת התחלה</label>
+              <input
+                className="inputs-fields"
+                type="time"
+                value={eventStart}
+                onChange={(e) => setEventStart(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Location */}
+          <div className="category-section location-section">
+            <h3 className="category-title">📍 מיקום ופרטי מפגש</h3>
+            <div className="mt-3">
+              <label className="bottom-section-text">נפגשים או נפגשות</label>
+              <select className="inputs-fields" value={meetAt} onChange={(e) => setMeetAt(e.target.value)}>
+                <option>נפגשים</option>
+                <option>נפגשות</option>
+              </select>
+            </div>
+            <div className="mt-3">
+              <label className="bottom-section-text">
+                כתובת מדוייקת של הארוע <span className="attention-text-color">(חשוב: לניווט ה-Waze)</span>
+              </label>
+              <input
+                className="inputs-fields"
+                type="text"
+                placeholder="התחל להקליד כתובת..."
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+              />
+            </div>
+            <div className="mt-3">
+              <label className="bottom-section-text">עם או ב-</label>
+              <select className="inputs-fields" value={imgOrBe} onChange={(e) => setImgOrBe(e.target.value)}>
+                <option>עם</option>
+                <option>ב-</option>
+              </select>
+            </div>
+            <div className="mt-3">
+              <label className="bottom-section-text">לראותך או לראותכם</label>
+              <select className="inputs-fields" value={gladSee} onChange={(e) => setGladSee(e.target.value)}>
+                <option>נשמח לראותך</option>
+                <option>נשמח לראותכם</option>
+                <option>נשמח לראותכן</option>
+              </select>
+            </div>
+            <div className="mt-3">
+              <label className="bottom-section-text">הערה לארוע (לא חובה)</label>
+              <textarea
+                className="inputs-fields"
+                rows={3}
+                placeholder="הערה לארוע"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Image */}
+          <div className="category-section media-section">
+            <h3 className="category-title">🖼 תמונת ההזמנה (חובה)</h3>
+
+            <div className="image-source-toggle">
+              <button
+                type="button"
+                className={`image-source-btn${imageSource === "upload" ? " is-active" : ""}`}
+                onClick={() => setImageSource("upload")}
+              >
+                📤 העלאת תמונה
+              </button>
+              <button
+                type="button"
+                className={`image-source-btn${imageSource === "ai" ? " is-active" : ""}`}
+                onClick={() => setImageSource("ai")}
+              >
+                ✨ יצירה עם AI
+              </button>
+            </div>
+
+            {imageSource === "upload" ? (
+              <>
+                <p className="upper-section-text" style={{ fontSize: 13, opacity: 0.8 }}>
+                  העלו את ההזמנה שעיצבתם כתמונה אחת. היא תוצג כפי שהיא, המערכת תתאים מסביב רקע ופייד עדינים.
+                </p>
+                <label className="image-upload-area">
+                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageChange} />
+                  {imageDataUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={imageDataUrl} alt="תצוגה מקדימה" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 8 }} />
+                  ) : (
+                    <span className="upload-label">📤 לחצו כאן להעלאת תמונה</span>
+                  )}
+                </label>
+              </>
+            ) : imageDataUrl ? (
+              <div className="image-upload-area">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imageDataUrl} alt="תצוגה מקדימה" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 8 }} />
+                <button type="button" className="ai-invite-retry-btn" style={{ marginTop: 12 }} onClick={() => setImageDataUrl(null)}>
+                  🔄 יצירה מחדש
+                </button>
+              </div>
+            ) : (
+              <AiInviteGenerator defaultEventType={partyType} onGenerated={setImageDataUrl} />
+            )}
+          </div>
+
+          {/* Confirmation */}
+          <div className="category-section confirmation-section">
+            {error && <div className="alert alert-error">{error}</div>}
+
+            <button type="submit" className="submit-btn" disabled={submitting}>
+              <span>{submitting ? "יוצר הזמנה..." : "מתחילים ליצור קסם!"}</span>
+              <span className="submit-btn-arrow">›</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    </DesktopPhoneWrapper>
+  );
+}
