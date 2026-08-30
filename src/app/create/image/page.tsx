@@ -69,6 +69,17 @@ export default function CreateInvitePage({
 
   const [invitedAs, setInvitedAs] = useState(initialData?.invitedAs ?? "הנכם מוזמנים");
   const [partyType, setPartyType] = useState(initialData?.partyType ?? PARTY_TYPES[0]);
+
+  // "אחר" switches the field above from a dropdown to free text - the
+  // dropdown's default ("יום ההולדת") would be a misleading pre-filled
+  // answer there, so clear it once, the first time this category is picked
+  // on a fresh (non-edit) invite.
+  useEffect(() => {
+    if (eventCategory === "אחר" && !initialData?.partyType && partyType === PARTY_TYPES[0]) {
+      setPartyType("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventCategory]);
   const [celebrants, setCelebrants] = useState<Celebrant[]>(
     initialData?.celebrants && initialData.celebrants.length > 0
       ? initialData.celebrants
@@ -312,15 +323,28 @@ export default function CreateInvitePage({
 
             <div>
               <label className="upper-section-text">סוג ארוע</label>
-              <select
-                className="inputs-fields"
-                value={partyType}
-                onChange={(e) => setPartyType(e.target.value)}
-              >
-                {PARTY_TYPES.map((t) => (
-                  <option key={t}>{t}</option>
-                ))}
-              </select>
+              {eventCategory === "אחר" ? (
+                // "אחר" means none of the fixed options fit - a free-text
+                // field is simpler than making someone scan a long list for
+                // something that isn't there.
+                <input
+                  className="inputs-fields"
+                  type="text"
+                  placeholder="למשל: יום גיבוש, מסיבת פרישה, כנס..."
+                  value={partyType}
+                  onChange={(e) => setPartyType(e.target.value)}
+                />
+              ) : (
+                <select
+                  className="inputs-fields"
+                  value={partyType}
+                  onChange={(e) => setPartyType(e.target.value)}
+                >
+                  {PARTY_TYPES.map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <p className="mt-4 mb-3 text-center text-lg" style={{ opacity: 0.7 }}>של</p>
