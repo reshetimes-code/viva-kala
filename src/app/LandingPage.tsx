@@ -17,17 +17,22 @@ const CATEGORIES = [
   {
     id: "gold-ornate-dark",
     label: "בר/בת מצווה",
-    sampleImage: "https://images.pexels.com/photos/5986488/pexels-photo-5986488.jpeg?auto=compress&cs=tinysrgb&w=800",
+    sampleImage: "/category/bar-bat-mitzvah.webp",
   },
   {
     id: "botanical-green",
     label: "חינה",
-    sampleImage: "https://images.pexels.com/photos/12872538/pexels-photo-12872538.jpeg?auto=compress&cs=tinysrgb&w=800",
+    sampleImage: "/category/henna.webp",
   },
   {
     id: "birthday-fun",
     label: "יום הולדת",
     sampleImage: "https://images.pexels.com/photos/8015132/pexels-photo-8015132.jpeg?auto=compress&cs=tinysrgb&w=800",
+  },
+  {
+    id: "navy-bold",
+    label: "אחר",
+    sampleImage: "https://images.pexels.com/photos/4722577/pexels-photo-4722577.jpeg?auto=compress&cs=tinysrgb&w=800",
   },
 ];
 
@@ -87,6 +92,7 @@ const FOOTER_COLUMNS = [
       { label: "הזמנות לבר/בת מצווה", href: "/create/templates" },
       { label: "הזמנות לחינה", href: "/create/templates" },
       { label: "הזמנות ליום הולדת", href: "/create/templates" },
+      { label: "הזמנות לאירועים אחרים", href: "/create/templates" },
     ],
   },
   {
@@ -261,11 +267,6 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
               <div className="landing-category-label">{c.label}</div>
             </Link>
           ))}
-        </RevealOnScroll>
-        <RevealOnScroll className="landing-categories-more">
-          <Link href="/create/templates" className="landing-outline-btn">
-            לכל סוגי האירועים
-          </Link>
         </RevealOnScroll>
         <RibbonDoodle className="landing-ribbon landing-ribbon-left" />
         <RibbonDoodle className="landing-ribbon landing-ribbon-right" />

@@ -45,9 +45,9 @@ export const PHOTO_STYLE_LABEL: Record<PhotoPlacement, string> = {
   background: "תמונת רקע מלאה",
 };
 
-export type EventCategory = "חתונה" | "בר/בת מצווה" | "חינה" | "יום הולדת";
+export type EventCategory = "חתונה" | "בר/בת מצווה" | "חינה" | "יום הולדת" | "אחר";
 
-export const EVENT_CATEGORIES: EventCategory[] = ["חתונה", "בר/בת מצווה", "חינה", "יום הולדת"];
+export const EVENT_CATEGORIES: EventCategory[] = ["חתונה", "בר/בת מצווה", "חינה", "יום הולדת", "אחר"];
 
 export interface TemplateDef {
   id: string;
@@ -61,7 +61,7 @@ export const TEMPLATES: TemplateDef[] = [
   { id: "cream-script", label: "סקריפט זהב על קרם", swatch: "linear-gradient(135deg,#f6efe2,#d9b96a)", photoStyle: "round", categories: ["חתונה"] },
   { id: "dark-gold", label: "כהה ומינימלי בזהב", swatch: "linear-gradient(135deg,#1b1b1f,#c9a24b)", photoStyle: "square", categories: ["חתונה", "בר/בת מצווה"] },
   { id: "floral-blush", label: "מסגרת פרחונית", swatch: "linear-gradient(135deg,#f7e3e6,#c98a93)", photoStyle: "header", categories: ["חתונה", "חינה"] },
-  { id: "navy-bold", label: "נייבי מודגש", swatch: "linear-gradient(135deg,#12213f,#c9a24b)", photoStyle: "footer", categories: ["חתונה", "בר/בת מצווה"] },
+  { id: "navy-bold", label: "נייבי מודגש", swatch: "linear-gradient(135deg,#12213f,#c9a24b)", photoStyle: "footer", categories: ["חתונה", "בר/בת מצווה", "אחר"] },
   { id: "line-frame", label: "מסגרת קווים דקה", swatch: "linear-gradient(135deg,#ffffff,#9aa0a8)", photoStyle: "side", categories: ["חתונה"] },
   { id: "botanical-green", label: "בוטני ירוק", swatch: "linear-gradient(135deg,#f3f1e6,#5c7a5c)", photoStyle: "background", categories: ["חתונה", "חינה"] },
   { id: "sunset-tropical", label: "שקיעה טרופית", swatch: "linear-gradient(135deg,#2f7c85,#f2a154)", photoStyle: "round", categories: ["חתונה"] },

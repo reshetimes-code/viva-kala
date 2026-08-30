@@ -48,3 +48,6 @@ devlog*.txt
 
 # editor/session backups
 .claude-backups/
+
+public/uploads/*
+!public/uploads/.gitkeep
