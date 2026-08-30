@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { TemplateCard, TEMPLATE_CTA_COLORS, type TemplateFields } from "@/lib/templates";
+import { wazeUrl, googleMapsUrl } from "@/lib/navLinks";
 
 const DEFAULT_CTA_COLORS = { bg: "rgba(20,20,25,0.72)", color: "#ffffff" };
 
@@ -284,23 +285,40 @@ export default function InviteView({
                     </p>
                   )}
                   {showNavBtn && address && (
-                    <a
-                      href={`https://waze.com/ul?q=${encodeURIComponent(address)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: "inline-block",
-                        marginTop: 18,
-                        padding: "12px 22px",
-                        borderRadius: 999,
-                        background: "#33ccff",
-                        color: "#fff",
-                        fontWeight: 700,
-                        textDecoration: "none",
-                      }}
-                    >
-                      ניווט ב-Waze
-                    </a>
+                    <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 18 }}>
+                      <a
+                        href={wazeUrl(address)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: "inline-block",
+                          padding: "12px 22px",
+                          borderRadius: 999,
+                          background: "#33ccff",
+                          color: "#fff",
+                          fontWeight: 700,
+                          textDecoration: "none",
+                        }}
+                      >
+                        ניווט ב-Waze
+                      </a>
+                      <a
+                        href={googleMapsUrl(address)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: "inline-block",
+                          padding: "12px 22px",
+                          borderRadius: 999,
+                          background: "#4285f4",
+                          color: "#fff",
+                          fontWeight: 700,
+                          textDecoration: "none",
+                        }}
+                      >
+                        ניווט ב-Maps
+                      </a>
+                    </div>
                   )}
                 </div>
               ) : (

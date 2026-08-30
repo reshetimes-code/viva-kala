@@ -1,3 +1,13 @@
+import { EVENT_CATEGORIES, type EventCategory } from "@/lib/eventCategories";
+
+// Re-exported for back-compat - every existing import of EventCategory/
+// EVENT_CATEGORIES from "@/lib/templates" keeps working unchanged. The
+// canonical definition now lives in eventCategories.ts so the photo-upload
+// creation flow (src/app/create/image) can share it without importing this
+// whole coded-template-gallery module.
+export type { EventCategory };
+export { EVENT_CATEGORIES };
+
 export interface TemplateFields {
   titleLine1: string;
   titleLine2: string;
@@ -44,10 +54,6 @@ export const PHOTO_STYLE_LABEL: Record<PhotoPlacement, string> = {
   side: "רצועה בצד",
   background: "תמונת רקע מלאה",
 };
-
-export type EventCategory = "חתונה" | "בר/בת מצווה" | "חינה" | "יום הולדת" | "אחר";
-
-export const EVENT_CATEGORIES: EventCategory[] = ["חתונה", "בר/בת מצווה", "חינה", "יום הולדת", "אחר"];
 
 export interface TemplateDef {
   id: string;

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { insertInvite, listInvitesByUser, countRsvpsForInvite } from "@/lib/store";
 import { getCurrentUser } from "@/lib/auth";
+import { saveImageDataUrl } from "@/lib/imageStorage";
+import { isEventCategory } from "@/lib/eventCategories";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -44,6 +46,8 @@ export async function POST(req: NextRequest) {
       templateId,
       templateFields,
       wantRsvp,
+      eventCategory,
+      categoryFields,
     } = body;
 
     if (mode === "image" && !imageDataUrl) {
@@ -54,6 +58,11 @@ export async function POST(req: NextRequest) {
     }
 
     const id = crypto.randomBytes(6).toString("hex");
+
+    // Photos come in as base64 data URLs from the browser - normalize/
+    // compress and write them to disk once here, so store.json only ever
+    // holds a short "/uploads/..." path instead of megabytes of inline text.
+    const imageUrl = mode === "image" ? await saveImageDataUrl(imageDataUrl, "invite") : "";
 
     insertInvite({
       id,
@@ -71,10 +80,12 @@ export async function POST(req: NextRequest) {
       imgOrBe: imgOrBe ?? "",
       gladSee: gladSee ?? "",
       notes: notes ?? "",
-      imageUrl: mode === "image" ? imageDataUrl : "",
+      imageUrl,
       templateId: mode === "template" ? templateId : undefined,
       templateFields: mode === "template" ? templateFields : undefined,
       wantRsvp: !!wantRsvp,
+      eventCategory: isEventCategory(eventCategory) ? eventCategory : undefined,
+      categoryFields: categoryFields && typeof categoryFields === "object" ? categoryFields : undefined,
       createdAt: new Date().toISOString(),
     });
 

@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import DesktopPhoneWrapper from "@/components/DesktopPhoneWrapper";
 import AiInviteGenerator from "@/components/AiInviteGenerator";
+import CategoryFieldsForm from "@/components/CategoryFieldsForm";
+import { EVENT_CATEGORIES, isEventCategory, type EventCategory } from "@/lib/eventCategories";
+import { hasCustomFields, findMissingRequiredField, readCommonFields } from "@/lib/categoryFields";
 
 const PARTY_TYPES = [
   "יום ההולדת", "מסיבה", "הצגה", "הפנינג", "יום גיבוש", "יום פעילות", "מופע",
@@ -33,6 +36,8 @@ export interface ImageInviteInitialData {
   notes: string;
   imageUrl: string;
   wantRsvp: boolean;
+  eventCategory?: EventCategory;
+  categoryFields?: Record<string, string>;
 }
 
 export default function CreateInvitePage({
@@ -43,6 +48,22 @@ export default function CreateInvitePage({
   initialData?: ImageInviteInitialData;
 }) {
   const router = useRouter();
+
+  // The landing page's category tiles link here with ?category=..., so the
+  // system already knows what's being celebrated - the user shouldn't have
+  // to pick it again. Read from the URL once, after mount (kept out of the
+  // initial render so server/client markup matches on first paint).
+  const [eventCategory, setEventCategory] = useState<EventCategory | undefined>(initialData?.eventCategory);
+  const [categoryFields, setCategoryFields] = useState<Record<string, string>>(initialData?.categoryFields ?? {});
+  const [editingCategory, setEditingCategory] = useState(false);
+
+  useEffect(() => {
+    if (initialData?.eventCategory) return; // editing an existing invite - keep its category
+    const fromUrl = new URLSearchParams(window.location.search).get("category");
+    if (isEventCategory(fromUrl)) setEventCategory(fromUrl);
+  }, [initialData?.eventCategory]);
+
+  const usesCustomFields = hasCustomFields(eventCategory);
 
   const [invitedAs, setInvitedAs] = useState(initialData?.invitedAs ?? "הנכם מוזמנים");
   const [partyType, setPartyType] = useState(initialData?.partyType ?? PARTY_TYPES[0]);
@@ -89,18 +110,32 @@ export default function CreateInvitePage({
     e.preventDefault();
     setError("");
 
-    if (!celebrants.some((c) => c.name.trim())) {
-      setError("נא להזין שם מלא לפחות לחוגג אחד");
-      return;
-    }
-    if (!eventDate || !eventStart) {
-      setError("נא למלא תאריך ושעת התחלה");
-      return;
+    if (usesCustomFields && eventCategory) {
+      const missing = findMissingRequiredField(eventCategory, categoryFields);
+      if (missing) {
+        setError(`נא למלא "${missing}"`);
+        return;
+      }
+    } else {
+      if (!celebrants.some((c) => c.name.trim())) {
+        setError("נא להזין שם מלא לפחות לחוגג אחד");
+        return;
+      }
+      if (!eventDate || !eventStart) {
+        setError("נא למלא תאריך ושעת התחלה");
+        return;
+      }
     }
     if (!imageDataUrl) {
       setError("נא להעלות תמונת הזמנה");
       return;
     }
+
+    // The rest of the app (RSVP thank-you screen, the 14-day cleanup sweep,
+    // Waze/Maps buttons, ...) all key off the flat eventDate/eventStart/
+    // address fields - so a category-fields invite still fills those from
+    // categoryFields, it just isn't the source of truth for them.
+    const common = usesCustomFields ? readCommonFields(categoryFields) : null;
 
     setSubmitting(true);
     try {
@@ -110,19 +145,21 @@ export default function CreateInvitePage({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           invitedAs,
-          partyType,
+          partyType: usesCustomFields && eventCategory ? eventCategory : partyType,
           celebrants: celebrants.filter((c) => c.name.trim()),
           willBe,
-          eventDate,
-          eventStart,
+          eventDate: common?.eventDate || eventDate,
+          eventStart: common?.eventStart || eventStart,
           meetAt,
-          address,
+          address: common?.venue || address,
           showNavBtn: true,
           imgOrBe,
           gladSee,
           notes,
           imageDataUrl,
           wantRsvp: true,
+          eventCategory,
+          categoryFields: usesCustomFields ? categoryFields : undefined,
         }),
       });
       const data = await res.json();
@@ -151,6 +188,51 @@ export default function CreateInvitePage({
         <h2 className="create-title">יצירת הזמנת תמונה</h2>
 
         <form onSubmit={handleSubmit}>
+          {/* Event category - already known from the landing page tile in
+              the normal flow, shown as one simple chip instead of asking
+              again. A tiny "שנה" link is the only way to change it, so the
+              common case (arrived here from a category tile) needs zero
+              extra taps. */}
+          <div className="category-section" style={{ textAlign: "center" }}>
+            {editingCategory || !eventCategory ? (
+              <>
+                <label className="upper-section-text">מה חוגגים?</label>
+                <select
+                  className="inputs-fields"
+                  value={eventCategory ?? ""}
+                  onChange={(e) => {
+                    setEventCategory(e.target.value as EventCategory);
+                    setEditingCategory(false);
+                  }}
+                >
+                  <option value="" disabled>
+                    בחרו סוג אירוע
+                  </option>
+                  {EVENT_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </>
+            ) : (
+              <p style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700 }}>
+                🎉 {eventCategory}{" "}
+                <button
+                  type="button"
+                  onClick={() => setEditingCategory(true)}
+                  style={{ background: "none", border: "none", color: "#d4af7a", fontWeight: 700, cursor: "pointer", fontSize: ".9rem" }}
+                >
+                  (שנה)
+                </button>
+              </p>
+            )}
+          </div>
+
+          {usesCustomFields && eventCategory ? (
+            <CategoryFieldsForm category={eventCategory} values={categoryFields} onChange={setCategoryFields} />
+          ) : (
+          <>
           {/* Basic info */}
           <div className="category-section basic-info-section">
             <h3 className="category-title">📋 פרטים בסיסיים</h3>
@@ -318,6 +400,8 @@ export default function CreateInvitePage({
               />
             </div>
           </div>
+          </>
+          )}
 
           {/* Image */}
           <div className="category-section media-section">

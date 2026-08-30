@@ -1,5 +1,11 @@
 import fs from "fs";
 import path from "path";
+import type { EventCategory } from "@/lib/eventCategories";
+
+// How long a past event's invite (and its RSVPs/tables/uploaded photo) is
+// kept around after the event date before the lazy sweep in readStore()
+// purges it. See the sweep function below.
+const RETENTION_DAYS_AFTER_EVENT = 14;
 
 const dataDir = path.join(process.cwd(), "data");
 const dataFile = path.join(dataDir, "store.json");
@@ -44,6 +50,25 @@ export interface StoredInvite {
   templateFields?: Record<string, string>;
   wantRsvp: boolean;
   createdAt: string;
+  /** The event category chosen on the landing page / creation flow
+   *  ("חתונה", "בר/בת מצווה", "חינה", ...) - drives which extra fields
+   *  CategoryFieldsForm shows and how the guest-view headline is built.
+   *  Optional so older invites created before this existed keep working. */
+  eventCategory?: EventCategory;
+  /** Free-form bag for the category-specific fields (groomName, brideName,
+   *  celebrantAge, familyName, ...) - same pattern as templateFields, so
+   *  adding/renaming a field never needs a data migration. */
+  categoryFields?: Record<string, string>;
+  /** The AI-chosen (or heuristic-fallback) design decision for laying the
+   *  event text over an uploaded/AI photo - computed once at save time and
+   *  reused identically in the create-flow preview and the guest view. */
+  textStyle?: {
+    textColor: string;
+    scrimColor: string;
+    scrimOpacity: number;
+    accentColor: string;
+    anchor: "top" | "center" | "bottom";
+  };
 }
 
 export interface StoredRsvp {
@@ -111,13 +136,51 @@ function ensureFile() {
   }
 }
 
+// An invite whose event was more than RETENTION_DAYS_AFTER_EVENT days ago is
+// dropped, along with its RSVPs, seating tables, and uploaded photo file -
+// no cron/scheduler needed since this flat-file store is fully read on
+// every request anyway; this just prunes stale rows as part of that read.
+// Invites with a missing/unparseable eventDate are left alone (never
+// destroy data over a date we can't confidently read).
+function isExpired(eventDate: string, now: Date): boolean {
+  if (!eventDate) return false;
+  const eventTime = new Date(eventDate).getTime();
+  if (Number.isNaN(eventTime)) return false;
+  const cutoff = eventTime + RETENTION_DAYS_AFTER_EVENT * 24 * 60 * 60 * 1000;
+  return now.getTime() > cutoff;
+}
+
+function sweepExpiredInvites(store: StoreShape): boolean {
+  const now = new Date();
+  const expired = store.invites.filter((i) => isExpired(i.eventDate, now));
+  if (expired.length === 0) return false;
+
+  const expiredIds = new Set(expired.map((i) => i.id));
+  store.invites = store.invites.filter((i) => !expiredIds.has(i.id));
+  store.rsvps = store.rsvps.filter((r) => !expiredIds.has(r.inviteId));
+  store.tables = store.tables.filter((t) => !expiredIds.has(t.inviteId));
+
+  for (const invite of expired) {
+    if (invite.imageUrl?.startsWith("/uploads/")) {
+      const filePath = path.join(process.cwd(), "public", invite.imageUrl);
+      try {
+        fs.unlinkSync(filePath);
+      } catch {
+        // already gone - fine.
+      }
+    }
+  }
+  return true;
+}
+
 function readStore(): StoreShape {
   ensureFile();
   const raw = fs.readFileSync(dataFile, "utf-8");
+  let store: StoreShape;
   try {
     const parsed = JSON.parse(raw) as Partial<StoreShape>;
     // Backfill fields added after some invites.json files were already on disk.
-    return {
+    store = {
       ...defaultStore(),
       ...parsed,
       tables: parsed.tables ?? [],
@@ -127,6 +190,11 @@ function readStore(): StoreShape {
   } catch {
     return defaultStore();
   }
+
+  if (sweepExpiredInvites(store)) {
+    writeStore(store);
+  }
+  return store;
 }
 
 function writeStore(store: StoreShape) {

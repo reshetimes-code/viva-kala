@@ -38,9 +38,9 @@ const CATEGORIES = [
 
 const FEATURES = [
   {
-    icon: "gallery",
-    title: "עשרות עיצובים מוכנים",
-    text: "גלריית תבניות מעוצבות בסגנונות שונים - ממלאים פרטים והעיצוב נבנה אוטומטית, כולל תמונה משלכם במיקום שתבחרו.",
+    icon: "ai",
+    title: "מעצב AI אישי, לא גלריה",
+    text: "מספרים לנו כמה מילים על האירוע - והמנוע שלנו יוצר לכם הזמנה מעוצבת ברמה מקצועית, כאילו הזמנתם מעצב/ת פרטי/ת.",
   },
   {
     icon: "upload",
@@ -124,6 +124,18 @@ function RibbonDoodle({ className }: { className?: string }) {
 function FeatureIcon({ type }: { type: string }) {
   const common = { viewBox: "0 0 32 32", width: 26, height: 26, fill: "none", "aria-hidden": true } as const;
   switch (type) {
+    case "ai":
+      return (
+        <svg {...common}>
+          <path
+            d="M16 4l2.4 8.6L27 15l-8.6 2.4L16 26l-2.4-8.6L5 15l8.6-2.4L16 4Z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
+          <circle cx="25" cy="7" r="1.6" fill="currentColor" />
+        </svg>
+      );
     case "gallery":
       return (
         <svg {...common}>
