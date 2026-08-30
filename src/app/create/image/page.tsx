@@ -237,7 +237,7 @@ export default function CreateInvitePage({
     <div className="create-page">
       <div className="create-wrapper">
         <div className="mb-4">
-          <a href="/create" className="create-back-link">
+          <a href="/dashboard" className="create-back-link">
             → חזרה
           </a>
         </div>

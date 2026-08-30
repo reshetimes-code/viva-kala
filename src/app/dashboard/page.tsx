@@ -47,7 +47,7 @@ export default async function DashboardPage() {
         <div className="dash-header">
           <h1>ההזמנה שלי</h1>
           {!invite && (
-            <Link href="/create" className="dash-new-btn">
+            <Link href="/create/image" className="dash-new-btn">
               ➕ הזמנה חדשה
             </Link>
           )}
@@ -56,7 +56,7 @@ export default async function DashboardPage() {
         {!invite ? (
           <div className="dash-empty">
             <p>עדיין לא יצרת הזמנה.</p>
-            <Link href="/create" className="dash-new-btn">
+            <Link href="/create/image" className="dash-new-btn">
               צור את ההזמנה הראשונה שלך
             </Link>
           </div>

@@ -1017,23 +1017,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .crop-btn-cancel { background: #eef1f4; color: #4a5568; }
 .crop-btn-confirm { background: linear-gradient(135deg, #1c1c1e, #2f2f32); color: #d4af7a; border: 1.5px solid rgba(212,175,55,0.5); }
 
-/* --- template gallery + chooser + fill-in form --- */
-.choose-page {
-  min-height: 100vh; background: #0d0518;
-  background: radial-gradient(circle at 20% 0%, #3a1050 0%, #1a0a2e 45%, #0d0518 100%);
-  color: #fff; direction: rtl; padding: 60px 20px; display: flex; flex-direction: column; align-items: center;
-}
-.choose-title { font-size: 1.7rem; font-weight: 800; margin-bottom: 34px; }
-.choose-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; width: 100%; max-width: 760px; }
-.choose-card {
-  background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.15); border-radius: 20px;
-  padding: 32px 20px; text-align: center; text-decoration: none; color: #fff; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; gap: 12px; transition: all .25s ease;
-}
-.choose-card:hover { border-color: #d4af7a; transform: translateY(-3px); }
-.choose-card .choose-icon { font-size: 2.6rem; }
-.choose-card h3 { font-size: 1.15rem; font-weight: 700; }
-.choose-card p { font-size: .85rem; color: rgba(255,255,255,0.65); }
+/* --- template gallery + fill-in form --- */
 
 .tpl-gallery-page { min-height: 100vh; background: #f4f1ea; padding: 50px 24px 80px; direction: rtl; }
 .tpl-gallery-header { max-width: 1400px; margin: 0 auto 50px; text-align: center; }

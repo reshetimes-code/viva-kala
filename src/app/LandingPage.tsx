@@ -81,7 +81,7 @@ const FOOTER_COLUMNS = [
     title: "המוצר",
     links: [
       { label: "גלריית עיצובים", href: "/create/templates" },
-      { label: "יצירת הזמנה", href: "/create" },
+      { label: "יצירת הזמנה", href: "/create/image" },
       { label: "לוח הבקרה", href: "/dashboard" },
     ],
   },
