@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import { TemplateCard, TEMPLATE_CTA_COLORS, type TemplateFields } from "@/lib/templates";
 import { wazeUrl, googleMapsUrl } from "@/lib/navLinks";
+import { buildHeadline } from "@/lib/categoryFields";
+import type { EventCategory } from "@/lib/eventCategories";
+import type { TextStyle } from "@/lib/textStyleHeuristic";
+import InvitePhotoCard from "@/components/InvitePhotoCard";
 
 const DEFAULT_CTA_COLORS = { bg: "rgba(20,20,25,0.72)", color: "#ffffff" };
 
@@ -18,6 +22,9 @@ interface Props {
   address: string;
   showNavBtn: boolean;
   wantRsvp: boolean;
+  eventCategory?: EventCategory;
+  categoryFields?: Record<string, string>;
+  textStyle?: TextStyle;
 }
 
 export default function InviteView({
@@ -32,7 +39,14 @@ export default function InviteView({
   address,
   showNavBtn,
   wantRsvp,
+  eventCategory,
+  categoryFields,
+  textStyle,
 }: Props) {
+  // Only the three tailored categories (wedding/bar-bat-mitzvah/henna) have
+  // enough structured data for a real headline - everything else keeps the
+  // original plain-photo view unchanged (no regression for older invites).
+  const photoCardHeadline = buildHeadline(eventCategory, categoryFields);
   const [showRsvp, setShowRsvp] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [whatsNumberOpen, setWhatsNumberOpen] = useState(false);
@@ -235,6 +249,14 @@ export default function InviteView({
             <div className="tpl-full-wrap">
               <TemplateCard templateId={templateId} fields={templateFields} />
             </div>
+          ) : photoCardHeadline ? (
+            <InvitePhotoCard
+              imageUrl={imageUrl}
+              headline={photoCardHeadline}
+              dateText={[eventDate, eventStart && `בשעה ${eventStart}`].filter(Boolean).join(" ")}
+              venueText={address}
+              textStyle={textStyle}
+            />
           ) : (
             <>
               <div

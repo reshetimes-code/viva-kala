@@ -59,7 +59,7 @@ export async function PATCH(
   const allowed = [
     "invitedAs", "partyType", "celebrants", "willBe", "eventDate", "eventStart",
     "meetAt", "address", "showNavBtn", "imgOrBe", "gladSee", "notes", "imageUrl",
-    "templateFields", "wantRsvp", "categoryFields",
+    "templateFields", "wantRsvp", "categoryFields", "textStyle",
   ];
   for (const key of allowed) {
     if (key in body) updates[key] = body[key];

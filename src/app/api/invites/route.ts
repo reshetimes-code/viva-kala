@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
       wantRsvp,
       eventCategory,
       categoryFields,
+      textStyle,
     } = body;
 
     if (mode === "image" && !imageDataUrl) {
@@ -86,6 +87,7 @@ export async function POST(req: NextRequest) {
       wantRsvp: !!wantRsvp,
       eventCategory: isEventCategory(eventCategory) ? eventCategory : undefined,
       categoryFields: categoryFields && typeof categoryFields === "object" ? categoryFields : undefined,
+      textStyle: textStyle && typeof textStyle === "object" ? textStyle : undefined,
       createdAt: new Date().toISOString(),
     });
 

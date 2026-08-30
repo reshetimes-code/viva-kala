@@ -50,6 +50,9 @@ export default async function InvitePage({
       address={invite.address}
       showNavBtn={invite.showNavBtn}
       wantRsvp={invite.wantRsvp}
+      eventCategory={invite.eventCategory}
+      categoryFields={invite.categoryFields}
+      textStyle={invite.textStyle}
     />
   );
 }

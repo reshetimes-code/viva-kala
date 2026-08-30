@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import DesktopPhoneWrapper from "@/components/DesktopPhoneWrapper";
 import AiInviteGenerator from "@/components/AiInviteGenerator";
 import CategoryFieldsForm from "@/components/CategoryFieldsForm";
+import InvitePhotoCard from "@/components/InvitePhotoCard";
 import { EVENT_CATEGORIES, isEventCategory, type EventCategory } from "@/lib/eventCategories";
-import { hasCustomFields, findMissingRequiredField, readCommonFields } from "@/lib/categoryFields";
+import { hasCustomFields, findMissingRequiredField, readCommonFields, buildHeadline } from "@/lib/categoryFields";
+import { computeTextStyleFromCanvas, type TextStyle } from "@/lib/textStyleHeuristic";
 
 const PARTY_TYPES = [
   "יום ההולדת", "מסיבה", "הצגה", "הפנינג", "יום גיבוש", "יום פעילות", "מופע",
@@ -82,6 +84,38 @@ export default function CreateInvitePage({
   const [notes, setNotes] = useState(initialData?.notes ?? "");
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(initialData?.imageUrl ?? null);
   const [imageSource, setImageSource] = useState<"upload" | "ai">("upload");
+  const [textStyle, setTextStyle] = useState<TextStyle | undefined>(undefined);
+
+  // Whenever the photo changes, work out how to lay text over it - this is
+  // the "AI decides the design, not the user" piece: no color/font picker
+  // ever shown, just a live preview of the result a moment later.
+  useEffect(() => {
+    if (!imageDataUrl) {
+      setTextStyle(undefined);
+      return;
+    }
+    let cancelled = false;
+    const img = new window.Image();
+    img.onload = () => {
+      if (cancelled) return;
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0);
+      try {
+        setTextStyle(computeTextStyleFromCanvas(canvas));
+      } catch {
+        // Cross-origin or otherwise unreadable image data - keep the
+        // previous style rather than breaking the preview.
+      }
+    };
+    img.src = imageDataUrl;
+    return () => {
+      cancelled = true;
+    };
+  }, [imageDataUrl]);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -160,6 +194,7 @@ export default function CreateInvitePage({
           wantRsvp: true,
           eventCategory,
           categoryFields: usesCustomFields ? categoryFields : undefined,
+          textStyle: usesCustomFields ? textStyle : undefined,
         }),
       });
       const data = await res.json();
@@ -449,6 +484,25 @@ export default function CreateInvitePage({
               </div>
             ) : (
               <AiInviteGenerator defaultEventType={partyType} onGenerated={setImageDataUrl} />
+            )}
+
+            {usesCustomFields && eventCategory && imageDataUrl && (
+              <div className="mt-4">
+                <p className="upper-section-text" style={{ fontSize: 13, opacity: 0.8, textAlign: "center" }}>
+                  ✨ ככה זה ייראה אצל האורחים - הכל מתעצב לבד:
+                </p>
+                <div style={{ aspectRatio: "9 / 16", maxWidth: 260, margin: "12px auto 0", borderRadius: 16, overflow: "hidden" }}>
+                  <InvitePhotoCard
+                    imageUrl={imageDataUrl}
+                    headline={buildHeadline(eventCategory, categoryFields)}
+                    dateText={[readCommonFields(categoryFields).eventDate, readCommonFields(categoryFields).eventStart && `בשעה ${readCommonFields(categoryFields).eventStart}`]
+                      .filter(Boolean)
+                      .join(" ")}
+                    venueText={readCommonFields(categoryFields).venue}
+                    textStyle={textStyle}
+                  />
+                </div>
+              </div>
             )}
           </div>
 
