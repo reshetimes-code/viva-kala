@@ -14,12 +14,12 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const invite = findInviteById(id);
+  const invite = await findInviteById(id);
   if (!invite || invite.userId !== user.id) {
     return NextResponse.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
   }
 
-  deleteInvite(id, user.id);
+  await deleteInvite(id, user.id);
   await deleteStoredImage(invite.imageUrl);
   return NextResponse.json({ success: true });
 }
@@ -33,7 +33,7 @@ export async function GET(
     return NextResponse.json({ error: "יש להתחבר תחילה" }, { status: 401 });
   }
   const { id } = await params;
-  const invite = findInviteById(id);
+  const invite = await findInviteById(id);
   if (!invite || invite.userId !== user.id) {
     return NextResponse.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
   }
@@ -49,7 +49,7 @@ export async function PATCH(
     return NextResponse.json({ error: "יש להתחבר תחילה" }, { status: 401 });
   }
   const { id } = await params;
-  const invite = findInviteById(id);
+  const invite = await findInviteById(id);
   if (!invite || invite.userId !== user.id) {
     return NextResponse.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
   }
@@ -79,6 +79,6 @@ export async function PATCH(
     }
   }
 
-  updateInvite(id, user.id, updates);
+  await updateInvite(id, user.id, updates);
   return NextResponse.json({ success: true });
 }

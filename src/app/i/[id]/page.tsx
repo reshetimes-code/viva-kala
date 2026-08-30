@@ -11,7 +11,7 @@ export default async function InvitePage({
 }) {
   const { id } = await params;
 
-  const invite = findInviteById(id);
+  const invite = await findInviteById(id);
 
   if (!invite) {
     notFound();

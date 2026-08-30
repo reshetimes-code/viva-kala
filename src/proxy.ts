@@ -3,7 +3,7 @@ import { findUserByToken, listInvitesByUser } from "@/lib/store";
 
 const SESSION_COOKIE = "session_token";
 
-export function proxy(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   if (!token) {
     const loginUrl = new URL("/login", req.url);
@@ -18,8 +18,8 @@ export function proxy(req: NextRequest) {
   const isCreateEntry =
     pathname === "/create" || pathname.startsWith("/create/image") || pathname.startsWith("/create/templates");
   if (isCreateEntry) {
-    const user = findUserByToken(token);
-    if (user && listInvitesByUser(user.id).length > 0) {
+    const user = await findUserByToken(token);
+    if (user && (await listInvitesByUser(user.id)).length > 0) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
   }

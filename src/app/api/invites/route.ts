@@ -11,10 +11,13 @@ export async function GET() {
     return NextResponse.json({ error: "יש להתחבר תחילה" }, { status: 401 });
   }
 
-  const invites = listInvitesByUser(user.id).map((inv) => ({
-    ...inv,
-    rsvpCounts: countRsvpsForInvite(inv.id),
-  }));
+  const userInvites = await listInvitesByUser(user.id);
+  const invites = await Promise.all(
+    userInvites.map(async (inv) => ({
+      ...inv,
+      rsvpCounts: await countRsvpsForInvite(inv.id),
+    }))
+  );
 
   return NextResponse.json({ invites });
 }
@@ -65,7 +68,7 @@ export async function POST(req: NextRequest) {
     // holds a short "/uploads/..." path instead of megabytes of inline text.
     const imageUrl = mode === "image" ? await saveImageDataUrl(imageDataUrl, "invite") : "";
 
-    insertInvite({
+    await insertInvite({
       id,
       userId: user.id,
       mode,

@@ -26,7 +26,14 @@ export default async function AdminLeadsPage() {
   if (!user) redirect("/login");
   if (!isAdminUser(user)) redirect("/dashboard");
 
-  const leads = listLeads();
+  const leads = await listLeads();
+  const ownerByInviteId = new Map(
+    await Promise.all(
+      [...new Set(leads.map((l) => l.sourceInviteId).filter(Boolean))].map(
+        async (inviteId) => [inviteId, await getInviteOwnerUsername(inviteId)] as const
+      )
+    )
+  );
 
   return (
     <DesktopPhoneWrapper title="לידים">
@@ -38,7 +45,7 @@ export default async function AdminLeadsPage() {
 
         <div className="admin-card-group">
           {leads.map((l) => {
-            const ownerUsername = l.sourceInviteId ? getInviteOwnerUsername(l.sourceInviteId) : null;
+            const ownerUsername = l.sourceInviteId ? ownerByInviteId.get(l.sourceInviteId) ?? null : null;
             const waHref = `https://wa.me/${toWaDigits(l.phone)}?text=${encodeURIComponent(
               contactMessage(l.name, ownerUsername)
             )}`;

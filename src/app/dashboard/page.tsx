@@ -14,12 +14,15 @@ export default async function DashboardPage() {
 
   // Each account owns exactly one invite, so the dashboard is built around
   // that single invite's progress rather than a list of many.
-  const invites = listInvitesByUser(user.id).map((inv) => ({
-    ...inv,
-    rsvpCounts: countRsvpsForInvite(inv.id),
-  }));
+  const userInvites = await listInvitesByUser(user.id);
+  const invites = await Promise.all(
+    userInvites.map(async (inv) => ({
+      ...inv,
+      rsvpCounts: await countRsvpsForInvite(inv.id),
+    }))
+  );
   const invite = invites[0] ?? null;
-  const tableCount = invite ? listTablesByInvite(invite.id).length : 0;
+  const tableCount = invite ? (await listTablesByInvite(invite.id)).length : 0;
   const hasResponses = !!invite && invite.rsvpCounts.total > 0;
 
   const steps: Array<{ label: string; status: "done" | "current" | "upcoming"; href?: string; cta?: string }> = invite

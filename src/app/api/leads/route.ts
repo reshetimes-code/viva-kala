@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     if (!phone || !String(phone).trim()) {
       return NextResponse.json({ error: "נא להזין מספר טלפון" }, { status: 400 });
     }
-    insertLead({
+    await insertLead({
       name: name ?? "",
       phone: String(phone).trim(),
       sourceInviteId: sourceInviteId ?? "",

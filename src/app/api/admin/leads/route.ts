@@ -7,5 +7,5 @@ export async function GET() {
   if (!isAdminUser(user)) {
     return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
   }
-  return NextResponse.json({ leads: listLeads() });
+  return NextResponse.json({ leads: await listLeads() });
 }

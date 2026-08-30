@@ -10,19 +10,21 @@ export async function POST(req: Request) {
   const guestName = typeof body?.guestName === "string" ? body.guestName : "";
   const familyName = typeof body?.familyName === "string" ? body.familyName : "";
 
-  if (!inviteId || !findInviteById(inviteId)) {
+  if (!inviteId || !(await findInviteById(inviteId))) {
     return NextResponse.json({ error: "אירוע לא נמצא" }, { status: 404 });
   }
   if (!guestName.trim() || !familyName.trim()) {
     return NextResponse.json({ error: "יש למלא שם פרטי ושם משפחה" }, { status: 400 });
   }
 
-  const matches = findRsvpsByName(inviteId, guestName, familyName);
-  const results = matches.map((r) => ({
-    guestName: r.guestName,
-    familyName: r.familyName,
-    tableNumber: r.tableId ? findTableById(r.tableId)?.number ?? null : null,
-  }));
+  const matches = await findRsvpsByName(inviteId, guestName, familyName);
+  const results = await Promise.all(
+    matches.map(async (r) => ({
+      guestName: r.guestName,
+      familyName: r.familyName,
+      tableNumber: r.tableId ? (await findTableById(r.tableId))?.number ?? null : null,
+    }))
+  );
 
   return NextResponse.json({ results });
 }

@@ -10,36 +10,36 @@ export interface User {
   username: string;
 }
 
-export function createUser(username: string, password: string): User {
-  const existing = findUserByUsername(username);
+export async function createUser(username: string, password: string): Promise<User> {
+  const existing = await findUserByUsername(username);
   if (existing) {
     throw new Error("שם המשתמש כבר תפוס");
   }
   const passwordHash = bcrypt.hashSync(password, 10);
-  const user = insertUser(username, passwordHash);
+  const user = await insertUser(username, passwordHash);
   return { id: user.id, username: user.username };
 }
 
-export function verifyUser(username: string, password: string): User | null {
-  const user = findUserByUsername(username);
+export async function verifyUser(username: string, password: string): Promise<User | null> {
+  const user = await findUserByUsername(username);
   if (!user) return null;
   const ok = bcrypt.compareSync(password, user.passwordHash);
   if (!ok) return null;
   return { id: user.id, username: user.username };
 }
 
-export function createSessionToken(userId: number): string {
+export async function createSessionToken(userId: number): Promise<string> {
   const token = crypto.randomBytes(32).toString("hex");
-  insertSession(token, userId);
+  await insertSession(token, userId);
   return token;
 }
 
-export function deleteSessionToken(token: string) {
-  deleteSession(token);
+export async function deleteSessionToken(token: string) {
+  await deleteSession(token);
 }
 
-export function getUserByToken(token: string): User | null {
-  const user = findUserByToken(token);
+export async function getUserByToken(token: string): Promise<User | null> {
+  const user = await findUserByToken(token);
   return user ? { id: user.id, username: user.username } : null;
 }
 
@@ -63,7 +63,7 @@ export async function setSessionCookie(token: string) {
 export async function clearSessionCookie() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (token) deleteSessionToken(token);
+  if (token) await deleteSessionToken(token);
   cookieStore.delete(SESSION_COOKIE);
 }
 

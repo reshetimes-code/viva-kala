@@ -12,7 +12,7 @@ export default async function AdminPage() {
   if (!user) redirect("/login");
   if (!isAdminUser(user)) redirect("/dashboard");
 
-  const users = listAllUsersWithStats();
+  const users = await listAllUsersWithStats();
 
   return (
     <DesktopPhoneWrapper title="ניהול מערכת">

@@ -16,13 +16,13 @@ export default async function GuestsPage({
   }
 
   const { id } = await params;
-  const invite = findInviteById(id);
+  const invite = await findInviteById(id);
   if (!invite || invite.userId !== user.id) {
     notFound();
   }
 
-  const rsvps = listRsvpsByInvite(id);
-  const tables = listTablesByInvite(id);
+  const rsvps = await listRsvpsByInvite(id);
+  const tables = await listTablesByInvite(id);
 
   let title = "";
   if (invite.mode === "template" && invite.templateFields) {

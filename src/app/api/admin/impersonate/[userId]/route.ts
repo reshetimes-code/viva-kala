@@ -12,12 +12,12 @@ export async function POST(_req: Request, { params }: { params: Promise<{ userId
   }
 
   const { userId } = await params;
-  const target = findUserById(Number(userId));
+  const target = await findUserById(Number(userId));
   if (!target) {
     return NextResponse.json({ error: "משתמש לא נמצא" }, { status: 404 });
   }
 
-  const token = createSessionToken(target.id);
+  const token = await createSessionToken(target.id);
   await setSessionCookie(token);
   return NextResponse.json({ ok: true });
 }

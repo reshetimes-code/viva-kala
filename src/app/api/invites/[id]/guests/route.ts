@@ -12,13 +12,13 @@ export async function GET(
   }
 
   const { id } = await params;
-  const invite = findInviteById(id);
+  const invite = await findInviteById(id);
   if (!invite || invite.userId !== user.id) {
     return NextResponse.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
   }
 
   return NextResponse.json({
-    rsvps: listRsvpsByInvite(id),
-    tables: listTablesByInvite(id),
+    rsvps: await listRsvpsByInvite(id),
+    tables: await listTablesByInvite(id),
   });
 }

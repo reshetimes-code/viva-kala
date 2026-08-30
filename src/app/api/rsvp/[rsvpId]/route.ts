@@ -12,17 +12,17 @@ export async function PATCH(
   }
 
   const { rsvpId } = await params;
-  const rsvp = findRsvpById(Number(rsvpId));
+  const rsvp = await findRsvpById(Number(rsvpId));
   if (!rsvp) {
     return NextResponse.json({ error: "אישור הגעה לא נמצא" }, { status: 404 });
   }
 
-  const invite = findInviteById(rsvp.inviteId);
+  const invite = await findInviteById(rsvp.inviteId);
   if (!invite || invite.userId !== user.id) {
     return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
   }
 
   const { tableId } = await req.json();
-  assignRsvpTable(rsvp.id, tableId ?? null);
+  await assignRsvpTable(rsvp.id, tableId ?? null);
   return NextResponse.json({ success: true });
 }

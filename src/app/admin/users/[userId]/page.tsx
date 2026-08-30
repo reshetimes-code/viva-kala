@@ -18,7 +18,7 @@ export default async function AdminUserDetailPage({
   if (!isAdminUser(admin)) redirect("/dashboard");
 
   const { userId } = await params;
-  const detail = getUserDetail(Number(userId));
+  const detail = await getUserDetail(Number(userId));
   if (!detail) notFound();
 
   return (

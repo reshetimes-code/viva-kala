@@ -9,12 +9,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "חסר מזהה הזמנה" }, { status: 400 });
     }
 
-    const invite = findInviteById(inviteId);
+    const invite = await findInviteById(inviteId);
     if (!invite) {
       return NextResponse.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
     }
 
-    const rsvp = insertRsvp({
+    const rsvp = await insertRsvp({
       inviteId,
       guestName: guestName ?? "",
       familyName: familyName ?? "",

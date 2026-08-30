@@ -14,7 +14,7 @@ export default async function EditInvitePage({
   if (!user) redirect("/login");
 
   const { id } = await params;
-  const invite = findInviteById(id);
+  const invite = await findInviteById(id);
   if (!invite || invite.userId !== user.id) notFound();
 
   if (invite.mode === "template" && invite.templateId) {

@@ -11,10 +11,10 @@ export async function DELETE(
     return NextResponse.json({ error: "יש להתחבר תחילה" }, { status: 401 });
   }
   const { id, tableId } = await params;
-  const invite = findInviteById(id);
+  const invite = await findInviteById(id);
   if (!invite || invite.userId !== user.id) {
     return NextResponse.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
   }
-  deleteTable(tableId, id);
+  await deleteTable(tableId, id);
   return NextResponse.json({ success: true });
 }

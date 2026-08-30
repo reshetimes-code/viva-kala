@@ -8,12 +8,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "נא למלא שם משתמש וסיסמה" }, { status: 400 });
     }
 
-    const user = verifyUser(String(username).trim(), String(password));
+    const user = await verifyUser(String(username).trim(), String(password));
     if (!user) {
       return NextResponse.json({ error: "שם משתמש או סיסמה שגויים" }, { status: 401 });
     }
 
-    const token = createSessionToken(user.id);
+    const token = await createSessionToken(user.id);
     await setSessionCookie(token);
 
     return NextResponse.json({ success: true, user });

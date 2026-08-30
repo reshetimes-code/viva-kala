@@ -13,13 +13,13 @@ export async function POST(
   }
 
   const { id } = await params;
-  const source = findInviteById(id);
+  const source = await findInviteById(id);
   if (!source || source.userId !== user.id) {
     return NextResponse.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
   }
 
   const newId = crypto.randomBytes(6).toString("hex");
-  insertInvite({
+  await insertInvite({
     ...source,
     id: newId,
     createdAt: new Date().toISOString(),

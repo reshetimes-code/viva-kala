@@ -12,8 +12,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "הסיסמה חייבת להכיל לפחות 4 תווים" }, { status: 400 });
     }
 
-    const user = createUser(String(username).trim(), String(password));
-    const token = createSessionToken(user.id);
+    const user = await createUser(String(username).trim(), String(password));
+    const token = await createSessionToken(user.id);
     await setSessionCookie(token);
 
     return NextResponse.json({ success: true, user });

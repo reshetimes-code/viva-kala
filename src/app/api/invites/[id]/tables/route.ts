@@ -11,11 +11,11 @@ export async function GET(
     return NextResponse.json({ error: "יש להתחבר תחילה" }, { status: 401 });
   }
   const { id } = await params;
-  const invite = findInviteById(id);
+  const invite = await findInviteById(id);
   if (!invite || invite.userId !== user.id) {
     return NextResponse.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
   }
-  return NextResponse.json({ tables: listTablesByInvite(id) });
+  return NextResponse.json({ tables: await listTablesByInvite(id) });
 }
 
 export async function POST(
@@ -27,7 +27,7 @@ export async function POST(
     return NextResponse.json({ error: "יש להתחבר תחילה" }, { status: 401 });
   }
   const { id } = await params;
-  const invite = findInviteById(id);
+  const invite = await findInviteById(id);
   if (!invite || invite.userId !== user.id) {
     return NextResponse.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
   }
@@ -37,6 +37,6 @@ export async function POST(
     return NextResponse.json({ error: "נא להזין מספר שולחן" }, { status: 400 });
   }
 
-  const table = insertTable(id, String(number).trim());
+  const table = await insertTable(id, String(number).trim());
   return NextResponse.json({ success: true, table });
 }

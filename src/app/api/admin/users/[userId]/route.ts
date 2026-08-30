@@ -12,7 +12,7 @@ export async function GET(
     return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
   }
   const { userId } = await params;
-  const detail = getUserDetail(Number(userId));
+  const detail = await getUserDetail(Number(userId));
   if (!detail) {
     return NextResponse.json({ error: "משתמש לא נמצא" }, { status: 404 });
   }
@@ -39,7 +39,7 @@ export async function PATCH(
       }
       updates.passwordHash = bcrypt.hashSync(String(password), 10);
     }
-    const ok = adminUpdateUser(Number(userId), updates);
+    const ok = await adminUpdateUser(Number(userId), updates);
     if (!ok) {
       return NextResponse.json({ error: "משתמש לא נמצא" }, { status: 404 });
     }

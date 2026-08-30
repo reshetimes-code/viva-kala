@@ -11,7 +11,7 @@ export default async function EventTableLookupPage({
   params: Promise<{ inviteId: string }>;
 }) {
   const { inviteId } = await params;
-  const invite = findInviteById(inviteId);
+  const invite = await findInviteById(inviteId);
   if (!invite) notFound();
 
   const venueText = invite.mode === "template" ? invite.templateFields?.venueText : invite.address;
