@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import DesktopPhoneWrapper from "@/components/DesktopPhoneWrapper";
-import AiInviteGenerator from "@/components/AiInviteGenerator";
+import AiDesignerChat from "@/components/AiDesignerChat";
 import CategoryFieldsForm from "@/components/CategoryFieldsForm";
 import InvitePhotoCard from "@/components/InvitePhotoCard";
 import { EVENT_CATEGORIES, isEventCategory, type EventCategory } from "@/lib/eventCategories";
@@ -112,6 +112,28 @@ export default function CreateInvitePage({
       }
     };
     img.src = imageDataUrl;
+
+    // The heuristic above is instant, so the preview never looks broken -
+    // this quietly asks the AI to actually look at the photo (avoid faces,
+    // pick real colors) and upgrades the style if/when it comes back.
+    // Only worth doing for a freshly chosen photo (a data: URL); an
+    // already-saved "/uploads/..." photo from editing an existing invite
+    // keeps whatever style it already has.
+    if (imageDataUrl.startsWith("data:")) {
+      fetch("/api/ai-designer/analyze-photo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageDataUrl }),
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((aiStyle) => {
+          if (!cancelled && aiStyle) setTextStyle(aiStyle);
+        })
+        .catch(() => {
+          // Heuristic result already showing - nothing to do on failure.
+        });
+    }
+
     return () => {
       cancelled = true;
     };
@@ -483,7 +505,11 @@ export default function CreateInvitePage({
                 </button>
               </div>
             ) : (
-              <AiInviteGenerator defaultEventType={partyType} onGenerated={setImageDataUrl} />
+              <AiDesignerChat
+                eventCategory={eventCategory ?? partyType}
+                categoryFields={usesCustomFields ? categoryFields : undefined}
+                onGenerated={setImageDataUrl}
+              />
             )}
 
             {usesCustomFields && eventCategory && imageDataUrl && (

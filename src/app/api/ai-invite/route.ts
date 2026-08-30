@@ -20,6 +20,12 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => null);
+
+  // The AI-designer chat (src/app/api/ai-designer/chat) assembles its own
+  // complete English prompt once it has asked enough questions - when it's
+  // given directly, skip the guided-form prompt-building below entirely.
+  const rawPrompt = typeof body?.prompt === "string" ? body.prompt.trim() : "";
+
   const eventType = typeof body?.eventType === "string" ? body.eventType.trim() : "";
   const color = typeof body?.color === "string" ? body.color.trim() : "";
   const background = typeof body?.background === "string" ? body.background.trim() : "";
@@ -27,20 +33,25 @@ export async function POST(req: Request) {
   const style = typeof body?.style === "string" ? body.style.trim() : "";
   const freeText = typeof body?.freeText === "string" ? body.freeText.trim() : "";
 
-  if (!eventType && !color && !background && !elements && !style && !freeText) {
+  if (!rawPrompt && !eventType && !color && !background && !elements && !style && !freeText) {
     return NextResponse.json({ error: "יש למלא לפחות פרט אחד" }, { status: 400 });
   }
 
-  const promptParts = [
-    `An elegant, professional digital invitation background design${eventType ? ` for a ${eventType}` : ""}.`,
-    color && `Color palette: ${color}.`,
-    background && `Background style: ${background}.`,
-    elements && `Decorative elements: ${elements}.`,
-    style && `Overall mood and style: ${style}.`,
-    freeText,
-    "Portrait orientation, high-end graphic design, tasteful negative space in the center and lower area for text to be added later, absolutely no text, no letters, no words, no numbers in the image.",
-  ].filter(Boolean);
-  const prompt = promptParts.join(" ");
+  const promptParts = rawPrompt
+    ? [
+        rawPrompt,
+        "Portrait orientation, high-end graphic design, tasteful negative space for text to be added later, absolutely no text, no letters, no words, no numbers in the image.",
+      ]
+    : [
+        `An elegant, professional digital invitation background design${eventType ? ` for a ${eventType}` : ""}.`,
+        color && `Color palette: ${color}.`,
+        background && `Background style: ${background}.`,
+        elements && `Decorative elements: ${elements}.`,
+        style && `Overall mood and style: ${style}.`,
+        freeText,
+        "Portrait orientation, high-end graphic design, tasteful negative space in the center and lower area for text to be added later, absolutely no text, no letters, no words, no numbers in the image.",
+      ];
+  const prompt = promptParts.filter(Boolean).join(" ");
 
   const model = process.env.GEMINI_IMAGE_MODEL || "imagen-3.0-generate-002";
 

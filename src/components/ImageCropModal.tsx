@@ -27,7 +27,12 @@ export default function ImageCropModal({ imageSrc, aspectRatio, roundPreview, on
       responsive: true,
     });
     cropperRef.current = cropper;
-    return () => cropper.destroy();
+    // cropperjs's destroy() returns the Cropper instance (for chaining),
+    // not void - wrap it so the effect's cleanup return type is a real
+    // Destructor instead of "() => Cropper".
+    return () => {
+      cropper.destroy();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageSrc, aspectRatio]);
 

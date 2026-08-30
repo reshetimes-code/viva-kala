@@ -185,7 +185,12 @@ function readStore(): StoreShape {
       ...parsed,
       tables: parsed.tables ?? [],
       leads: parsed.leads ?? [],
-      rsvps: (parsed.rsvps ?? []).map((r) => ({ tableId: null, guestCount: 1, ...r })),
+      // Older store.json files may predate tableId/guestCount - back-fill
+      // them with defaults rather than assuming every persisted row already
+      // has both (spreading r after the defaults made TS think r always
+      // overwrites them, which isn't true for rows written before these
+      // fields existed).
+      rsvps: (parsed.rsvps ?? []).map((r) => ({ ...r, tableId: r.tableId ?? null, guestCount: r.guestCount ?? 1 })),
     };
   } catch {
     return defaultStore();

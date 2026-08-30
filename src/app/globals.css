@@ -677,6 +677,17 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   background: transparent; color: #fff; font-weight: 700; cursor: pointer;
 }
 
+/* --- AI designer chat: one big question, big tappable answers - no typing
+   required. Kept visually simple on purpose (see AiDesignerChat.tsx). --- */
+.ai-chat-question { color: #fff; font-weight: 700; font-size: 1.05rem; text-align: center; margin: 6px 0 16px; }
+.ai-chat-options { display: flex; flex-direction: column; gap: 10px; }
+.ai-chat-option-btn {
+  width: 100%; padding: 16px 18px; border-radius: 14px; border: 1.5px solid rgba(212,175,55,0.5);
+  background: rgba(255,255,255,0.08); color: #fff; font-weight: 700; font-size: 1rem; cursor: pointer;
+  text-align: center; transition: background .2s ease, transform .2s ease;
+}
+.ai-chat-option-btn:hover, .ai-chat-option-btn:active { background: rgba(212,175,55,0.22); transform: translateY(-1px); }
+
 #submit-btn, .submit-btn {
   width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px;
   background: linear-gradient(135deg, #1c1c1e, #2f2f32);
