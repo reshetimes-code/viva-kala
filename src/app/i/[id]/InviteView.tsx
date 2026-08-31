@@ -53,8 +53,6 @@ export default function InviteView({
   const [whatsNumberOpen, setWhatsNumberOpen] = useState(false);
   const [whatsNumberValue, setWhatsNumberValue] = useState("");
   const [showWelcomeAlert, setShowWelcomeAlert] = useState(false);
-  const [desktopWrap, setDesktopWrap] = useState(false);
-  const [iframeSrc, setIframeSrc] = useState("");
 
   // Nudge people to actually RSVP - a lot of guests open the invite, look at
   // the picture and never bother confirming, which leaves the host unable to
@@ -64,37 +62,6 @@ export default function InviteView({
     const t = setTimeout(() => setShowWelcomeAlert(true), 900);
     return () => clearTimeout(t);
   }, [wantRsvp]);
-
-  // Guests opening the link on a desktop browser see the invite inside a
-  // phone-frame mockup (matches how fiestaa.co.il does it) instead of a 9:16
-  // portrait card stretched awkwardly across a wide window - re-render the
-  // real page inside an iframe with ?mobile=true so it skips wrapping.
-  useEffect(() => {
-    function isMobileUA() {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
-    // UA sniffing alone isn't reliable enough on its own (some in-app/
-    // embedded mobile browsers don't match the pattern above) - a real
-    // phone's screen is a touchscreen, so this is checked too as a second,
-    // independent signal. A guest on an actual phone must never see the
-    // mockup wrapped around their own real screen.
-    function isTouchDevice() {
-      return window.matchMedia?.("(pointer: coarse)")?.matches || "ontouchstart" in window || navigator.maxTouchPoints > 0;
-    }
-    function isInIframe() {
-      try {
-        return window.self !== window.top;
-      } catch {
-        return true;
-      }
-    }
-    const params = new URLSearchParams(window.location.search);
-    if (!isInIframe() && !isMobileUA() && !isTouchDevice() && window.innerWidth > 768 && !params.has("mobile")) {
-      const sep = window.location.search ? "&" : "?";
-      setIframeSrc(`${window.location.pathname}${window.location.search}${sep}mobile=true`);
-      setDesktopWrap(true);
-    }
-  }, []);
 
   const [guestName, setGuestName] = useState("");
   const [familyName, setFamilyName] = useState("");
@@ -198,23 +165,10 @@ export default function InviteView({
     setWhatsNumberOpen(false);
   }
 
-  if (desktopWrap) {
-    return (
-      <div className="desktop-wrapper">
-        <div className="mobile-frame">
-          <div className="desktop-title">ההזמנה הדיגיטלית שלכם</div>
-          <div className="side-button-right" />
-          <div className="side-button-left-1" />
-          <div className="side-button-left-2" />
-          <div className="side-button-left-3" />
-          <div className="mobile-screen">
-            {iframeSrc && <iframe src={iframeSrc} allowFullScreen />}
-          </div>
-          <div className="powered-by">Powered by VIVA</div>
-        </div>
-      </div>
-    );
-  }
+  // No phone-frame mockup on desktop, by explicit choice - the invite
+  // itself fills whatever window it's opened in, 100% width, even on a
+  // wide desktop browser (object-fit: cover on the photo handles a 9:16
+  // image sitting in a wider frame).
 
   return (
     <div className="vpager">
