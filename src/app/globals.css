@@ -1750,9 +1750,6 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    so the white input fields/text stay perfectly legible regardless of what
    the photo looks like - continuity with the designed invite instead of
    dropping into an unrelated plain page for the RSVP step. */
-.rsvp-bg-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; filter: blur(2px); }
-.rsvp-bg-scrim { position: absolute; inset: 0; z-index: 0; background: rgba(245,239,224,0.88); }
-.rsvp-panel > *:not(.rsvp-bg-photo):not(.rsvp-bg-scrim) { position: relative; z-index: 1; }
 .rsvp-card { width: 100%; max-width: 380px; text-align: center; }
 .rsvp-title {
   font-family: 'Assistant', sans-serif; font-weight: 800;

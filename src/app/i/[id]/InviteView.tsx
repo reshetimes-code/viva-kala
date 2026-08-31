@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 import { TemplateCard, TEMPLATE_CTA_COLORS, type TemplateFields } from "@/lib/templates";
 import { wazeUrl, googleMapsUrl } from "@/lib/navLinks";
 import { buildHeadline, buildExtraDetailLines, formatEventDate } from "@/lib/categoryFields";
@@ -143,6 +144,16 @@ export default function InviteView({
   const shareText = encodeURIComponent(`להזמנה הדיגיטלית שלנו כנסו לקישור הבא ${shareUrl}`);
 
   async function submitRsvp(attending: boolean) {
+    if (!guestName.trim() || !familyName.trim() || !phone.trim()) {
+      Swal.fire({
+        icon: "warning",
+        title: "חסרים פרטים",
+        text: "נא למלא שם פרטי, שם משפחה וטלפון כדי לאשר הגעה",
+        confirmButtonText: "הבנתי",
+        confirmButtonColor: "#d4af7a",
+      });
+      return;
+    }
     setSending(true);
     try {
       const res = await fetch("/api/rsvp", {
@@ -311,16 +322,6 @@ export default function InviteView({
 
         {wantRsvp && (
           <section className="rsvp-panel">
-            {/* Same generated/uploaded photo as the invite itself, softened
-                behind the form so this screen doesn't feel like an
-                unrelated generic page after the designed invite. */}
-            {mode === "image" && imageUrl && (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="rsvp-bg-photo" src={imageUrl} alt="" aria-hidden="true" />
-                <div className="rsvp-bg-scrim" />
-              </>
-            )}
             <button type="button" className="back-to-inv-cta" onClick={() => setShowRsvp(false)}>
               <span className="pull-arrows">
                 <i className="a1">▲</i>
@@ -382,20 +383,21 @@ export default function InviteView({
                   <h2 className="rsvp-title">אנא אשרו הגעתכם</h2>
 
                   <div className="rsvp-field">
-                    <label>שם פרטי</label>
-                    <input value={guestName} onChange={(e) => setGuestName(e.target.value)} />
+                    <label>שם פרטי *</label>
+                    <input value={guestName} onChange={(e) => setGuestName(e.target.value)} required />
                   </div>
                   <div className="rsvp-field">
-                    <label>שם המשפחה</label>
-                    <input value={familyName} onChange={(e) => setFamilyName(e.target.value)} />
+                    <label>שם המשפחה *</label>
+                    <input value={familyName} onChange={(e) => setFamilyName(e.target.value)} required />
                   </div>
                   <div className="rsvp-field">
-                    <label>טלפון (ספרות בלבד)</label>
+                    <label>טלפון (ספרות בלבד) *</label>
                     <input
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="05XXXXXXXX"
                       inputMode="numeric"
+                      required
                     />
                   </div>
                   <div className="rsvp-field">
