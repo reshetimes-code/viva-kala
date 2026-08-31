@@ -253,26 +253,44 @@ export default function CreateInvitePage({
     Swal.fire({
       html: container,
       showConfirmButton: false,
-      showCloseButton: true,
+      // SweetAlert2's own built-in close button kept showing up alongside
+      // (not instead of) a custom one, doubled - one rendered here directly
+      // instead, so there's exactly one, and its position isn't at the
+      // mercy of Swal's own RTL-flipping logic.
+      showCloseButton: false,
       width: "min(560px, 96vw)",
       padding: "1.6em 1.2em",
       background: "#fff",
       didOpen: () => {
         aiModalRootRef.current = createRoot(container);
         aiModalRootRef.current.render(
-          <AiDesignerChat
-            eventCategory={eventCategory ?? partyType}
-            categoryFields={usesCustomFields ? categoryFields : undefined}
-            onGenerated={(url) => {
-              // Its own prompt asked Gemini to draw the event's text right
-              // into the image - InvitePhotoCard's separate panel would
-              // just duplicate that, so it's marked here to be skipped.
-              setImageHasBakedText(true);
-              setTextStyle({ ...DEFAULT_TEXT_STYLE, imageHasText: true });
-              setImageDataUrl(url);
-              Swal.close();
-            }}
-          />
+          <>
+            <button
+              type="button"
+              onClick={() => Swal.close()}
+              aria-label="סגירה"
+              style={{
+                position: "absolute", top: 10, right: 14, zIndex: 10,
+                background: "none", border: "none", fontSize: "1.6rem", lineHeight: 1,
+                color: "#999", cursor: "pointer", padding: 4,
+              }}
+            >
+              ×
+            </button>
+            <AiDesignerChat
+              eventCategory={eventCategory ?? partyType}
+              categoryFields={usesCustomFields ? categoryFields : undefined}
+              onGenerated={(url) => {
+                // Its own prompt asked Gemini to draw the event's text right
+                // into the image - InvitePhotoCard's separate panel would
+                // just duplicate that, so it's marked here to be skipped.
+                setImageHasBakedText(true);
+                setTextStyle({ ...DEFAULT_TEXT_STYLE, imageHasText: true });
+                setImageDataUrl(url);
+                Swal.close();
+              }}
+            />
+          </>
         );
       },
       willClose: () => {

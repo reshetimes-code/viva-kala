@@ -37,6 +37,9 @@ body {
   font-family: 'Heebo', Arial, Helvetica, sans-serif;
   overflow-x: hidden;
   max-width: 100vw;
+  margin: 0; /* browsers default <body> to margin:8px - that's exactly what
+                was showing up as unwanted side gaps around a full-bleed
+                page like the guest invite view on a real phone */
 }
 
 /* =========================================================================
@@ -705,10 +708,6 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    moves straight to the next question) - never typing required. Big,
    mobile-friendly type throughout on purpose (see AiDesignerChat.tsx). --- */
 .ai-chat-question { color: #1c1c1e; font-weight: 700; font-size: 1.3rem; text-align: center; margin: 6px 0 18px; line-height: 1.4; }
-/* SweetAlert2 flips its close (X) button to the top-left in an RTL page by
-   default - pin it to the top-right instead, where people actually expect
-   a close button to sit. */
-.swal2-close { left: auto !important; right: 8px !important; }
 .ai-chat-loading { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 24px 0; }
 .ai-chat-spinner {
   width: 40px; height: 40px; border-radius: 50%;
@@ -1747,10 +1746,17 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
               #f5efe0;
   display: flex; align-items: center; justify-content: center; padding: 40px 20px;
 }
+/* Same photo as the invite itself, softened way down behind a cream scrim
+   so the white input fields/text stay perfectly legible regardless of what
+   the photo looks like - continuity with the designed invite instead of
+   dropping into an unrelated plain page for the RSVP step. */
+.rsvp-bg-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; filter: blur(2px); }
+.rsvp-bg-scrim { position: absolute; inset: 0; z-index: 0; background: rgba(245,239,224,0.88); }
+.rsvp-panel > *:not(.rsvp-bg-photo):not(.rsvp-bg-scrim) { position: relative; z-index: 1; }
 .rsvp-card { width: 100%; max-width: 380px; text-align: center; }
 .rsvp-title {
-  font-family: 'Frank Ruhl Libre', serif; font-weight: 900; letter-spacing: .01em;
-  font-size: clamp(2rem, 8vw, 2.6rem); color: #b8860b; margin-bottom: 30px; line-height: 1.25;
+  font-family: 'Assistant', sans-serif; font-weight: 800;
+  font-size: clamp(1.7rem, 7vw, 2.2rem); color: #b8860b; margin-bottom: 30px; line-height: 1.3;
 }
 .rsvp-field { margin-bottom: 20px; text-align: right; }
 .rsvp-field label { display: block; font-weight: 700; color: #4a3f30; margin-bottom: 8px; }

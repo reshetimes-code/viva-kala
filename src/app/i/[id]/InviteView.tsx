@@ -129,7 +129,15 @@ export default function InviteView({
   }
 
   const ctaColors =
-    mode === "template" && templateId ? TEMPLATE_CTA_COLORS[templateId] ?? DEFAULT_CTA_COLORS : DEFAULT_CTA_COLORS;
+    mode === "template" && templateId
+      ? TEMPLATE_CTA_COLORS[templateId] ?? DEFAULT_CTA_COLORS
+      // A photo invite has its own per-image accent color (gold-ish,
+      // chosen to go with that specific photo) - use it here too instead
+      // of one flat dark-gray bar on every single invite regardless of
+      // its actual design.
+      : textStyle?.accentColor
+        ? { bg: `${textStyle.accentColor}dd`, color: "#1c1c1e" }
+        : DEFAULT_CTA_COLORS;
 
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
   const shareText = encodeURIComponent(`להזמנה הדיגיטלית שלנו כנסו לקישור הבא ${shareUrl}`);
@@ -303,6 +311,16 @@ export default function InviteView({
 
         {wantRsvp && (
           <section className="rsvp-panel">
+            {/* Same generated/uploaded photo as the invite itself, softened
+                behind the form so this screen doesn't feel like an
+                unrelated generic page after the designed invite. */}
+            {mode === "image" && imageUrl && (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="rsvp-bg-photo" src={imageUrl} alt="" aria-hidden="true" />
+                <div className="rsvp-bg-scrim" />
+              </>
+            )}
             <button type="button" className="back-to-inv-cta" onClick={() => setShowRsvp(false)}>
               <span className="pull-arrows">
                 <i className="a1">▲</i>
