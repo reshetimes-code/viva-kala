@@ -126,16 +126,12 @@ export default function InviteView({
     setShowLeadPopup(false);
   }
 
+  // A solid gold bar (the per-photo accent color) read as an odd, clashing
+  // block of color against a photo background - a translucent dark-gray
+  // bar blends with any photo underneath instead, so this is back to the
+  // one flat DEFAULT_CTA_COLORS for every photo invite, not a per-photo one.
   const ctaColors =
-    mode === "template" && templateId
-      ? TEMPLATE_CTA_COLORS[templateId] ?? DEFAULT_CTA_COLORS
-      // A photo invite has its own per-image accent color (gold-ish,
-      // chosen to go with that specific photo) - use it here too instead
-      // of one flat dark-gray bar on every single invite regardless of
-      // its actual design.
-      : textStyle?.accentColor
-        ? { bg: `${textStyle.accentColor}dd`, color: "#1c1c1e" }
-        : DEFAULT_CTA_COLORS;
+    mode === "template" && templateId ? TEMPLATE_CTA_COLORS[templateId] ?? DEFAULT_CTA_COLORS : DEFAULT_CTA_COLORS;
 
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
   const shareText = encodeURIComponent(`להזמנה הדיגיטלית שלנו כנסו לקישור הבא ${shareUrl}`);
@@ -319,6 +315,19 @@ export default function InviteView({
 
         {wantRsvp && (
           <section className="rsvp-panel">
+            {/* Same photo as the invite itself, softened behind the form -
+                continuity with the designed invite instead of an unrelated
+                plain page for the RSVP step. Kept as its own absolutely-
+                positioned layer (not touching sibling elements' own
+                positioning) so it can never interfere with the back-arrow
+                button below. */}
+            {mode === "image" && imageUrl && (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="rsvp-bg-photo" src={imageUrl} alt="" aria-hidden="true" />
+                <div className="rsvp-bg-scrim" />
+              </>
+            )}
             <button type="button" className="back-to-inv-cta" onClick={() => setShowRsvp(false)}>
               <span className="pull-arrows">
                 <i className="a1">▲</i>

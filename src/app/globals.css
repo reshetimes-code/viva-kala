@@ -1559,25 +1559,29 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    the 100vh line above still applies as a fallback on anything that
    doesn't understand dvh. */
 .vpager {
-  height: 100vh; height: 100dvh; width: 100%; width: 100vw; overflow: hidden; position: relative;
-  margin: 0; left: 0; right: 0;
+  height: 100vh; height: 100dvh; width: 100vw !important; max-width: 100vw !important;
+  overflow: hidden; position: relative; margin: 0 !important; left: 0; right: 0;
   overscroll-behavior: none;
 }
 .vpager-inner {
-  display: flex; flex-direction: column; width: 100%; height: 200vh; height: 200dvh;
+  display: flex; flex-direction: column; width: 100% !important; height: 200vh; height: 200dvh;
   transition: transform .5s cubic-bezier(.4,0,.2,1);
 }
 .vpager-inner.show-rsvp { transform: translateY(-100vh); transform: translateY(-100dvh); }
 
 .inv-panel {
-  height: 100vh; height: 100dvh; width: 100%; position: relative;
+  height: 100vh; height: 100dvh; width: 100% !important; position: relative;
   display: flex; flex-direction: column; overflow: hidden;
 }
 /* The actual image/card - a normal flex item that shrinks to make room for
    .pull-cta below it (a real sibling now, not an absolute overlay sitting
-   on top of - and hiding the bottom of - the photo). */
+   on top of - and hiding the bottom of - the photo). align-items/justify-
+   content only matter for the smaller "blank-image" fallback case below -
+   the InvitePhotoCard case fills this box completely regardless (its own
+   width/height:100%), so !important here is just insurance against
+   anything upstream accidentally shrinking this flex item's own box. */
 .inv-media {
-  flex: 1 1 auto; min-height: 0; position: relative;
+  flex: 1 1 auto; min-height: 0; width: 100% !important; position: relative;
   display: flex; align-items: center; justify-content: center;
 }
 .inv-panel img.blank-image {
@@ -1604,7 +1608,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    scroll/reflow, so the guest sees the bare photo first and the text only
    "pops in" once something nudges a repaint. This keeps it painted from
    the first frame instead. */
-.ipc-card { position: relative; width: 100%; height: 100%; overflow: hidden; transform: translateZ(0); }
+.ipc-card { position: relative; width: 100% !important; height: 100% !important; overflow: hidden; transform: translateZ(0); }
 .ipc-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
 /* The text now lives in its own solid card instead of floating straight on
    the photo - the photo's own brightness/business was fighting whatever
@@ -1745,16 +1749,18 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   background: radial-gradient(circle at 15% 10%, rgba(212,175,55,0.10), transparent 40%),
               radial-gradient(circle at 85% 85%, rgba(212,175,55,0.10), transparent 40%),
               #f5efe0;
-  display: flex; align-items: center; justify-content: center; padding: 40px 20px;
+  display: flex; align-items: center; justify-content: center; padding: 90px 20px 40px;
 }
 /* Same photo as the invite itself, softened way down behind a cream scrim
    so the white input fields/text stay perfectly legible regardless of what
    the photo looks like - continuity with the designed invite instead of
    dropping into an unrelated plain page for the RSVP step. */
-.rsvp-card { width: 100%; max-width: 380px; text-align: center; }
+.rsvp-card { width: 100%; max-width: 380px; text-align: center; position: relative; z-index: 1; }
+.rsvp-bg-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.rsvp-bg-scrim { position: absolute; inset: 0; z-index: 0; background: rgba(245,239,224,0.82); }
 .rsvp-title {
   font-family: 'Assistant', sans-serif; font-weight: 800;
-  font-size: clamp(1.7rem, 7vw, 2.2rem); color: #b8860b; margin: 60px 0 30px; line-height: 1.3;
+  font-size: clamp(1.7rem, 7vw, 2.2rem); color: #b8860b; margin: 0 0 30px; line-height: 1.3;
 }
 .rsvp-field { margin-bottom: 20px; text-align: right; }
 .rsvp-field label { display: block; font-weight: 700; color: #4a3f30; margin-bottom: 8px; }
