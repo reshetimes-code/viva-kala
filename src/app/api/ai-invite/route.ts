@@ -1,10 +1,19 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 
-// Generates an invitation background/design image via Google's Imagen model
-// (through the Gemini Developer API) from a guided form + optional free
-// text - image models can't reliably render accurate Hebrew names/dates, so
-// this produces a design/background only, not the full finished invitation.
+// Generates an invitation background/design image from a guided form +
+// optional free text, via Google's Gemini image-generation models through
+// the Interactions API (all Imagen models - the previous :predict-based
+// approach here - were shut down by Google on 2026-08-17; image generation
+// now goes through the same generateContent-family text models, requested
+// via POST .../v1beta/interactions instead of .../models/{id}:predict).
+// The AI-designer chat path (see ai-designer/chat/route.ts) now asks for the
+// full finished invitation, real Hebrew event text rendered inside the
+// image and all - current-generation models handle that far better than
+// the "never put text in the image" assumption this comment used to carry.
+// The older guided-form path below (no chat, just category/color/style)
+// still asks for a text-free background, since it was never given the
+// user's actual event details in a shape meant for rendering into an image.
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) {
@@ -37,11 +46,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "יש למלא לפחות פרט אחד" }, { status: 400 });
   }
 
+  // "3:4" was Imagen's own `parameters.aspectRatio` - the Interactions API
+  // doesn't take a matching structured field for this model family, so the
+  // ratio requirement is folded into the prompt text itself instead, same
+  // as the existing "portrait orientation" instruction right after it.
+  //
+  // The AI-designer chat's own prompt (rawPrompt) now asks for the full
+  // invitation - real event text rendered inside the image - instead of a
+  // text-free background (current-generation image models turn out to
+  // handle Hebrew text in-image far better than the older Imagen models
+  // this comment used to warn about), so it must NOT get the "no text"
+  // instruction the guided-form path below still uses.
   const promptParts = rawPrompt
-    ? [
-        rawPrompt,
-        "Portrait orientation, high-end graphic design, tasteful negative space for text to be added later, absolutely no text, no letters, no words, no numbers in the image.",
-      ]
+    ? [rawPrompt, "Portrait orientation, 9:16 aspect ratio, high-end professional graphic design."]
     : [
         `An elegant, professional digital invitation background design${eventType ? ` for a ${eventType}` : ""}.`,
         color && `Color palette: ${color}.`,
@@ -49,24 +66,21 @@ export async function POST(req: Request) {
         elements && `Decorative elements: ${elements}.`,
         style && `Overall mood and style: ${style}.`,
         freeText,
-        "Portrait orientation, high-end graphic design, tasteful negative space in the center and lower area for text to be added later, absolutely no text, no letters, no words, no numbers in the image.",
+        "Portrait orientation, 3:4 aspect ratio, high-end graphic design, tasteful negative space in the center and lower area for text to be added later, absolutely no text, no letters, no words, no numbers in the image.",
       ];
   const prompt = promptParts.filter(Boolean).join(" ");
 
-  const model = process.env.GEMINI_IMAGE_MODEL || "imagen-3.0-generate-002";
+  const model = process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image";
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        body: JSON.stringify({
-          instances: [{ prompt }],
-          parameters: { sampleCount: 1, aspectRatio: "3:4" },
-        }),
-      }
-    );
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        model,
+        input: [{ type: "text", text: prompt }],
+      }),
+    });
 
     const data = await res.json().catch(() => null);
     if (!res.ok) {
@@ -76,13 +90,26 @@ export async function POST(req: Request) {
       );
     }
 
-    const prediction = data?.predictions?.[0];
-    const base64 = prediction?.bytesBase64Encoded;
+    // `output_image` is the documented convenience field for the last
+    // generated image; fall back to scanning the steps timeline for an
+    // image content block in case a particular response omits it.
+    interface ImageContent { data?: string; mime_type?: string }
+    let imageContent: ImageContent | undefined = data?.output_image;
+    if (!imageContent?.data) {
+      for (const step of data?.steps ?? []) {
+        const found = (step?.content ?? []).find((c: ImageContent & { type?: string }) => c?.type === "image" && c?.data);
+        if (found) {
+          imageContent = found;
+          break;
+        }
+      }
+    }
+    const base64 = imageContent?.data;
     if (!base64) {
       return NextResponse.json({ error: "לא התקבלה תמונה מהשירות" }, { status: 502 });
     }
 
-    const mimeType = prediction?.mimeType || "image/png";
+    const mimeType = imageContent?.mime_type || "image/png";
     return NextResponse.json({ imageDataUrl: `data:${mimeType};base64,${base64}` });
   } catch {
     return NextResponse.json({ error: "שגיאת רשת מול שירות ה-AI" }, { status: 502 });

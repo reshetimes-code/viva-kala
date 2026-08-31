@@ -1,7 +1,6 @@
-import fs from "fs";
-import path from "path";
 import type { EventCategory } from "@/lib/eventCategories";
 import { getPool } from "@/lib/db";
+import { deleteStoredImage } from "@/lib/imageStorage";
 
 // How long a past event's invite (and its RSVPs/tables/uploaded photo) is
 // kept around after the event date before the lazy sweep below purges it.
@@ -535,14 +534,7 @@ function isExpired(eventDate: string, now: Date): boolean {
 
 async function purgeInvite(row: { id: string; image_url?: string }): Promise<void> {
   await getPool().query("DELETE FROM invites WHERE id = $1", [row.id]); // cascades rsvps/tables
-  if (row.image_url?.startsWith("/uploads/")) {
-    const filePath = path.join(process.cwd(), "public", row.image_url);
-    try {
-      fs.unlinkSync(filePath);
-    } catch {
-      // already gone - fine.
-    }
-  }
+  await deleteStoredImage(row.image_url);
 }
 
 async function sweepExpiredForUser(userId: number): Promise<void> {

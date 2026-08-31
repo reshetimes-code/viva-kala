@@ -51,6 +51,7 @@ export default async function EditInvitePage({
     wantRsvp: invite.wantRsvp,
     eventCategory: invite.eventCategory,
     categoryFields: invite.categoryFields,
+    textStyle: invite.textStyle,
   };
 
   return <CreateInvitePage editInviteId={invite.id} initialData={initialData} />;

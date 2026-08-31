@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Cropper from "cropperjs";
 import "cropperjs/dist/cropper.css";
 
@@ -42,7 +43,12 @@ export default function ImageCropModal({ imageSrc, aspectRatio, roundPreview, on
     onConfirm(canvas.toDataURL("image/jpeg", 0.9));
   }
 
-  return (
+  // Rendered via a portal straight onto document.body - rather than inline
+  // wherever this component happens to sit in the tree - so this fixed,
+  // full-screen overlay is never accidentally boxed in or out-stacked by an
+  // ancestor's own positioning/transform/z-index (e.g. buttons elsewhere on
+  // the page rendering visually "above" what should be a modal on top).
+  return createPortal(
     <div className="crop-modal-overlay">
       <div className="crop-modal-box">
         <h3 className="crop-modal-title">חיתוך התמונה</h3>
@@ -62,6 +68,7 @@ export default function ImageCropModal({ imageSrc, aspectRatio, roundPreview, on
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

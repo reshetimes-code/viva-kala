@@ -4,6 +4,15 @@ export interface TextStyle {
   scrimOpacity: number;
   accentColor: string;
   anchor: "top" | "center" | "bottom";
+  /** True when the image itself already has the event's name/date/venue
+   *  designed and rendered right into it (the AI-designer chat's image
+   *  prompt now asks for that, instead of a text-free background) - a real
+   *  DB column would need a migration nobody can run without touching a
+   *  secret DATABASE_URL, so this rides along on the already-flexible JSONB
+   *  text_style column instead. When true, InvitePhotoCard's own text panel
+   *  is skipped entirely (the caller just shows the photo) so the event
+   *  details never end up rendered twice. */
+  imageHasText?: boolean;
 }
 
 // Used whenever a real analysis (heuristic below, or the AI-vision call
@@ -12,7 +21,7 @@ export interface TextStyle {
 export const DEFAULT_TEXT_STYLE: TextStyle = {
   textColor: "#ffffff",
   scrimColor: "#000000",
-  scrimOpacity: 0.5,
+  scrimOpacity: 0.62,
   accentColor: "#d4af7a",
   anchor: "bottom",
 };

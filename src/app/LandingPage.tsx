@@ -268,7 +268,7 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
           {CATEGORIES.map((c, i) => (
             <Link
               key={c.id}
-              href={`/create/templates?category=${encodeURIComponent(c.label)}`}
+              href={`/create/image?category=${encodeURIComponent(c.label)}`}
               className="landing-category-tile"
               style={{ transitionDelay: `${i * 90}ms` }}
             >

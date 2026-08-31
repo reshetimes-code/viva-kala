@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:ital,wght@0,300..900;1,300..900&family=Rubik+Wet+Paint&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Dancing+Script:wght@500;700&family=Assistant:wght@300;400;600;700&family=Petit+Formal+Script&family=Italiana&family=Caveat:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:ital,wght@0,300..900;1,300..900&family=Rubik+Wet+Paint&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Dancing+Script:wght@500;700&family=Assistant:wght@300;400;600;700&family=Petit+Formal+Script&family=Italiana&family=Caveat:wght@500;700&family=Frank+Ruhl+Libre:wght@400;500;700;900&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -581,6 +581,11 @@ body {
   text-align: right;
 }
 .inputs-fields::placeholder { color: rgba(255,255,255,0.6); }
+/* Safari renders a native date/time input's own formatted value through a
+   separate internal part that plain `text-align` doesn't reach - it stays
+   left-ish even on an RTL page unless this WebKit-only pseudo is targeted
+   directly. (Chrome already aligns correctly either way.) */
+.inputs-fields::-webkit-date-and-time-value { text-align: right; }
 .inputs-fields:focus {
   outline: 3px solid #495057; outline-offset: 2px; border-color: #495057;
 }
@@ -643,50 +648,81 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 }
 .upload-label { cursor: pointer; text-align: center; color: #fff; font-weight: 600; margin: 0; }
 
-/* --- upload-vs-AI mode toggle for the invitation image --- */
-.image-source-toggle { display: flex; gap: 10px; margin-bottom: 16px; }
-.image-source-btn {
-  flex: 1; padding: 12px 10px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.25);
-  background: rgba(255,255,255,0.06); color: #fff; font-weight: 700; font-size: .92rem; cursor: pointer;
+/* --- upload-vs-AI choice for the invitation image: two full-width, stacked
+   buttons instead of a tab toggle - AI designer on top (the primary/
+   recommended path), upload-your-own underneath. --- */
+.image-choice-buttons { display: flex; flex-direction: column; gap: 12px; }
+.image-choice-btn {
+  width: 100%; padding: 18px 16px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.06); color: #fff; font-weight: 700; font-size: 1.02rem; cursor: pointer;
+  transition: background .2s ease, transform .2s ease;
 }
-.image-source-btn.is-active { background: #d4af7a; color: #1c1c1e; border-color: #d4af7a; }
+.image-choice-btn:hover, .image-choice-btn:active { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+.image-choice-btn-ai { background: #d4af7a; color: #1c1c1e; border-color: #d4af7a; }
+.image-choice-btn-ai:hover, .image-choice-btn-ai:active { background: #c9a066; }
 
-/* --- AI invitation image generator --- */
-.ai-invite-note { color: rgba(255,255,255,0.75); font-size: .88rem; line-height: 1.6; margin-bottom: 16px; }
+/* .alert-error elsewhere assumes a dark page background (light pink text) -
+   override just inside the AI chat's own white popup so it stays readable. */
+.ai-invite-form .alert-error { background: #fdecec; color: #b42318; border-color: #f3b4b4; }
+
+/* --- AI invitation image generator - lives inside a plain white SweetAlert
+   popup now (see openAiDesigner in create/image/page.tsx), so this is a
+   light theme: dark text on white/light-gray, big mobile-friendly type. --- */
+.ai-invite-note { color: #55565c; font-size: 1rem; line-height: 1.6; margin-bottom: 16px; }
 .ai-invite-field { margin-bottom: 14px; }
-.ai-invite-field label { display: block; font-weight: 600; color: #fff; margin-bottom: 6px; font-size: .95rem; }
+.ai-invite-field label { display: block; font-weight: 600; color: #1c1c1e; margin-bottom: 6px; font-size: 1.05rem; }
 .ai-invite-field input, .ai-invite-field select, .ai-invite-field textarea {
-  width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 10px;
-  border: 1.5px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); color: #fff; font-size: .95rem;
+  width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 10px;
+  border: 1.5px solid #d8d5cd; background: #f7f6f2; color: #1c1c1e; font-size: 1.05rem;
 }
 .ai-invite-field textarea { resize: vertical; }
 .ai-invite-generate-btn {
-  width: 100%; padding: 15px; border-radius: 999px; border: 1.5px solid rgba(212,175,55,0.6);
-  background: linear-gradient(135deg, #1c1c1e, #2f2f32); color: #d4af7a; font-weight: 700; font-size: 1rem; cursor: pointer;
+  width: 100%; padding: 16px; border-radius: 999px; border: none;
+  background: #d4af7a; color: #1c1c1e; font-weight: 700; font-size: 1.1rem; cursor: pointer;
 }
 .ai-invite-generate-btn:disabled { opacity: .6; cursor: not-allowed; }
 .ai-invite-result { text-align: center; }
-.ai-invite-result-img { max-width: 100%; max-height: 320px; border-radius: 12px; margin-bottom: 14px; }
-.ai-invite-result-actions { display: flex; gap: 10px; }
+/* Tall/portrait like a TikTok frame (9:16) - width fills the popup, height
+   follows from the ratio instead of being capped, so it reads as the actual
+   invitation background shape rather than a small thumbnail. */
+.ai-invite-result-img { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 12px; margin-bottom: 14px; }
+.ai-invite-result-actions { display: flex; flex-direction: column; gap: 10px; }
+/* .ai-invite-retry-btn's shared `flex: 1` is for its other use (a single
+   button inside a centered flex row) - in this column layout that would
+   stretch it to fill height instead of just width, so pin it back down. */
+.ai-invite-result-actions .ai-invite-retry-btn { flex: none; width: 100%; }
 .ai-invite-use-btn {
-  flex: 1; padding: 13px; border-radius: 999px; border: none; background: #1e7d3a; color: #fff;
-  font-weight: 700; cursor: pointer;
+  width: 100%; padding: 15px; border-radius: 999px; border: none; background: #1e7d3a; color: #fff;
+  font-weight: 700; font-size: 1.05rem; cursor: pointer;
 }
 .ai-invite-retry-btn {
-  flex: 1; padding: 13px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.3);
-  background: transparent; color: #fff; font-weight: 700; cursor: pointer;
+  flex: 1; padding: 15px; border-radius: 999px; border: 1.5px solid #d8d5cd;
+  background: #fff; color: #1c1c1e; font-weight: 700; font-size: 1.05rem; cursor: pointer;
 }
 
-/* --- AI designer chat: one big question, big tappable answers - no typing
-   required. Kept visually simple on purpose (see AiDesignerChat.tsx). --- */
-.ai-chat-question { color: #fff; font-weight: 700; font-size: 1.05rem; text-align: center; margin: 6px 0 16px; }
-.ai-chat-options { display: flex; flex-direction: column; gap: 10px; }
+/* --- AI designer chat: one big question, big tappable answers (stacked
+   rows, one below the other - tapping one submits it as the answer and
+   moves straight to the next question) - never typing required. Big,
+   mobile-friendly type throughout on purpose (see AiDesignerChat.tsx). --- */
+.ai-chat-question { color: #1c1c1e; font-weight: 700; font-size: 1.3rem; text-align: center; margin: 6px 0 18px; line-height: 1.4; }
+/* SweetAlert2 flips its close (X) button to the top-left in an RTL page by
+   default - pin it to the top-right instead, where people actually expect
+   a close button to sit. */
+.swal2-close { left: auto !important; right: 8px !important; }
+.ai-chat-loading { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 24px 0; }
+.ai-chat-spinner {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 4px solid #f2e6cc; border-top-color: #d4af7a;
+  animation: ai-chat-spin .8s linear infinite;
+}
+@keyframes ai-chat-spin { to { transform: rotate(360deg); } }
+.ai-chat-options { display: flex; flex-direction: column; gap: 12px; }
 .ai-chat-option-btn {
-  width: 100%; padding: 16px 18px; border-radius: 14px; border: 1.5px solid rgba(212,175,55,0.5);
-  background: rgba(255,255,255,0.08); color: #fff; font-weight: 700; font-size: 1rem; cursor: pointer;
+  width: 100%; padding: 18px 20px; border-radius: 14px; border: 1.5px solid #d4af7a;
+  background: #fbf6ec; color: #1c1c1e; font-weight: 700; font-size: 1.1rem; cursor: pointer;
   text-align: center; transition: background .2s ease, transform .2s ease;
 }
-.ai-chat-option-btn:hover, .ai-chat-option-btn:active { background: rgba(212,175,55,0.22); transform: translateY(-1px); }
+.ai-chat-option-btn:hover, .ai-chat-option-btn:active { background: #f2e2c2; transform: translateY(-1px); }
 
 #submit-btn, .submit-btn {
   width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px;
@@ -788,24 +824,33 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .tpl-floral-times { font-family: 'Assistant', sans-serif; font-weight: 500; font-size: clamp(.95rem, 4vw, 1.1rem); margin-top: 8px; color: #8a5158; z-index: 1; }
 .tpl-floral-footer { font-family: 'Assistant', sans-serif; font-weight: 700; font-size: clamp(1.5rem, 6.5vw, 1.9rem); margin-top: 20px; color: #a56672; z-index: 1; }
 
-/* --- navy-bold --- */
+/* --- navy-bold: navy ground + gold corner frame marks + a white "card on a
+   card" holding the text - the layered look several of the reference
+   invitations use (a plain color panel would look flat by comparison). --- */
 .tpl-navy {
   background:
     radial-gradient(circle at 20% 90%, rgba(201,162,75,0.14), transparent 40%),
     radial-gradient(circle at 50% 0%, #2a3f66 0%, #1c2e52 45%, #0f1b33 100%);
   color: #f2eee1; --cta-bg: rgba(201,162,75,0.94); --cta-color: #1b1b1f;
 }
-.tpl-navy-subtitle { font-family: 'Assistant', sans-serif; font-weight: 600; font-size: clamp(.95rem, 4vw, 1.1rem); letter-spacing: .06em; color: #c9a24b; margin-bottom: 16px; }
-.tpl-navy-title { font-family: 'Assistant', sans-serif; font-weight: 800; font-size: clamp(1.7rem, 7.5vw, 2.3rem); line-height: 1.35; }
-.tpl-navy-amp { color: #c9a24b; }
-.tpl-navy-date-badge {
-  margin: 20px auto 12px; width: clamp(90px, 24vw, 110px); height: clamp(90px, 24vw, 110px); border-radius: 50%;
-  border: 2px solid #c9a24b; display: flex; align-items: center; justify-content: center;
-  font-family: 'Assistant', sans-serif; font-weight: 700; font-size: clamp(1rem, 4.5vw, 1.2rem);
+.tpl-navy-corner { position: absolute; width: 30px; height: 30px; border: 1.5px solid #c9a24b; opacity: .85; z-index: 2; }
+.tpl-navy-corner-tl { top: -34px; left: -14px; border-width: 1.5px 0 0 1.5px; }
+.tpl-navy-corner-tr { top: -34px; right: -14px; border-width: 1.5px 1.5px 0 0; }
+.tpl-navy-corner-bl { bottom: -34px; left: -14px; border-width: 0 0 1.5px 1.5px; }
+.tpl-navy-corner-br { bottom: -34px; right: -14px; border-width: 0 1.5px 1.5px 0; }
+.tpl-navy-box {
+  background: #fbf8f1; border-radius: 18px; width: 100%; max-width: 300px;
+  padding: 36px 26px; box-shadow: 0 14px 36px rgba(0,0,0,0.35);
+  display: flex; flex-direction: column; align-items: center;
 }
-.tpl-navy-venue { font-family: 'Assistant', sans-serif; font-weight: 700; font-size: clamp(1.05rem, 4.5vw, 1.25rem); margin-top: 10px; }
-.tpl-navy-times { font-family: 'Assistant', sans-serif; font-weight: 500; font-size: clamp(.9rem, 3.8vw, 1.05rem); color: #cdd3e0; margin-top: 8px; }
-.tpl-navy-footer { font-family: 'Assistant', sans-serif; font-weight: 700; font-size: clamp(1.15rem, 5vw, 1.4rem); margin-top: 22px; color: #c9a24b; }
+.tpl-navy-subtitle { font-family: 'Assistant', sans-serif; font-weight: 600; font-size: clamp(.85rem, 3.4vw, .95rem); letter-spacing: .08em; color: #a5883f; margin-bottom: 14px; }
+.tpl-navy-title { font-family: 'Frank Ruhl Libre', serif; font-weight: 900; font-size: clamp(2.1rem, 8.5vw, 2.8rem); line-height: 1.2; color: #12213f; }
+.tpl-navy-amp { display: block; color: #c9a24b; font-size: .65em; margin: 4px 0; }
+.tpl-navy-divider { width: 56px; height: 2px; background: #c9a24b; margin: 18px 0; }
+.tpl-navy-date { font-family: 'Assistant', sans-serif; font-weight: 700; font-size: clamp(1.15rem, 4.6vw, 1.35rem); color: #12213f; letter-spacing: .02em; }
+.tpl-navy-venue { font-family: 'Assistant', sans-serif; font-weight: 600; font-size: clamp(.98rem, 3.9vw, 1.12rem); color: #3a4a6a; margin-top: 8px; }
+.tpl-navy-times { font-family: 'Assistant', sans-serif; font-weight: 500; font-size: clamp(.85rem, 3.4vw, 1rem); color: #6b7690; margin-top: 10px; }
+.tpl-navy-footer { font-family: 'Assistant', sans-serif; font-weight: 700; font-size: clamp(1.1rem, 4.6vw, 1.3rem); margin-top: 24px; color: #c9a24b; letter-spacing: .03em; }
 
 /* --- line-frame --- */
 .tpl-line {
@@ -998,9 +1043,15 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   align-items: center; padding: 52px 32px; box-sizing: border-box;
 }
 
+/* SweetAlert popups on the dark theme set color:#fff on the whole popup for
+   the title/text - a native <select> inherits that, so its closed box AND
+   its (browser-rendered, always light-background) options list both end up
+   with white-on-white text. Force it back to normal dark-on-light contrast. */
+.swal2-select { color: #1c1c1e !important; background: #fff !important; }
+
 /* --- image crop modal (Cropper.js) --- */
 .crop-modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 1000;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 100000;
   display: flex; align-items: center; justify-content: center; padding: 20px;
 }
 .crop-modal-box {
@@ -1499,18 +1550,35 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 /* =========================================================================
    INVITE VIEW (guest-facing) — ported from blankInv.css concept
    ========================================================================= */
+/* 100vh is the *layout* viewport on mobile Safari - it stays the same size
+   whether the address/toolbar chrome is collapsed or expanded, so it's
+   taller than what's actually visible whenever that chrome is showing.
+   That pushed the RSVP button (position:absolute; bottom:0 inside
+   .inv-panel) below the visible area, looking like it "disappeared" on any
+   scroll/pull that changed the chrome's state. 100dvh tracks the real,
+   currently-visible viewport instead - kept as a second declaration so
+   the 100vh line above still applies as a fallback on anything that
+   doesn't understand dvh. */
 .vpager {
-  height: 100vh; width: 100%; overflow: hidden; position: relative;
+  height: 100vh; height: 100dvh; width: 100%; overflow: hidden; position: relative;
+  overscroll-behavior: none;
 }
 .vpager-inner {
-  display: flex; flex-direction: column; width: 100%; height: 200vh;
+  display: flex; flex-direction: column; width: 100%; height: 200vh; height: 200dvh;
   transition: transform .5s cubic-bezier(.4,0,.2,1);
 }
-.vpager-inner.show-rsvp { transform: translateY(-100vh); }
+.vpager-inner.show-rsvp { transform: translateY(-100vh); transform: translateY(-100dvh); }
 
 .inv-panel {
-  height: 100vh; width: 100%; position: relative; display: flex;
-  align-items: center; justify-content: center; overflow: hidden;
+  height: 100vh; height: 100dvh; width: 100%; position: relative;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+/* The actual image/card - a normal flex item that shrinks to make room for
+   .pull-cta below it (a real sibling now, not an absolute overlay sitting
+   on top of - and hiding the bottom of - the photo). */
+.inv-media {
+  flex: 1 1 auto; min-height: 0; position: relative;
+  display: flex; align-items: center; justify-content: center;
 }
 .inv-panel img.blank-image {
   max-width: 100%; max-height: 100%; object-fit: contain; position: relative; z-index: 2;
@@ -1530,31 +1598,75 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    laid over it (textStyle chosen by the AI/heuristic, never by the user).
    Fills whatever box it's placed in - full-screen in the guest view
    (.inv-panel), a small preview box in the create flow. --- */
-.ipc-card { position: relative; width: 100%; height: 100%; overflow: hidden; }
+/* transform:translateZ(0) forces its own compositor layer - iOS Safari has
+   a long-standing bug where a stack of absolutely-positioned/filtered
+   layers like this (photo + scrim + text) can fail to paint until the next
+   scroll/reflow, so the guest sees the bare photo first and the text only
+   "pops in" once something nudges a repaint. This keeps it painted from
+   the first frame instead. */
+.ipc-card { position: relative; width: 100%; height: 100%; overflow: hidden; transform: translateZ(0); }
 .ipc-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
-.ipc-scrim { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
-.ipc-content {
-  position: absolute; left: 0; right: 0; z-index: 2;
+/* The text now lives in its own solid card instead of floating straight on
+   the photo - the photo's own brightness/business was fighting whatever
+   font/size/color the text tried, no matter how that was tuned, because it
+   never had a controlled surface to sit on. This is the same cream+navy+
+   gold system as the "navy-bold" coded template, just here it floats over
+   whatever photo the AI made instead of a fixed color background - full
+   typographic control either way, the photo just shows around/behind it
+   instead of the text having to fight it for contrast. */
+.ipc-panel {
+  position: absolute; left: 18px; right: 18px; z-index: 2; transform: translateZ(0);
   display: flex; flex-direction: column; align-items: center; text-align: center;
-  padding: 32px 28px; box-sizing: border-box; gap: 8px; direction: rtl;
+  background: #fbf8f1; border: 1px solid rgba(201,162,75,0.45); border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+  padding: 30px 24px; box-sizing: border-box; gap: 10px; direction: rtl;
 }
-.ipc-anchor-bottom { bottom: 0; }
-.ipc-anchor-top { top: 0; }
-.ipc-anchor-center { top: 50%; transform: translateY(-50%); }
+.ipc-anchor-bottom { bottom: 18px; }
+.ipc-anchor-top { top: 18px; }
+.ipc-anchor-center { top: 50%; transform: translateY(-50%) translateZ(0); }
+/* Frank Ruhl Libre is a real Hebrew serif (unlike Playfair/Cormorant/
+   Italiana above, which are Latin-only and silently fall back to a system
+   font on Hebrew text) - the single biggest "looks designed, not generic"
+   typography lever available without hand-authoring bespoke art. */
+.ipc-intro {
+  font-family: 'Assistant', sans-serif; font-weight: 600; font-size: clamp(.82rem, 3vw, .95rem);
+  letter-spacing: .02em; color: #6b6455; max-width: 240px; line-height: 1.5;
+}
 .ipc-line1 {
-  font-family: 'Assistant', sans-serif; font-weight: 800; line-height: 1.25;
-  font-size: clamp(1.7rem, 7vw, 2.5rem); text-shadow: 0 2px 10px rgba(0,0,0,0.25);
+  font-family: 'Frank Ruhl Libre', serif; font-weight: 900; line-height: 1.1; letter-spacing: .01em;
+  font-size: clamp(2.5rem, 11vw, 3.4rem); color: #12213f;
 }
-.ipc-line2 { font-family: 'Assistant', sans-serif; font-weight: 600; font-size: clamp(1rem, 4vw, 1.2rem); opacity: .92; }
+.ipc-line2 {
+  font-family: 'Frank Ruhl Libre', serif; font-weight: 500; line-height: 1.3;
+  font-size: clamp(1.1rem, 4.2vw, 1.3rem); color: #5a6a8a; margin-top: -4px;
+}
+.ipc-divider {
+  display: flex; align-items: center; gap: 10px; width: 100%; max-width: 220px;
+  margin: 4px 0; /* color inherited from .ipc-panel's inline accentColor */
+}
+.ipc-divider::before, .ipc-divider::after { content: ""; flex: 1; height: 1px; background: currentColor; opacity: .6; }
+.ipc-divider span { font-size: .95rem; }
 .ipc-date {
-  font-family: 'Assistant', sans-serif; font-weight: 700; font-size: clamp(.95rem, 3.6vw, 1.1rem);
-  border: 1.5px solid; border-radius: 999px; padding: 6px 20px; margin-top: 4px;
+  font-family: 'Assistant', sans-serif; font-weight: 700; font-size: clamp(1.1rem, 4.4vw, 1.3rem);
+  line-height: 1.5; letter-spacing: .02em; color: #12213f;
+  border: 1.5px solid; border-radius: 999px; padding: 9px 26px; margin-top: 4px; /* border-color inline, per-photo */
 }
-.ipc-venue { font-family: 'Assistant', sans-serif; font-weight: 500; font-size: clamp(.85rem, 3.2vw, 1rem); opacity: .88; }
+.ipc-venue {
+  font-family: 'Assistant', sans-serif; font-weight: 600; font-size: clamp(.98rem, 3.8vw, 1.15rem);
+  letter-spacing: .01em; color: #3a3a3a; margin-top: 2px;
+}
+.ipc-extra {
+  font-family: 'Assistant', sans-serif; font-weight: 400; font-size: clamp(.82rem, 3.1vw, .95rem);
+  color: #7a7568; line-height: 1.6; margin-top: 2px;
+}
 
 .pull-cta {
-  position: absolute; bottom: 0; left: 0; right: 0; width: 100%;
-  z-index: 5; backdrop-filter: blur(6px);
+  /* Normal flex-flow item now (flex: none - .inv-media above takes the
+     rest) instead of position:absolute over the image, so it reserves its
+     own real space at the bottom of the screen rather than floating on top
+     of - and covering - the bottom of the photo/frame. */
+  flex: none; width: 100%;
+  position: relative; z-index: 5; backdrop-filter: blur(6px);
   border: none; border-top: 1px solid rgba(255,255,255,0.2); border-radius: 0;
   padding: 14px 10px calc(14px + env(safe-area-inset-bottom, 0px));
   display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -1629,7 +1741,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 /* RSVP panel — cream/gold, matches the mobile screenshot */
 .rsvp-panel {
   position: relative;
-  height: 100vh; width: 100%; overflow-y: auto;
+  height: 100vh; height: 100dvh; width: 100%; overflow-y: auto;
   background: radial-gradient(circle at 15% 10%, rgba(212,175,55,0.10), transparent 40%),
               radial-gradient(circle at 85% 85%, rgba(212,175,55,0.10), transparent 40%),
               #f5efe0;
@@ -1637,8 +1749,8 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 }
 .rsvp-card { width: 100%; max-width: 380px; text-align: center; }
 .rsvp-title {
-  font-family: 'Assistant', sans-serif; font-weight: 800;
-  font-size: 1.9rem; color: #b8860b; margin-bottom: 30px; line-height: 1.3;
+  font-family: 'Frank Ruhl Libre', serif; font-weight: 900; letter-spacing: .01em;
+  font-size: clamp(2rem, 8vw, 2.6rem); color: #b8860b; margin-bottom: 30px; line-height: 1.25;
 }
 .rsvp-field { margin-bottom: 20px; text-align: right; }
 .rsvp-field label { display: block; font-weight: 700; color: #4a3f30; margin-bottom: 8px; }
@@ -1725,6 +1837,3 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .rsvp-choice-btn.active-no { background: #c62828; color: #fff; border-color: #c62828; }
 .rsvp-thanks { font-size: 1.3rem; font-weight: 700; color: #4a3f30; }
 
-@media (max-width: 480px) {
-  .rsvp-title { font-size: 1.6rem; }
-}

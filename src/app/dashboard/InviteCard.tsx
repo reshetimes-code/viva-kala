@@ -32,7 +32,17 @@ export default function InviteCard({ invite }: Props) {
     setBusy(true);
     try {
       const res = await fetch(`/api/invites/${invite.id}`, { method: "DELETE" });
-      if (res.ok) router.refresh();
+      if (res.ok) {
+        router.refresh();
+      } else {
+        // Used to fail silently here - the card just sat there with no
+        // sign anything went wrong, which is exactly what "I click delete
+        // and nothing happens" looks like from the outside.
+        const data = await res.json().catch(() => null);
+        alert(data?.error || `שגיאה במחיקת ההזמנה (${res.status})`);
+      }
+    } catch {
+      alert("שגיאת רשת - נסה שוב");
     } finally {
       setBusy(false);
     }
@@ -64,9 +74,15 @@ export default function InviteCard({ invite }: Props) {
               🪑 אורחים והושבה
             </Link>
           )}
-          <Link href={`/i/${invite.id}`} className="dash-btn dash-btn-blue">
+          {/* Opens in a real new tab instead of navigating inside the
+              dashboard's own desktop phone-mockup iframe - staying inside
+              it was exactly what caused a second, nested phone frame to
+              show up wrapped around the invite itself. A fresh top-level
+              tab always renders the invite's own desktop-preview wrapper
+              correctly, exactly once. */}
+          <a href={`/i/${invite.id}`} target="_blank" rel="noopener noreferrer" className="dash-btn dash-btn-blue">
             👁 הצג
-          </Link>
+          </a>
           <Link href={`/dashboard/${invite.id}/edit`} className="dash-btn dash-btn-orange">
             ✏️ עריכה
           </Link>

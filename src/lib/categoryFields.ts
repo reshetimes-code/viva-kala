@@ -66,7 +66,18 @@ export function findMissingRequiredField(
 export interface HeadlineParts {
   line1: string;
   line2?: string;
+  /** A short fixed opening line above the name ("שמחים להזמינכם...") - the
+   *  reference invitations this app is trying to match almost always carry
+   *  one, and it costs nothing to add since it's the same per category
+   *  rather than something the user has to type. */
+  intro?: string;
 }
+
+const CATEGORY_INTRO: Partial<Record<EventCategory, string>> = {
+  "חתונה": "בשמחה ובאהבה אנו מזמינים אתכם לחגוג עמנו",
+  "בר/בת מצווה": "בשמחה רבה אנו מזמינים אתכם לחגוג עמנו",
+  "חינה": "מזמינים אתכם לחגוג עמנו את ליל החינה",
+};
 
 /** Builds the "who/what" headline from structured category fields, for the
  *  three tailored categories. Returns null when there isn't enough data
@@ -79,18 +90,21 @@ export function buildHeadline(
 ): HeadlineParts | null {
   if (!category || !fields) return null;
 
+  const intro = CATEGORY_INTRO[category];
+
   switch (category) {
     case "חתונה":
     case "חינה": {
       const names = [fields.groomName, fields.brideName].filter(Boolean);
       if (names.length === 0) return null;
-      return { line1: names.join(" ו") };
+      return { line1: names.join(" ו"), intro };
     }
     case "בר/בת מצווה": {
       if (!fields.celebrantName) return null;
       return {
         line1: fields.celebrantName,
         line2: fields.familyName ? `משפחת ${fields.familyName}` : undefined,
+        intro,
       };
     }
     default:
@@ -101,6 +115,43 @@ export function buildHeadline(
 export function headlineToString(parts: HeadlineParts | null): string {
   if (!parts) return "";
   return [parts.line1, parts.line2].filter(Boolean).join(" - ");
+}
+
+/** A native <input type="date"> always gives back "YYYY-MM-DD" - display
+ *  that as "DD/MM/YYYY" instead everywhere a date reaches a guest/preview.
+ *  Anything else (already-formatted, or free text on an older invite)
+ *  passes through unchanged. */
+export function formatEventDate(isoDate: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : isoDate;
+}
+
+// Fields already shown elsewhere on the guest card (headline, date/time
+// line, venue line) - everything else a category collects (ceremony time,
+// parents' names, sibling names, celebrant's age, ...) had no home on the
+// card at all before this and just silently never reached a guest.
+const SURFACED_ELSEWHERE = new Set([
+  "groomName", "brideName", "celebrantName", "familyName",
+  "eventDate", "eventStart", "venue",
+]);
+
+/** Every optional/extra category field that's actually been filled in,
+ *  formatted as one short "label value" line each - for the small print
+ *  under the venue on the guest card (ceremony time, parents' names, ...).
+ *  Order follows CATEGORY_FIELD_DEFS so it's stable and matches the form. */
+export function buildExtraDetailLines(
+  category: EventCategory | undefined,
+  fields: Record<string, string> | undefined
+): string[] {
+  if (!category || !fields) return [];
+  const defs = CATEGORY_FIELD_DEFS[category] ?? [];
+  return defs
+    .filter((d) => !SURFACED_ELSEWHERE.has(d.key) && fields[d.key]?.trim())
+    .map((d) => {
+      const label = d.label.replace(/\s*\(לא חובה\)\s*$/, "");
+      const value = fields[d.key].trim();
+      return d.type === "time" ? `${label} ${value}` : `${label}: ${value}`;
+    });
 }
 
 /** venue/eventDate/eventStart live under different keys depending on

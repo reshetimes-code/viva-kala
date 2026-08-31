@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { TemplateCard, TEMPLATE_CTA_COLORS, type TemplateFields } from "@/lib/templates";
 import { wazeUrl, googleMapsUrl } from "@/lib/navLinks";
-import { buildHeadline } from "@/lib/categoryFields";
+import { buildHeadline, buildExtraDetailLines, formatEventDate } from "@/lib/categoryFields";
 import type { EventCategory } from "@/lib/eventCategories";
 import type { TextStyle } from "@/lib/textStyleHeuristic";
 import InvitePhotoCard from "@/components/InvitePhotoCard";
@@ -51,9 +51,9 @@ export default function InviteView({
   const [shareOpen, setShareOpen] = useState(false);
   const [whatsNumberOpen, setWhatsNumberOpen] = useState(false);
   const [whatsNumberValue, setWhatsNumberValue] = useState("");
+  const [showWelcomeAlert, setShowWelcomeAlert] = useState(false);
   const [desktopWrap, setDesktopWrap] = useState(false);
   const [iframeSrc, setIframeSrc] = useState("");
-  const [showWelcomeAlert, setShowWelcomeAlert] = useState(false);
 
   // Nudge people to actually RSVP - a lot of guests open the invite, look at
   // the picture and never bother confirming, which leaves the host unable to
@@ -65,11 +65,20 @@ export default function InviteView({
   }, [wantRsvp]);
 
   // Guests opening the link on a desktop browser see the invite inside a
-  // phone-frame mockup (matches how fiestaa.co.il does it): re-render the
+  // phone-frame mockup (matches how fiestaa.co.il does it) instead of a 9:16
+  // portrait card stretched awkwardly across a wide window - re-render the
   // real page inside an iframe with ?mobile=true so it skips wrapping.
   useEffect(() => {
     function isMobileUA() {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+    // UA sniffing alone isn't reliable enough on its own (some in-app/
+    // embedded mobile browsers don't match the pattern above) - a real
+    // phone's screen is a touchscreen, so this is checked too as a second,
+    // independent signal. A guest on an actual phone must never see the
+    // mockup wrapped around their own real screen.
+    function isTouchDevice() {
+      return window.matchMedia?.("(pointer: coarse)")?.matches || "ontouchstart" in window || navigator.maxTouchPoints > 0;
     }
     function isInIframe() {
       try {
@@ -79,7 +88,7 @@ export default function InviteView({
       }
     }
     const params = new URLSearchParams(window.location.search);
-    if (!isInIframe() && !isMobileUA() && window.innerWidth > 768 && !params.has("mobile")) {
+    if (!isInIframe() && !isMobileUA() && !isTouchDevice() && window.innerWidth > 768 && !params.has("mobile")) {
       const sep = window.location.search ? "&" : "?";
       setIframeSrc(`${window.location.pathname}${window.location.search}${sep}mobile=true`);
       setDesktopWrap(true);
@@ -245,29 +254,36 @@ export default function InviteView({
 
       <div className={`vpager-inner${showRsvp ? " show-rsvp" : ""}`}>
         <section className="inv-panel">
-          {mode === "template" && templateId && templateFields ? (
-            <div className="tpl-full-wrap">
-              <TemplateCard templateId={templateId} fields={templateFields} />
-            </div>
-          ) : photoCardHeadline ? (
-            <InvitePhotoCard
-              imageUrl={imageUrl}
-              headline={photoCardHeadline}
-              dateText={[eventDate, eventStart && `בשעה ${eventStart}`].filter(Boolean).join(" ")}
-              venueText={address}
-              textStyle={textStyle}
-            />
-          ) : (
-            <>
-              <div
-                className="blank-bg"
-                style={{ background: "linear-gradient(to bottom, #4c6b85 0%, #4c6b85 34%, #323a3c 66%, #323a3c 100%)" }}
+          {/* A proper flex sibling of .pull-cta below (not an absolute
+              overlay on top of it) - the image/card now shrinks to leave
+              real room for the button bar instead of the bar floating over
+              (and hiding) the bottom of the photo/frame. */}
+          <div className="inv-media">
+            {mode === "template" && templateId && templateFields ? (
+              <div className="tpl-full-wrap">
+                <TemplateCard templateId={templateId} fields={templateFields} />
+              </div>
+            ) : photoCardHeadline && !textStyle?.imageHasText ? (
+              <InvitePhotoCard
+                imageUrl={imageUrl}
+                headline={photoCardHeadline}
+                dateText={[eventDate && formatEventDate(eventDate), eventStart && `בשעה ${eventStart}`].filter(Boolean).join("\n")}
+                venueText={address}
+                extraLines={buildExtraDetailLines(eventCategory, categoryFields)}
+                textStyle={textStyle}
               />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="blank-image" src={imageUrl} alt="הזמנה" />
-              <div className="blank-fade" />
-            </>
-          )}
+            ) : (
+              <>
+                <div
+                  className="blank-bg"
+                  style={{ background: "linear-gradient(to bottom, #4c6b85 0%, #4c6b85 34%, #323a3c 66%, #323a3c 100%)" }}
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="blank-image" src={imageUrl} alt="הזמנה" />
+                <div className="blank-fade" />
+              </>
+            )}
+          </div>
 
           {wantRsvp && (
             <button
@@ -303,7 +319,7 @@ export default function InviteView({
                   {headline && <p style={{ marginTop: 14, color: "#4a3f30" }}>{headline}</p>}
                   {eventDate && (
                     <p style={{ marginTop: 8, color: "#4a3f30" }}>
-                      {eventDate} {eventStart && `בשעה ${eventStart}`}
+                      {formatEventDate(eventDate)} {eventStart && `בשעה ${eventStart}`}
                     </p>
                   )}
                   {showNavBtn && address && (

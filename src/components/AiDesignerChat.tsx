@@ -135,7 +135,10 @@ export default function AiDesignerChat({
       {error && <div className="alert alert-error">{error}</div>}
 
       {loading || generating ? (
-        <p className="ai-chat-question">{generating ? "יוצר/ת לכם עיצוב..." : "רגע, חושב/ת..."}</p>
+        <div className="ai-chat-loading">
+          <span className="ai-chat-spinner" aria-hidden="true" />
+          <p className="ai-chat-question">{generating ? "יוצר/ת לכם עיצוב..." : "רגע, חושב/ת..."}</p>
+        </div>
       ) : turn?.question ? (
         <>
           <p className="ai-chat-question">{turn.question}</p>

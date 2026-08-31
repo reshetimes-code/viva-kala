@@ -106,9 +106,7 @@ const CARD_CLASS: Record<string, string> = {
 };
 
 /** Elegant Latin-only fonts (no Hebrew glyphs) used for English names - the
- *  same fancy look as myinvite-style wedding cards. Hebrew names fall back
- *  to Assistant instead, since these fonts render Hebrew as an ugly system
- *  default. */
+ *  same fancy look as myinvite-style wedding cards. */
 const LATIN_TITLE_FONT: Record<string, string> = {
   "cream-script": "'Petit Formal Script', cursive",
   "dark-gold": "'Playfair Display', serif",
@@ -122,6 +120,26 @@ const LATIN_TITLE_FONT: Record<string, string> = {
   "festive-balloons": "'Assistant', sans-serif",
 };
 
+// Every LATIN_TITLE_FONT above is a Latin-only face with zero Hebrew glyph
+// coverage - a Hebrew name used to fall through to plain 'Assistant' (the
+// same base font as the rest of the card's body text) on every single
+// formal/elegant template, so the "fancy" look only ever showed up for
+// English names. Frank Ruhl Libre is a real Hebrew serif with the same
+// elegant, high-contrast character the Latin scripts above are going for -
+// this is what actually makes a Hebrew name (the common case for this app)
+// read as "designed" instead of generic. The two playful/casual templates
+// keep Assistant bold on purpose - a serif there would look formal, not fun.
+const HEBREW_TITLE_FONT: Record<string, string> = {
+  "cream-script": "'Frank Ruhl Libre', serif",
+  "dark-gold": "'Frank Ruhl Libre', serif",
+  "floral-blush": "'Frank Ruhl Libre', serif",
+  "navy-bold": "'Frank Ruhl Libre', serif",
+  "line-frame": "'Frank Ruhl Libre', serif",
+  "botanical-green": "'Frank Ruhl Libre', serif",
+  "sunset-tropical": "'Frank Ruhl Libre', serif",
+  "gold-ornate-dark": "'Frank Ruhl Libre', serif",
+};
+
 const HEBREW_CHAR_RANGE = new RegExp("[\\u0590-\\u05FF]");
 
 function isLatinTitle(fields: TemplateFields): boolean {
@@ -131,8 +149,11 @@ function isLatinTitle(fields: TemplateFields): boolean {
 }
 
 function titleFontStyle(templateId: string, fields: TemplateFields): { fontFamily?: string } {
-  if (!isLatinTitle(fields)) return {};
-  return { fontFamily: LATIN_TITLE_FONT[templateId] ?? "'Playfair Display', serif" };
+  if (isLatinTitle(fields)) {
+    return { fontFamily: LATIN_TITLE_FONT[templateId] ?? "'Playfair Display', serif" };
+  }
+  const hebrewFont = HEBREW_TITLE_FONT[templateId];
+  return hebrewFont ? { fontFamily: hebrewFont } : {};
 }
 
 /** Small clean line icons - kept as real vector shapes instead of emoji,
@@ -211,16 +232,25 @@ function renderContent(templateId: string, fields: TemplateFields) {
     case "navy-bold":
       return (
         <>
-          <p className="tpl-navy-subtitle">{fields.subtitle}</p>
-          <h2 className="tpl-navy-title" style={titleStyle}>
-            {fields.titleLine1} <span className="tpl-navy-amp">•</span> {fields.titleLine2}
-          </h2>
-          <div className="tpl-navy-date-badge">{fields.dateText}</div>
-          <p className="tpl-navy-venue">{fields.venueText}</p>
-          <p className="tpl-navy-times">
-            {fields.ceremonyTime && `קבלת פנים ${fields.ceremonyTime}`}
-            {fields.receptionTime && ` · חופה ${fields.receptionTime}`}
-          </p>
+          <span className="tpl-navy-corner tpl-navy-corner-tl" aria-hidden="true" />
+          <span className="tpl-navy-corner tpl-navy-corner-tr" aria-hidden="true" />
+          <span className="tpl-navy-corner tpl-navy-corner-bl" aria-hidden="true" />
+          <span className="tpl-navy-corner tpl-navy-corner-br" aria-hidden="true" />
+          <div className="tpl-navy-box">
+            <p className="tpl-navy-subtitle">{fields.subtitle}</p>
+            <h2 className="tpl-navy-title" style={titleStyle}>
+              {fields.titleLine1}
+              <span className="tpl-navy-amp">&amp;</span>
+              {fields.titleLine2}
+            </h2>
+            <div className="tpl-navy-divider" />
+            <p className="tpl-navy-date">{fields.dateText}</p>
+            <p className="tpl-navy-venue">{fields.venueText}</p>
+            <p className="tpl-navy-times">
+              {fields.ceremonyTime && `חופה וקידושין ${fields.ceremonyTime}`}
+              {fields.receptionTime && ` · קבלת פנים ${fields.receptionTime}`}
+            </p>
+          </div>
           <p className="tpl-navy-footer">{fields.footerNote}</p>
         </>
       );
