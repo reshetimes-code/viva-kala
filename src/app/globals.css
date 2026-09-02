@@ -1559,12 +1559,13 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    the 100vh line above still applies as a fallback on anything that
    doesn't understand dvh. */
 .vpager {
-  /* position:fixed + inset:0 anchors this to the actual browser viewport
-     directly - immune to literally any ancestor's width/margin/padding,
-     unlike width:100% (or even 100vw) which can still be thrown off by
-     something upstream. This is the maximally bulletproof way to guarantee
-     zero side gaps regardless of what's going on above it in the tree. */
-  position: fixed !important; inset: 0 !important;
+  /* The actual full-bleed bug was .blank-image's object-fit:contain (see
+     ipc-card/blank-image below) - position:fixed here was an untested
+     extra defensive layer added on top while chasing it, and it's what
+     caused the RSVP form to overflow sideways on real Safari (fixed
+     positioning + RTL direction interacting badly). Back to a plain,
+     well-understood position:relative + width:100vw. */
+  position: relative;
   height: 100vh; height: 100dvh; width: 100vw !important; max-width: 100vw !important;
   overflow: hidden; margin: 0 !important;
   overscroll-behavior: none;
@@ -1793,7 +1794,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .rsvp-field { margin-bottom: 20px; text-align: right; }
 .rsvp-field label { display: block; font-weight: 700; color: #4a3f30; margin-bottom: 8px; }
 .rsvp-field input {
-  width: 100%; padding: 14px 16px; border-radius: 999px; border: 1px solid #d8cba8;
+  width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 999px; border: 1px solid #d8cba8;
   background: #fff; font-size: 1rem; text-align: center;
 }
 .rsvp-allergy-q { color: #b8860b; font-weight: 700; margin: 20px 0; font-size: 1.1rem; }
