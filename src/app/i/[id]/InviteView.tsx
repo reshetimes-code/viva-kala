@@ -464,22 +464,18 @@ export default function InviteView({
             ×
           </button>
           <div className="blank-share-title">שתפו את ההזמנה</div>
-          <div className="blank-share-grid">
-            <a className="btn-circle whatsapp" href={`https://wa.me/?text=${shareText}`} target="_blank" rel="noopener noreferrer">
-              <i>💬</i>
-              <span>וואטסאפ</span>
+          <div className="share-tile-grid">
+            <a className="share-tile share-tile-whatsapp" href={`https://wa.me/?text=${shareText}`} target="_blank" rel="noopener noreferrer">
+              וואטסאפ
             </a>
-            <button type="button" className="btn-circle whatsapp-number" onClick={openWhatsNumberModal}>
-              <i>📱</i>
-              <span>וואטסאפ לאיש קשר</span>
+            <button type="button" className="share-tile share-tile-whatsapp-contact" onClick={openWhatsNumberModal}>
+              וואטסאפ לאיש קשר
             </button>
-            <a className="btn-circle sms" href={`sms:?&body=${shareText}`}>
-              <i>✉️</i>
-              <span>SMS</span>
+            <a className="share-tile share-tile-sms" href={`sms:?&body=${shareText}`}>
+              SMS
             </a>
-            <button type="button" className="btn-circle copy-link-btn" onClick={copyLink}>
-              <i>🔗</i>
-              <span>העתקת קישור</span>
+            <button type="button" className="share-tile share-tile-copy" onClick={copyLink}>
+              העתקת קישור
             </button>
           </div>
         </div>
