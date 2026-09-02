@@ -1438,7 +1438,20 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    ========================================================================= */
 .dash-page {
   min-height: 100vh;
-  background: #eef1f4;
+  /* Elegant event-invitation atmosphere instead of a flat white page -
+     deep navy base with soft warm "party light" bokeh glows and a fine
+     sparkle texture, all CSS (no external photo) so it matches the VIVA
+     gold/navy brand exactly and never breaks. Scoped to this page only. */
+  background-color: var(--viva-navy);
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(218,174,124,0.35), transparent 40%),
+    radial-gradient(circle at 88% 18%, rgba(250,128,154,0.28), transparent 38%),
+    radial-gradient(circle at 20% 92%, rgba(61,219,210,0.22), transparent 42%),
+    radial-gradient(circle at 85% 88%, rgba(129,68,125,0.35), transparent 45%),
+    linear-gradient(160deg, #0f2029 0%, var(--viva-navy) 45%, #1b3242 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><g fill='%23daae7c' opacity='0.12'><circle cx='10' cy='14' r='1.4'/><circle cx='55' cy='6' r='1'/><circle cx='75' cy='40' r='1.6'/><circle cx='30' cy='60' r='1'/><circle cx='62' cy='78' r='1.3'/></g></svg>");
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+  background-size: cover, cover, cover, cover, cover, 90px 90px;
   padding: 32px 20px 100px;
   direction: rtl;
   font-family: 'Heebo', sans-serif;
@@ -1489,9 +1502,12 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 
 .dash-header {
   max-width: 1100px; margin: 0 auto 28px; display: flex; align-items: center;
-  justify-content: space-between; flex-wrap: wrap; gap: 14px;
+  justify-content: center; text-align: center; flex-wrap: wrap; gap: 14px;
 }
-.dash-header h1 { font-size: 1.8rem; font-weight: 800; color: #1e2430; }
+.dash-header h1 {
+  font-size: 1.9rem; font-weight: 800; color: #fdf6ea;
+  text-shadow: 0 2px 14px rgba(0,0,0,0.35);
+}
 
 /* --- fixed bottom action bar for the logged-in area --- */
 .bottom-nav {
