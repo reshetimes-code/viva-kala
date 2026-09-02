@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Swal from "sweetalert2";
 import type { StoredRsvp, StoredTable } from "@/lib/store";
 import RoundTable from "./RoundTable";
 import QrCode from "@/components/QrCode";
@@ -18,6 +19,7 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
   const [tables, setTables] = useState(initialTables);
   const [tab, setTab] = useState<"guests" | "seating">("guests");
   const [newTableNumber, setNewTableNumber] = useState("");
+  const [newTableCapacity, setNewTableCapacity] = useState("");
   const [busy, setBusy] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
@@ -43,13 +45,44 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
       const res = await fetch(`/api/invites/${inviteId}/tables`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ number: newTableNumber.trim() }),
+        body: JSON.stringify({
+          number: newTableNumber.trim(),
+          capacity: newTableCapacity.trim() ? Number(newTableCapacity.trim()) : null,
+        }),
       });
       if (res.ok) {
         setNewTableNumber("");
+        setNewTableCapacity("");
         setAddingTable(false);
         await refresh();
       }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleEditCapacity(table: StoredTable) {
+    const { value, isConfirmed } = await Swal.fire({
+      title: `כמות מקומות בשולחן ${table.number}`,
+      input: "number",
+      inputValue: table.capacity ?? "",
+      inputAttributes: { min: "1", inputMode: "numeric" },
+      inputPlaceholder: "לדוגמה: 12",
+      showCancelButton: true,
+      confirmButtonText: "שמירה",
+      cancelButtonText: "ביטול",
+      confirmButtonColor: "#b8860b",
+    });
+    if (!isConfirmed) return;
+    const capacity = value === "" || value === undefined ? null : Number(value);
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/invites/${inviteId}/tables/${table.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ capacity }),
+      });
+      if (res.ok) await refresh();
     } finally {
       setBusy(false);
     }
@@ -66,7 +99,37 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
     }
   }
 
+  function guestsForTable(tableId: string) {
+    return rsvps.filter((r) => r.tableId === tableId);
+  }
+
+  function seatsTakenAtTable(tableId: string, excludeRsvpId?: number) {
+    return guestsForTable(tableId)
+      .filter((r) => r.id !== excludeRsvpId)
+      .reduce((sum, r) => sum + (r.guestCount ?? 1), 0);
+  }
+
   async function handleAssign(rsvpId: number, tableId: string) {
+    if (tableId) {
+      const table = tables.find((t) => t.id === tableId);
+      const rsvp = rsvps.find((r) => r.id === rsvpId);
+      if (table && table.capacity != null && rsvp) {
+        const takenByOthers = seatsTakenAtTable(tableId, rsvpId);
+        const newTotal = takenByOthers + (rsvp.guestCount ?? 1);
+        if (newTotal > table.capacity) {
+          const { isConfirmed } = await Swal.fire({
+            icon: "warning",
+            title: "שימו לב 🪑",
+            html: `בשולחן <b>${table.number}</b> הגעתם לכמות המקסימלית של היושבים (${table.capacity} מקומות).<br/>שיבוץ זה יביא את השולחן ל-${newTotal} סועדים.`,
+            confirmButtonText: "שבצו בכל זאת",
+            showCancelButton: true,
+            cancelButtonText: "ביטול",
+            confirmButtonColor: "#b8860b",
+          });
+          if (!isConfirmed) return;
+        }
+      }
+    }
     setRsvps((prev) => prev.map((r) => (r.id === rsvpId ? { ...r, tableId: tableId || null } : r)));
     await fetch(`/api/rsvp/${rsvpId}`, {
       method: "PATCH",
@@ -77,10 +140,6 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
     // on its own - flash a brief confirmation so it's clear the change saved.
     setJustSavedId(rsvpId);
     setTimeout(() => setJustSavedId((cur) => (cur === rsvpId ? null : cur)), 1600);
-  }
-
-  function guestsForTable(tableId: string) {
-    return rsvps.filter((r) => r.tableId === tableId);
   }
 
   return (
@@ -177,6 +236,14 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
                 inputMode="numeric"
                 autoFocus
               />
+              <input
+                className="gm-add-table-input gm-add-table-capacity-input"
+                placeholder="כמות מקומות (לא חובה)"
+                value={newTableCapacity}
+                onChange={(e) => setNewTableCapacity(e.target.value)}
+                inputMode="numeric"
+                title="פה תוסיפו כמה מקומות יש בשולחן - לפי המספר הזה יסודרו כמות האורחים בשולחן"
+              />
               <button type="submit" className="gm-add-table-btn" disabled={busy}>
                 ➕ הוספה
               </button>
@@ -198,13 +265,28 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
 
           {tables.map((t) => {
             const guests = guestsForTable(t.id);
+            const seatsTaken = seatsTakenAtTable(t.id);
+            const isFull = t.capacity != null && seatsTaken >= t.capacity;
             return (
               <div key={t.id} className="gm-table-card">
                 <div className="gm-table-top">
-                  <span className="gm-table-number">שולחן {t.number}</span>
-                  <button type="button" className="gm-table-delete" onClick={() => handleDeleteTable(t.id)}>
-                    🗑
-                  </button>
+                  <span className="gm-table-number">
+                    שולחן {t.number}
+                    {t.capacity != null && (
+                      <span className={`gm-table-capacity${isFull ? " gm-table-capacity-full" : ""}`}>
+                        {" "}
+                        ({seatsTaken}/{t.capacity} מקומות)
+                      </span>
+                    )}
+                  </span>
+                  <div className="gm-table-actions">
+                    <button type="button" className="gm-table-edit" onClick={() => handleEditCapacity(t)} title="עריכת כמות מקומות">
+                      ✏️
+                    </button>
+                    <button type="button" className="gm-table-delete" onClick={() => handleDeleteTable(t.id)}>
+                      🗑
+                    </button>
+                  </div>
                 </div>
                 {guests.length === 0 ? (
                   <p className="gm-table-empty">אין עדיין אורחים משובצים</p>

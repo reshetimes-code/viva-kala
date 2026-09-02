@@ -84,6 +84,8 @@ export interface StoredTable {
   id: string;
   inviteId: string;
   number: string;
+  /** Max seats at this table - null/undefined means no limit set. */
+  capacity: number | null;
   createdAt: string;
 }
 
@@ -92,6 +94,9 @@ export interface StoredLead {
   name: string;
   phone: string;
   sourceInviteId: string;
+  /** The date they mentioned for their own upcoming event ("מה התאריך?"
+   *  in the RSVP screen's cross-sell popup) - optional, free text. */
+  eventDate: string;
   createdAt: string;
 }
 
@@ -151,11 +156,24 @@ function rowToRsvp(row: any): StoredRsvp {
 }
 
 function rowToTable(row: any): StoredTable {
-  return { id: row.id, inviteId: row.invite_id, number: row.number, createdAt: row.created_at.toISOString() };
+  return {
+    id: row.id,
+    inviteId: row.invite_id,
+    number: row.number,
+    capacity: row.capacity ?? null,
+    createdAt: row.created_at.toISOString(),
+  };
 }
 
 function rowToLead(row: any): StoredLead {
-  return { id: row.id, name: row.name, phone: row.phone, sourceInviteId: row.source_invite_id, createdAt: row.created_at.toISOString() };
+  return {
+    id: row.id,
+    name: row.name,
+    phone: row.phone,
+    sourceInviteId: row.source_invite_id,
+    eventDate: row.event_date ?? "",
+    createdAt: row.created_at.toISOString(),
+  };
 }
 
 // camelCase invite field -> [column, isJsonColumn]. Drives both the
@@ -362,17 +380,25 @@ export async function assignRsvpTable(rsvpId: number, tableId: string | null): P
 }
 
 // ---- Seating tables ----
-export async function insertTable(inviteId: string, number: string): Promise<StoredTable> {
+export async function insertTable(inviteId: string, number: string, capacity?: number | null): Promise<StoredTable> {
   // Table ids were "t<counter>" strings in the old flat-file store - kept
   // the same shape here (per-invite sequence number) rather than switching
   // to a raw serial id, since it's a user-visible-ish identifier.
   const countRes = await getPool().query("SELECT count(*)::int AS n FROM tables WHERE invite_id = $1", [inviteId]);
   const id = `t${inviteId}-${countRes.rows[0].n + 1}`;
   const res = await getPool().query(
-    "INSERT INTO tables (id, invite_id, number) VALUES ($1, $2, $3) RETURNING *",
-    [id, inviteId, number]
+    "INSERT INTO tables (id, invite_id, number, capacity) VALUES ($1, $2, $3, $4) RETURNING *",
+    [id, inviteId, number, capacity ?? null]
   );
   return rowToTable(res.rows[0]);
+}
+
+export async function updateTableCapacity(tableId: string, capacity: number | null): Promise<StoredTable | undefined> {
+  const res = await getPool().query(
+    "UPDATE tables SET capacity = $1 WHERE id = $2 RETURNING *",
+    [capacity, tableId]
+  );
+  return res.rows[0] ? rowToTable(res.rows[0]) : undefined;
 }
 
 export async function listTablesByInvite(inviteId: string): Promise<StoredTable[]> {
@@ -396,8 +422,8 @@ export async function deleteTable(tableId: string, inviteId: string): Promise<bo
 // ---- Leads (from the "planning an event soon?" widget on guest invites) ----
 export async function insertLead(lead: Omit<StoredLead, "id" | "createdAt">): Promise<StoredLead> {
   const res = await getPool().query(
-    "INSERT INTO leads (name, phone, source_invite_id) VALUES ($1, $2, $3) RETURNING *",
-    [lead.name, lead.phone, lead.sourceInviteId]
+    "INSERT INTO leads (name, phone, source_invite_id, event_date) VALUES ($1, $2, $3, $4) RETURNING *",
+    [lead.name, lead.phone, lead.sourceInviteId, lead.eventDate]
   );
   return rowToLead(res.rows[0]);
 }

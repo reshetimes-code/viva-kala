@@ -129,9 +129,10 @@ export default function InviteView({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            name: leadEventDate ? `${name} (תאריך משוער: ${leadEventDate})` : name,
+            name,
             phone,
             sourceInviteId: id,
+            eventDate: leadEventDate || "",
           }),
         });
       } finally {
@@ -185,8 +186,8 @@ export default function InviteView({
       if (attending) {
         await Swal.fire({
           icon: "success",
-          title: "שמרנו את פרטיך!",
-          text: "באולם יוצג לך מיקום השולחן השמור עבורך",
+          title: "שמרנו לכם את השולחן!",
+          text: "באולם יוצג לכם מיקום השולחן השמור עבורכם",
           confirmButtonText: "מעולה",
           confirmButtonColor: "#d4af7a",
           background: "#1f2a33",
@@ -282,6 +283,9 @@ export default function InviteView({
                 >
                   לסיור הוירטואלי 🎥
                 </a>
+                <button type="button" className="lead-alert-no" style={{ width: "100%", marginTop: 10 }} onClick={declineLead}>
+                  לא תודה
+                </button>
               </>
             ) : leadPopupSent ? (
               <>
@@ -412,7 +416,6 @@ export default function InviteView({
             <div className="rsvp-card">
               {submitted ? (
                 <div className="rsvp-thanks-screen">
-                  <div className="rsvp-thanks-icon">{submitted === "yes" ? "🎉" : "🙏"}</div>
                   <p className="rsvp-thanks">
                     {submitted === "yes" ? "תודה שאישרתם הגעה!" : "תודה על התגובה"}
                   </p>

@@ -32,11 +32,18 @@ export async function POST(
     return NextResponse.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
   }
 
-  const { number } = await req.json();
+  const { number, capacity } = await req.json();
   if (!number || !String(number).trim()) {
     return NextResponse.json({ error: "נא להזין מספר שולחן" }, { status: 400 });
   }
+  const parsedCapacity =
+    capacity === undefined || capacity === null || capacity === ""
+      ? null
+      : Number(capacity);
+  if (parsedCapacity !== null && (!Number.isFinite(parsedCapacity) || parsedCapacity <= 0)) {
+    return NextResponse.json({ error: "כמות מקומות לא תקינה" }, { status: 400 });
+  }
 
-  const table = await insertTable(id, String(number).trim());
+  const table = await insertTable(id, String(number).trim(), parsedCapacity);
   return NextResponse.json({ success: true, table });
 }

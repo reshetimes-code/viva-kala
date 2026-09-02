@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS tables (
   id         TEXT PRIMARY KEY,
   invite_id  TEXT NOT NULL REFERENCES invites(id) ON DELETE CASCADE,
   number     TEXT NOT NULL DEFAULT '',
+  capacity   INTEGER,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS tables_invite_id_idx ON tables(invite_id);
@@ -71,5 +72,6 @@ CREATE TABLE IF NOT EXISTS leads (
   name             TEXT NOT NULL DEFAULT '',
   phone            TEXT NOT NULL DEFAULT '',
   source_invite_id TEXT NOT NULL DEFAULT '',
+  event_date       TEXT NOT NULL DEFAULT '',
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
