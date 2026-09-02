@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { findInviteById } from "@/lib/store";
+import { getCurrentUser } from "@/lib/auth";
 import type { TemplateFields } from "@/lib/templates";
 import { buildHeadline, headlineToString } from "@/lib/categoryFields";
 import InviteView from "./InviteView";
@@ -16,6 +17,13 @@ export default async function InvitePage({
   if (!invite) {
     notFound();
   }
+
+  // Same link a guest gets, but the owner viewing their own invite (logged
+  // in, in the same browser they built it in) gets an extra way back to the
+  // dashboard - most people who open this to check on it don't think to
+  // hit "back" enough times to find their way there again.
+  const currentUser = await getCurrentUser();
+  const isOwner = currentUser?.id === invite.userId;
 
   let headline = "";
   if (invite.mode === "template") {
@@ -53,6 +61,7 @@ export default async function InvitePage({
       eventCategory={invite.eventCategory}
       categoryFields={invite.categoryFields}
       textStyle={invite.textStyle}
+      isOwner={isOwner}
     />
   );
 }

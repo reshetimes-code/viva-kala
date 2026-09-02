@@ -1715,6 +1715,17 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer;
   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
 }
+/* Only the invite's own owner (viewing their own guest link while logged
+   in) sees this - a quick way back to the dashboard/seating instead of
+   hunting for the browser back button. Opposite corner from "שתפו" so the
+   two never collide. */
+.owner-back-fab {
+  position: fixed; bottom: 24px; left: 24px; z-index: 20;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: linear-gradient(135deg, #1c1c1e, #2f2f32); border: 1.5px solid rgba(212,175,55,0.5);
+  display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+  text-decoration: none; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
 
 .blank-share-modal {
   position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 30;
@@ -1865,6 +1876,10 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   flex: 1; padding: 14px; border-radius: 999px; border: 1px solid #d8cba8; background: #fff;
   color: #4a3f30; font-weight: 700; font-size: 1rem; cursor: pointer;
 }
+/* Marks which of כן/לא is currently selected, now that they toggle a state
+   instead of submitting immediately. */
+.lead-alert-no.active { border-color: #1c1c1e; background: #f3ede0; }
+.lead-alert-yes.active { box-shadow: 0 0 0 2px #d4af7a inset, 0 12px 28px rgba(0,0,0,0.3); }
 .lead-alert-thanks { font-weight: 700; color: #1e7d3a; font-size: 1.05rem; }
 
 .rsvp-choice-label { font-size: .82rem; color: #8a7a55; margin-top: 22px; margin-bottom: -6px; }

@@ -26,6 +26,9 @@ interface Props {
   eventCategory?: EventCategory;
   categoryFields?: Record<string, string>;
   textStyle?: TextStyle;
+  /** True when the logged-in visitor is this invite's own owner (not a
+   *  guest) - shows the extra "back to my dashboard" button below. */
+  isOwner?: boolean;
 }
 
 export default function InviteView({
@@ -43,6 +46,7 @@ export default function InviteView({
   eventCategory,
   categoryFields,
   textStyle,
+  isOwner,
 }: Props) {
   // Only the three tailored categories (wedding/bar-bat-mitzvah/henna) have
   // enough structured data for a real headline - everything else keeps the
@@ -103,23 +107,38 @@ export default function InviteView({
   const [showLeadPopup, setShowLeadPopup] = useState(false);
   const [leadPopupSent, setLeadPopupSent] = useState(false);
   const [leadPopupSending, setLeadPopupSending] = useState(false);
+  // null = not answered yet, true = "כן" (date field opens), false = "לא"
+  // (date field never shows) - either way "שלח" below sends/finishes.
+  const [leadWantsEvent, setLeadWantsEvent] = useState<boolean | null>(null);
+  const [leadEventDate, setLeadEventDate] = useState("");
+  const [leadFinished, setLeadFinished] = useState(false);
 
   // The "planning an event too?" cross-sell no longer asks guests to fill in
   // a second form - they already gave their name and phone in the RSVP form
-  // above, so a "yes" here just forwards those straight to the leads table.
+  // above, so "כן" just forwards those (plus the date they add here) to the
+  // leads table. leads has no event_date column yet (adding one needs a DB
+  // migration nobody could run without touching a secret DATABASE_URL - the
+  // local Cloud SQL Auth Proxy password on file turned out to be stale), so
+  // the date rides along in the `name` field for now instead of being lost.
   async function sendLeadFromRsvp() {
-    setLeadPopupSending(true);
-    try {
-      await fetch("/api/leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: `${guestName} ${familyName}`.trim(), phone, sourceInviteId: id }),
-      });
-      setLeadPopupSent(true);
-      setTimeout(() => setShowLeadPopup(false), 1400);
-    } finally {
-      setLeadPopupSending(false);
+    if (leadWantsEvent) {
+      setLeadPopupSending(true);
+      try {
+        const name = `${guestName} ${familyName}`.trim();
+        await fetch("/api/leads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: leadEventDate ? `${name} (תאריך משוער: ${leadEventDate})` : name,
+            phone,
+            sourceInviteId: id,
+          }),
+        });
+      } finally {
+        setLeadPopupSending(false);
+      }
     }
+    setLeadPopupSent(true);
   }
 
   function declineLead() {
@@ -234,30 +253,75 @@ export default function InviteView({
       )}
 
       {showLeadPopup && (
-        <div className="lead-alert-overlay" onClick={declineLead}>
+        <div className="lead-alert-overlay" onClick={leadFinished ? undefined : declineLead}>
           <div className="lead-alert-card" onClick={(e) => e.stopPropagation()}>
-            {leadPopupSent ? (
+            {leadFinished ? (
+              <>
+                <div className="lead-alert-icon">✨</div>
+                <p className="lead-alert-thanks">בהצלחה באירוע הבא שלכם!</p>
+                <p className="welcome-alert-emphasis" style={{ marginTop: 6 }}>
+                  רוצים לראות איך זה נראה בשטח? סיור 360° באולם:
+                </p>
+                <a
+                  href="https://go3d.co.il/360/yama/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="lead-alert-yes"
+                  style={{ display: "block", textDecoration: "none", marginTop: 14 }}
+                >
+                  לסיור הוירטואלי 🎥
+                </a>
+              </>
+            ) : leadPopupSent ? (
               <>
                 <div className="lead-alert-icon">🎉</div>
                 <p className="lead-alert-thanks">מעולה! ניצור איתכם קשר בקרוב</p>
+                <button
+                  type="button"
+                  className="lead-alert-yes"
+                  style={{ marginTop: 14 }}
+                  onClick={() => setLeadFinished(true)}
+                >
+                  סיים
+                </button>
               </>
             ) : (
               <>
                 <h3 className="welcome-alert-subtitle">רגע לפני שממשיכים...</h3>
                 <p className="welcome-alert-emphasis">חוגגים אירוע בקרוב? תרצו לקבל הטבה מיוחדת מאיתנו?</p>
                 <div className="lead-alert-row">
-                  <button type="button" className="lead-alert-no" onClick={declineLead}>
+                  <button
+                    type="button"
+                    className={`lead-alert-no${leadWantsEvent === false ? " active" : ""}`}
+                    onClick={() => setLeadWantsEvent(false)}
+                  >
                     לא, תודה
                   </button>
                   <button
                     type="button"
-                    className="lead-alert-yes"
-                    disabled={leadPopupSending}
-                    onClick={sendLeadFromRsvp}
+                    className={`lead-alert-yes${leadWantsEvent === true ? " active" : ""}`}
+                    onClick={() => setLeadWantsEvent(true)}
                   >
                     כן, רוצה!
                   </button>
                 </div>
+                {leadWantsEvent === true && (
+                  <div className="rsvp-field" style={{ marginTop: 16, textAlign: "center" }}>
+                    <label>מה התאריך? (לא חובה)</label>
+                    <input type="date" value={leadEventDate} onChange={(e) => setLeadEventDate(e.target.value)} />
+                  </div>
+                )}
+                {leadWantsEvent !== null && (
+                  <button
+                    type="button"
+                    className="lead-alert-yes"
+                    style={{ width: "100%", marginTop: 16 }}
+                    disabled={leadPopupSending}
+                    onClick={sendLeadFromRsvp}
+                  >
+                    שלח
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -453,6 +517,12 @@ export default function InviteView({
           </section>
         )}
       </div>
+
+      {isOwner && (
+        <a href={`/dashboard/${id}/guests`} className="owner-back-fab" title="חזרה לפאנל הניהול">
+          🛠️
+        </a>
+      )}
 
       <button type="button" className="blank-share-fab" onClick={() => setShareOpen(true)}>
         📤 שתפו
