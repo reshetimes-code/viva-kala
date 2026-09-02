@@ -187,7 +187,14 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
             </button>
           )}
 
-          {tables.length === 0 && <p className="gm-empty">עדיין לא יצרתם שולחנות.</p>}
+          {tables.length === 0 && (
+            <div className="gm-empty-tables">
+              <p className="gm-empty">עדיין לא יצרתם שולחנות.</p>
+              <button type="button" className="gm-add-table-round" onClick={() => setAddingTable(true)}>
+                הוספת שולחן
+              </button>
+            </div>
+          )}
 
           {tables.map((t) => {
             const guests = guestsForTable(t.id);

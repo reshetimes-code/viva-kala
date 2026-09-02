@@ -182,6 +182,17 @@ export default function InviteView({
       });
       const data = await res.json().catch(() => null);
       if (data?.rsvpId) setRsvpId(data.rsvpId);
+      if (attending) {
+        await Swal.fire({
+          icon: "success",
+          title: "שמרנו את פרטיך!",
+          text: "באולם יוצג לך מיקום השולחן השמור עבורך",
+          confirmButtonText: "מעולה",
+          confirmButtonColor: "#d4af7a",
+          background: "#1f2a33",
+          color: "#fff",
+        });
+      }
       setSubmitted(attending ? "yes" : "no");
       setShowLeadPopup(true);
     } finally {
@@ -401,48 +412,23 @@ export default function InviteView({
 
             <div className="rsvp-card">
               {submitted ? (
-                <div>
+                <div className="rsvp-thanks-screen">
+                  <div className="rsvp-thanks-icon">{submitted === "yes" ? "🎉" : "🙏"}</div>
                   <p className="rsvp-thanks">
-                    {submitted === "yes" ? "תודה שאישרתם הגעה! 🎉" : "תודה על התגובה 🙏"}
+                    {submitted === "yes" ? "תודה שאישרתם הגעה!" : "תודה על התגובה"}
                   </p>
-                  {headline && <p style={{ marginTop: 14, color: "#4a3f30" }}>{headline}</p>}
+                  {headline && <p className="rsvp-thanks-headline">{headline}</p>}
                   {eventDate && (
-                    <p style={{ marginTop: 8, color: "#4a3f30" }}>
+                    <p className="rsvp-thanks-date">
                       {formatEventDate(eventDate)} {eventStart && `בשעה ${eventStart}`}
                     </p>
                   )}
                   {showNavBtn && address && (
-                    <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 18 }}>
-                      <a
-                        href={wazeUrl(address)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: "inline-block",
-                          padding: "12px 22px",
-                          borderRadius: 999,
-                          background: "#33ccff",
-                          color: "#fff",
-                          fontWeight: 700,
-                          textDecoration: "none",
-                        }}
-                      >
+                    <div className="rsvp-thanks-nav-row">
+                      <a href={wazeUrl(address)} target="_blank" rel="noopener noreferrer" className="rsvp-thanks-nav-btn rsvp-thanks-waze">
                         ניווט ב-Waze
                       </a>
-                      <a
-                        href={googleMapsUrl(address)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: "inline-block",
-                          padding: "12px 22px",
-                          borderRadius: 999,
-                          background: "#4285f4",
-                          color: "#fff",
-                          fontWeight: 700,
-                          textDecoration: "none",
-                        }}
-                      >
+                      <a href={googleMapsUrl(address)} target="_blank" rel="noopener noreferrer" className="rsvp-thanks-nav-btn rsvp-thanks-maps">
                         ניווט ב-Maps
                       </a>
                     </div>
