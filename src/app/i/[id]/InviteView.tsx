@@ -301,11 +301,10 @@ export default function InviteView({
                 <h3 className="welcome-alert-subtitle">רגע לפני שממשיכים...</h3>
                 <p className="welcome-alert-emphasis">חוגגים אירוע בקרוב? תרצו לקבל הטבה מיוחדת מאיתנו?</p>
                 <div className="lead-alert-row">
-                  <button
-                    type="button"
-                    className={`lead-alert-no${leadWantsEvent === false ? " active" : ""}`}
-                    onClick={() => setLeadWantsEvent(false)}
-                  >
+                  {/* "לא" needs no follow-up step at all - straight back to
+                      the underlying thank-you screen, same as before this
+                      flow grew a date question. Only "כן" opens that. */}
+                  <button type="button" className="lead-alert-no" onClick={declineLead}>
                     לא, תודה
                   </button>
                   <button
@@ -317,21 +316,21 @@ export default function InviteView({
                   </button>
                 </div>
                 {leadWantsEvent === true && (
-                  <div className="rsvp-field" style={{ marginTop: 16, textAlign: "center" }}>
-                    <label>מה התאריך? (לא חובה)</label>
-                    <input type="date" value={leadEventDate} onChange={(e) => setLeadEventDate(e.target.value)} />
-                  </div>
-                )}
-                {leadWantsEvent !== null && (
-                  <button
-                    type="button"
-                    className="lead-alert-yes"
-                    style={{ width: "100%", marginTop: 16 }}
-                    disabled={leadPopupSending}
-                    onClick={sendLeadFromRsvp}
-                  >
-                    שלח
-                  </button>
+                  <>
+                    <div className="rsvp-field" style={{ marginTop: 16, textAlign: "center" }}>
+                      <label>מה התאריך? (לא חובה)</label>
+                      <input type="date" value={leadEventDate} onChange={(e) => setLeadEventDate(e.target.value)} />
+                    </div>
+                    <button
+                      type="button"
+                      className="lead-alert-yes"
+                      style={{ width: "100%", marginTop: 16 }}
+                      disabled={leadPopupSending}
+                      onClick={sendLeadFromRsvp}
+                    >
+                      שלחו
+                    </button>
+                  </>
                 )}
               </>
             )}
