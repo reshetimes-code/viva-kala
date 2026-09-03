@@ -1700,7 +1700,17 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   overflow: hidden; margin: 0 !important;
   overscroll-behavior: none;
   touch-action: pan-y;
+  /* Safety-net base color, not a fix for any one specific browser: dvh can
+     legitimately compute a hair differently between this fixed outer shell
+     and its 100dvh-tall children (.inv-panel / .rsvp-panel) at the exact
+     moment a phone's browser chrome is animating in/out - a real, ongoing
+     cross-browser risk, not something one CSS tweak eliminates for good.
+     Whatever color is actually correct for the currently-visible panel
+     shows through first if there's ever a sub-pixel gap, instead of
+     whatever the page's own default background happens to be. */
+  background: var(--viva-navy);
 }
+.vpager:has(.vpager-inner.show-rsvp) { background: #f5efe0; }
 .vpager-inner {
   display: flex; flex-direction: column; width: 100% !important; height: 200vh; height: 200dvh;
   transition: transform .5s cubic-bezier(.4,0,.2,1);
@@ -1709,7 +1719,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .vpager-inner.show-rsvp { transform: translateY(-100vh); transform: translateY(-100dvh); }
 
 .inv-panel {
-  height: 100vh; height: 100dvh; width: 100% !important; position: relative;
+  height: 100vh; height: 100dvh; min-height: 100dvh; width: 100% !important; position: relative;
   display: flex; flex-direction: column; overflow: hidden;
   touch-action: pan-y;
 }
@@ -1910,7 +1920,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 /* RSVP panel — cream/gold, matches the mobile screenshot */
 .rsvp-panel {
   position: relative;
-  height: 100vh; height: 100dvh; width: 100%; overflow-y: auto; overflow-x: hidden;
+  height: 100vh; height: 100dvh; min-height: 100dvh; width: 100%; overflow-y: auto; overflow-x: hidden;
   touch-action: pan-y; overscroll-behavior-x: none;
   background: radial-gradient(circle at 15% 10%, rgba(212,175,55,0.10), transparent 40%),
               radial-gradient(circle at 85% 85%, rgba(212,175,55,0.10), transparent 40%),
@@ -2067,13 +2077,23 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   from { opacity: 1; transform: translateY(0); }
   to { opacity: 0; transform: translateY(-6px); }
 }
-.lead-video-q-question, .lead-video-q-picked { animation: lead-video-q-fade-in .3s ease-out; }
+.lead-video-q-question, .lead-video-q-picked, .lead-video-q-confirm { animation: lead-video-q-fade-in .3s ease-out; }
 .lead-video-q-out { animation: lead-video-q-fade-out .3s ease-in forwards; }
 .lead-video-picked {
   margin: 0; font-weight: 800; font-size: 1.15rem; color: #1e7d3a;
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
 .lead-video-thanks { display: flex; flex-direction: column; align-items: center; }
+/* Date only - stays on screen with its own confirm button instead of
+   auto-advancing after a flash, so there's an actual chance to check the
+   picked date is right before moving on. */
+.lead-video-confirm { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.lead-video-confirm .lead-video-picked { color: #4a3f30; font-size: 1.05rem; }
+.lead-video-confirm-btn {
+  border: none; border-radius: 999px; padding: 10px 26px; font-weight: 800; font-size: .92rem;
+  font-family: 'Assistant', sans-serif; cursor: pointer; color: #fff;
+  background: linear-gradient(135deg, #1c1c1e, #2f2f32); box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+}
 
 /* --- 360 virtual tour, opened in-page instead of navigating away --- */
 .tour-modal-overlay {

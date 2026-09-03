@@ -197,11 +197,15 @@ export default function InviteView({
   // The 3-question sequence (date -> event type -> venue) shown crossfading
   // in place, one row, next to the autoplaying video - see the render below
   // for how "picked"/"out" drive the fade. "question" = showing the input,
-  // "picked" = briefly showing the chosen value as plain text (date/type
-  // only - venue is free text, so it skips straight past this phase),
-  // "out" = fading out right before the next question fades in.
+  // "picked" = briefly showing the chosen value as plain text (event type
+  // only - venue is free text and skips straight past this phase) before
+  // auto-advancing, "confirm" = date only - the picked date stays on
+  // screen with its own "אישור" button instead of auto-advancing, since a
+  // flash that's gone in under a second didn't give anyone a real chance
+  // to check they picked the right date, "out" = fading out right before
+  // the next question fades in.
   const [leadStep, setLeadStep] = useState<0 | 1 | 2>(0);
-  const [leadStepPhase, setLeadStepPhase] = useState<"question" | "picked" | "out">("question");
+  const [leadStepPhase, setLeadStepPhase] = useState<"question" | "picked" | "confirm" | "out">("question");
   const [leadPickedText, setLeadPickedText] = useState("");
 
   function advanceLeadStep(pickedLabel: string) {
@@ -218,7 +222,17 @@ export default function InviteView({
 
   function handleLeadDatePicked(value: string) {
     setLeadEventDate(value);
-    if (value) advanceLeadStep(formatEventDate(value));
+    if (!value) return;
+    setLeadPickedText(formatEventDate(value));
+    setLeadStepPhase("confirm");
+  }
+
+  function confirmLeadDate() {
+    setLeadStepPhase("out");
+    setTimeout(() => {
+      setLeadStep(1);
+      setLeadStepPhase("question");
+    }, 300);
   }
 
   function handleLeadTypePicked(value: string) {
@@ -440,7 +454,14 @@ export default function InviteView({
                     </div>
                   ) : (
                     <div key={`${leadStep}-${leadStepPhase}`} className={`lead-video-q lead-video-q-${leadStepPhase}`}>
-                      {leadStepPhase === "picked" ? (
+                      {leadStepPhase === "confirm" ? (
+                        <div className="lead-video-confirm">
+                          <p className="lead-video-picked">זה התאריך? {leadPickedText}</p>
+                          <button type="button" className="lead-video-confirm-btn" onClick={confirmLeadDate}>
+                            ✓ אישור
+                          </button>
+                        </div>
+                      ) : leadStepPhase === "picked" ? (
                         <p className="lead-video-picked">✓ {leadPickedText}</p>
                       ) : leadStep === 0 ? (
                         <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
@@ -706,9 +727,15 @@ export default function InviteView({
         </a>
       )}
 
-      <button type="button" className="blank-share-fab" onClick={() => setShareOpen(true)}>
-        📤 שתפו
-      </button>
+      {/* Was always fixed at bottom-right regardless of which panel was
+          showing - on the RSVP form specifically it sat right on top of
+          the "לא" button. Hidden while the RSVP panel is open; sharing
+          isn't the point of that screen anyway. */}
+      {!showRsvp && (
+        <button type="button" className="blank-share-fab" onClick={() => setShareOpen(true)}>
+          📤 שתפו
+        </button>
+      )}
 
       <div className={`blank-share-modal${shareOpen ? " open" : ""}`} onClick={() => setShareOpen(false)}>
         <div className="blank-share-card" onClick={(e) => e.stopPropagation()}>
