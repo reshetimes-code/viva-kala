@@ -56,6 +56,7 @@ export default async function AdminLeadsPage() {
                 subtitle={new Date(l.createdAt).toLocaleString("he-IL")}
               >
                 <AdminCardRow label="טלפון" value={<span dir="ltr">{l.phone}</span>} />
+                {l.eventType && <AdminCardRow label="סוג האירוע" value={l.eventType} />}
                 {l.eventDate && (
                   <AdminCardRow
                     label="תאריך הארוע המבוקש"

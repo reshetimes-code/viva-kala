@@ -3,7 +3,7 @@ import { insertLead } from "@/lib/store";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, phone, sourceInviteId, eventDate } = await req.json();
+    const { name, phone, sourceInviteId, eventDate, eventType } = await req.json();
     if (!phone || !String(phone).trim()) {
       return NextResponse.json({ error: "נא להזין מספר טלפון" }, { status: 400 });
     }
@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
       phone: String(phone).trim(),
       sourceInviteId: sourceInviteId ?? "",
       eventDate: eventDate ?? "",
+      eventType: eventType ?? "",
     });
     return NextResponse.json({ success: true });
   } catch (err) {

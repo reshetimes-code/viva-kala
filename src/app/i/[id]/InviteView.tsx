@@ -111,6 +111,7 @@ export default function InviteView({
   // (date field never shows) - either way "שלח" below sends/finishes.
   const [leadWantsEvent, setLeadWantsEvent] = useState<boolean | null>(null);
   const [leadEventDate, setLeadEventDate] = useState("");
+  const [leadEventType, setLeadEventType] = useState("");
   const [leadFinished, setLeadFinished] = useState(false);
 
   // The "planning an event too?" cross-sell no longer asks guests to fill in
@@ -133,6 +134,7 @@ export default function InviteView({
             phone,
             sourceInviteId: id,
             eventDate: leadEventDate || "",
+            eventType: leadEventType || "",
           }),
         });
       } finally {
@@ -324,6 +326,16 @@ export default function InviteView({
                     <div className="rsvp-field" style={{ marginTop: 16, textAlign: "center" }}>
                       <label>מה התאריך? (לא חובה)</label>
                       <input type="date" value={leadEventDate} onChange={(e) => setLeadEventDate(e.target.value)} />
+                    </div>
+                    <div className="rsvp-field" style={{ marginTop: 16, textAlign: "center" }}>
+                      <label>סוג האירוע? (לא חובה)</label>
+                      <select value={leadEventType} onChange={(e) => setLeadEventType(e.target.value)}>
+                        <option value="">בחרו סוג אירוע</option>
+                        <option value="חתונה">חתונה</option>
+                        <option value="בר מצווה">בר מצווה</option>
+                        <option value="ברית">ברית</option>
+                        <option value="אחר">אחר</option>
+                      </select>
                     </div>
                     <button
                       type="button"
