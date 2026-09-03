@@ -1695,8 +1695,20 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
      "thank you" screen (still inside .rsvp-panel, same .vpager) confirm
      position:fixed is what actually closes the gap reliably: it anchors
      straight to the real viewport, immune to any ancestor's width/margin. */
+  /* position:fixed + inset:0 alone already pins all four edges exactly to
+     the real viewport - no rounding involved. An explicit height here (as
+     this used to have, height:100dvh) fights that: per the CSS spec, when
+     top/bottom AND an explicit height are all set on a fixed element, height
+     wins and 'bottom' gets silently recomputed away from 0 - so it stops
+     being guaranteed flush with the true bottom edge. Any tiny mismatch
+     between 100dvh's computed value and the actual viewport (routine while
+     the browser's URL/toolbar is mid-animation - exactly the state a guest
+     is in right after opening the link) left a sliver of unpainted page
+     background exposed at the very bottom, right behind the כן/לא buttons.
+     min-height is safe to keep - it never overrides bottom:0 the way a
+     plain height does. */
   position: fixed !important; inset: 0 !important;
-  height: 100vh; height: 100dvh; min-height: 100vh; min-height: 100dvh;
+  min-height: 100vh; min-height: 100dvh;
   width: 100vw !important; max-width: 100vw !important;
   overflow: hidden; margin: 0 !important;
   overscroll-behavior: none;
@@ -1941,7 +1953,8 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
      back-arrow) ends up clipped/inaccessible instead of just scrolled to.
      flex-start + the panel's own top padding gives the same visual
      placement without that trap. */
-  display: flex; align-items: flex-start; justify-content: center; padding: 90px 20px 40px;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 90px 20px calc(40px + env(safe-area-inset-bottom, 0px));
 }
 /* Same photo as the invite itself, softened way down behind a cream scrim
    so the white input fields/text stay perfectly legible regardless of what
@@ -2122,8 +2135,14 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .rsvp-choice-label { font-size: .82rem; color: #8a7a55; margin-top: 22px; margin-bottom: -6px; }
 .rsvp-choice-row { display: flex; gap: 14px; margin-top: 20px; }
 .rsvp-choice-btn {
-  flex: 1; padding: 16px; border-radius: 16px; border: 1px solid #d8cba8;
+  /* A plain white pill on the page's own near-white cream background read
+     as almost the same color - a visible border alone wasn't enough
+     separation. A real drop shadow (lifts it off the page) plus a
+     noticeably darker/thicker border does the job regardless of what the
+     page background happens to be. */
+  flex: 1; padding: 16px; border-radius: 16px; border: 1.5px solid #b8860b;
   background: #fff; font-weight: 700; font-size: 1.1rem; color: #4a3f30; cursor: pointer;
+  box-shadow: 0 6px 16px rgba(74,63,48,0.16);
 }
 .rsvp-choice-btn.active-yes { background: #2e7d32; color: #fff; border-color: #2e7d32; }
 .rsvp-choice-btn.active-no { background: #c62828; color: #fff; border-color: #c62828; }
