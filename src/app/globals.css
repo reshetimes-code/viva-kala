@@ -1864,14 +1864,6 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 }
 .back-to-inv-cta .pull-arrows i { color: #b8860b; font-size: 1rem; }
 .back-to-inv-label { font-size: .78rem; font-weight: 700; font-family: 'Assistant', sans-serif; }
-/* Thin separator between "צפייה בהזמנה" above and the RSVP title below -
-   an ::after on the button itself (not a separate element) so it never
-   fights the button's own centering/absolute positioning. Sits in the gap
-   before .rsvp-card's own top padding starts. */
-.back-to-inv-cta::after {
-  content: ""; position: absolute; left: 50%; bottom: -20px; transform: translateX(-50%);
-  width: 180px; height: 1px; background: rgba(20,20,20,0.15);
-}
 
 .blank-share-fab {
   position: fixed; bottom: 24px; right: 24px; z-index: 20;
@@ -1969,11 +1961,25 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    the photo looks like - continuity with the designed invite instead of
    dropping into an unrelated plain page for the RSVP step. */
 .rsvp-card { width: 100%; max-width: 380px; text-align: center; position: relative; z-index: 1; }
+/* Separator between "צפייה בהזמנה" above and the RSVP title - a real block
+   element in the card's own flow (not positioned off the button above,
+   which drifted depending on that button's own content height) so it
+   always lands in exactly the same place, right above the title. */
+.rsvp-card::before {
+  content: ""; display: block; width: 140px; height: 1.5px;
+  background: rgba(74,63,48,0.35); margin: 0 auto 22px;
+}
 /* Heavily blurred so it reads as a soft floral/color texture at the edges -
    not the actual name/date text ghosting through legibly behind the form,
    which is what a lighter blur here used to look like. */
 .rsvp-bg-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; filter: blur(18px) saturate(1.1); transform: scale(1.1); }
-.rsvp-bg-scrim { position: absolute; inset: 0; z-index: 0; background: rgba(245,239,224,0.9); }
+/* Fully opaque now, not 90% - the 10% that used to show through let the
+   actual event photo's own colors (a blue tint, on this invite) bleed into
+   the RSVP background, especially wherever the blurred photo was locally
+   darker/more saturated - that's what was reading as a "torn"/discolored
+   patch. Solid beige, matching .rsvp-panel's own flat color, guarantees a
+   completely uniform background regardless of what the photo looks like. */
+.rsvp-bg-scrim { position: absolute; inset: 0; z-index: 0; background: #f5efe0; }
 .rsvp-title {
   font-family: 'Assistant', sans-serif; font-weight: 800;
   font-size: clamp(1.7rem, 7vw, 2.2rem); color: #b8860b; margin: 0 0 8px; line-height: 1.3;
