@@ -139,6 +139,7 @@ export default function InviteView({
   // tied to the original tap.
   const ytPlayerRef = useRef<{
     playVideo: () => void;
+    pauseVideo: () => void;
     unMute: () => void;
     setVolume: (v: number) => void;
   } | null>(null);
@@ -194,6 +195,20 @@ export default function InviteView({
       // own controls still let the guest press play manually.
     }
   }
+
+  // "סיים" on the "נציג מטעם האולם..." screen - moving to leadFinished
+  // visually collapses the video wrap, but the player itself keeps
+  // playing (audio and all) unless explicitly told to stop - it's the
+  // same persistent player instance the whole time, never unmounted.
+  function finishLeadFlow() {
+    try {
+      ytPlayerRef.current?.pauseVideo();
+    } catch {
+      // Nothing to pause - fine.
+    }
+    setLeadFinished(true);
+  }
+
   // The 3-question sequence (date -> event type -> venue) shown crossfading
   // in place, one row, next to the autoplaying video - see the render below
   // for how "picked"/"out" drive the fade. "question" = showing the input,
@@ -288,6 +303,20 @@ export default function InviteView({
         icon: "warning",
         title: "חסרים פרטים",
         text: "נא למלא שם פרטי, שם משפחה וטלפון כדי לאשר הגעה",
+        confirmButtonText: "הבנתי",
+        confirmButtonColor: "#d4af7a",
+      });
+      return;
+    }
+    // The phone number is the single most important piece of data here (how
+    // the host actually reaches this guest) - not just "non-empty", it has
+    // to be a real 10-digit Israeli mobile number, matching the inline
+    // "מספר טלפון לא תקין" hint shown live under the field below.
+    if (phone.replace(/\D/g, "").length !== 10) {
+      Swal.fire({
+        icon: "warning",
+        title: "מספר טלפון לא תקין",
+        text: "נא להזין מספר טלפון תקין בן 10 ספרות (לדוגמה: 0501234567)",
         confirmButtonText: "הבנתי",
         confirmButtonColor: "#d4af7a",
       });
@@ -498,7 +527,7 @@ export default function InviteView({
                     type="button"
                     className="lead-alert-yes"
                     style={{ width: "100%", marginTop: 16 }}
-                    onClick={() => setLeadFinished(true)}
+                    onClick={finishLeadFlow}
                   >
                     סיים
                   </button>
@@ -672,6 +701,14 @@ export default function InviteView({
                       inputMode="numeric"
                       required
                     />
+                    {/* Live hint, not just a popup on submit - the phone
+                        number is the most important field here (how the
+                        host actually reaches this guest), so it's worth
+                        flagging the instant it's wrong instead of only
+                        after "כן"/"לא" is tapped. */}
+                    {phone.trim() && phone.replace(/\D/g, "").length !== 10 && (
+                      <p className="rsvp-field-error">מספר טלפון לא תקין (חייב 10 ספרות)</p>
+                    )}
                   </div>
                   <div className="rsvp-field">
                     <label>כמה מגיעים?</label>
@@ -729,13 +766,16 @@ export default function InviteView({
 
       {/* Was always fixed at bottom-right regardless of which panel was
           showing - on the RSVP form specifically it sat right on top of
-          the "לא" button. Hidden while the RSVP panel is open; sharing
-          isn't the point of that screen anyway. */}
-      {!showRsvp && (
-        <button type="button" className="blank-share-fab" onClick={() => setShareOpen(true)}>
-          📤 שתפו
-        </button>
-      )}
+          the "לא" button. Still needed on the RSVP screen too - moved to
+          the opposite top corner (clear of the back-to-invitation button
+          which sits centered) instead of being hidden. */}
+      <button
+        type="button"
+        className={`blank-share-fab${showRsvp ? " blank-share-fab-top" : ""}`}
+        onClick={() => setShareOpen(true)}
+      >
+        📤 שתפו
+      </button>
 
       <div className={`blank-share-modal${shareOpen ? " open" : ""}`} onClick={() => setShareOpen(false)}>
         <div className="blank-share-card" onClick={(e) => e.stopPropagation()}>
