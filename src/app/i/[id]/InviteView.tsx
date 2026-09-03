@@ -124,13 +124,19 @@ export default function InviteView({
   // they never opened the tour at all.
   const [tourVisited, setTourVisited] = useState(false);
   // The YouTube IFrame Player instance backing the lead-video slot -
-  // preloaded (muted, not playing) the moment the RSVP popup shows, so
-  // "כן, רוצה!" can call playVideo() synchronously inside its own click
-  // handler. That's the actual difference that makes autoplay-with-sound
-  // work on iOS Safari: a raw <iframe src="...autoplay=1"> only created at
-  // click time relies on YouTube's own page noticing the URL param and
-  // calling play() on itself later, asynchronously - by then the browser
-  // no longer considers it tied to the original tap.
+  // preloaded (muted, not playing) from the moment this page itself loads
+  // (NOT from when the RSVP popup shows - that was the bug: by the time a
+  // guest fills the whole RSVP form, submits it, reads the lead popup and
+  // taps "כן, רוצה!", the player almost certainly wasn't ready yet on a
+  // real connection, so playVideo() silently no-op'd and the guest just
+  // saw the normal paused YouTube thumbnail). Loading from page-mount gives
+  // it the maximum possible head start. So "כן, רוצה!" can call
+  // playVideo() synchronously inside its own click handler - that's the
+  // actual difference that makes autoplay-with-sound work on iOS Safari: a
+  // raw <iframe src="...autoplay=1"> only created at click time relies on
+  // YouTube's own page noticing the URL param and calling play() on itself
+  // later, asynchronously - by then the browser no longer considers it
+  // tied to the original tap.
   const ytPlayerRef = useRef<{
     playVideo: () => void;
     unMute: () => void;
@@ -138,11 +144,11 @@ export default function InviteView({
   } | null>(null);
 
   useEffect(() => {
-    if (!showLeadPopup) return;
     let cancelled = false;
 
     function createPlayer() {
       if (cancelled || ytPlayerRef.current) return;
+      if (!document.getElementById("lead-yt-player-target")) return;
       const YT = (window as unknown as { YT?: { Player: new (...args: unknown[]) => unknown } }).YT;
       if (!YT) return;
       ytPlayerRef.current = new YT.Player("lead-yt-player-target", {
@@ -173,7 +179,7 @@ export default function InviteView({
     return () => {
       cancelled = true;
     };
-  }, [showLeadPopup]);
+  }, []);
 
   // "כן, רוצה!" - the click itself is what's allowed to start playback.
   function handleWantsEventClick() {
@@ -370,28 +376,31 @@ export default function InviteView({
         </div>
       )}
 
-      {showLeadPopup && (
-        // Tapping the dark overlay outside the card used to close the whole
-        // popup (declineLead) - easy to trigger by accident on a phone, and
-        // it silently threw away whatever the guest had already answered
-        // partway through the video+questions flow. The only way to close
-        // this now is one of the explicit "לא, תודה"/"לא תודה" buttons.
-        <div className="lead-alert-overlay">
-          <div
+      {
+        // Always mounted (never a conditional && block) so the YouTube
+        // player target below exists in the DOM - and can start preloading
+        // - from the moment this page itself loads, instead of only once
+        // the RSVP is actually submitted. Visibility is a CSS class instead
+        // of React conditional rendering for exactly that reason. Tapping
+        // the dark overlay outside the card used to close the whole popup
+        // (declineLead) - easy to trigger by accident on a phone, and it
+        // silently threw away whatever the guest had already answered
+        // partway through the video+questions flow - so that's gone too:
+        // the only way to close this now is one of the explicit
+        // "לא, תודה"/"לא תודה" buttons.
+      }
+      <div className={`lead-alert-overlay${showLeadPopup ? "" : " lead-alert-overlay-hidden"}`}>
+        <div
             className={`lead-alert-card${leadWantsEvent === true ? " lead-alert-card-video" : ""}`}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Mounted for the whole lifetime of the popup (not just once
-                "כן, רוצה!" is clicked) so the YouTube IFrame Player can
-                preload in advance - collapsed to an invisible sliver until
-                the video stage. A raw <iframe src="...autoplay=1"> created
-                only at click time (the previous approach) relies on
-                YouTube's OWN page noticing the autoplay param and calling
-                play() on itself, asynchronously, disconnected from the
-                actual click - which is exactly what iOS Safari blocks.
-                Calling player.playVideo() directly, synchronously, inside
-                the click handler is the real fix - it only works reliably
-                because the player already exists by then. */}
+            {/* Mounted from page load (this whole overlay is now always in
+                the DOM - see above) so the YouTube IFrame Player can
+                preload as early as possible - collapsed to an invisible
+                sliver until the video stage. player.playVideo() is called
+                synchronously inside the "כן, רוצה!" click handler - that
+                only works reliably because the player already exists (and
+                had plenty of time to finish loading) by then. */}
             <div
               className={`lead-video-wrap${leadWantsEvent === true && !leadFinished ? "" : " lead-video-wrap-collapsed"}`}
             >
@@ -508,9 +517,9 @@ export default function InviteView({
             )}
           </div>
         </div>
-      )}
 
       {tourOpen && (
+
         <div className="tour-modal-overlay">
           <iframe
             className="tour-modal-iframe"

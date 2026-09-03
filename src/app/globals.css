@@ -1949,14 +1949,18 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 999px; border: 1px solid #d8cba8;
   background: #fff; font-size: 1rem; text-align: center; font-family: 'Assistant', sans-serif; color: #4a3f30;
 }
-/* iOS Safari's native <input type="date"> calendar-icon control doesn't
-   respect a very rounded (999px pill) border-radius - it can visibly
-   poke out past the rounded corner. A calmer radius gives it room. Only
-   used here (the lead-popup video question row) - the first place a
-   type="date" field ever used the pill-shaped .rsvp-field style; every
-   other date field in the app already uses the 12px-radius .inputs-fields
-   style instead, so nothing else needs this. */
-.lead-video-questions .rsvp-field input[type="date"] { border-radius: 16px; }
+/* iOS Safari's native <input type="date"> doesn't reliably stretch to
+   100% width/height the same way a text input does (a real WebKit sizing
+   quirk, not a border-radius issue - that was the wrong diagnosis) -
+   without -webkit-appearance:none + an explicit min-width, it can render
+   visibly smaller/narrower than the text/select fields right next to it
+   in the same row. First (and only) place in the app a type="date" field
+   ever used the pill-shaped .rsvp-field style, which is why nothing else
+   needed this. */
+.lead-video-questions .rsvp-field input[type="date"] {
+  -webkit-appearance: none; appearance: none;
+  min-width: 100%; min-height: 50px; line-height: 1.2; border-radius: 16px;
+}
 .rsvp-allergy-q { color: #b8860b; font-weight: 700; margin: 20px 0; font-size: 1.1rem; }
 
 .rsvp-stepper { display: flex; align-items: center; justify-content: center; gap: 22px; }
@@ -2003,8 +2007,15 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .lead-alert-overlay {
   position: fixed; inset: 0; z-index: 65; background: rgba(20,15,10,0.55);
   display: flex; align-items: center; justify-content: center; padding: 24px;
-  animation: landing-fade-up .3s ease-out;
+  opacity: 1; transition: opacity .25s ease;
 }
+/* Now always mounted (see InviteView) so the YouTube player inside can
+   preload from page load - shown/hidden via opacity (not display:none or
+   the old @keyframes entrance, which only plays once on a permanently-
+   mounted element) so it doesn't risk the browser throttling a hidden
+   iframe's playback readiness, and still gets a clean fade every time
+   showLeadPopup toggles on. */
+.lead-alert-overlay-hidden { opacity: 0; pointer-events: none; z-index: -1; }
 .lead-alert-card {
   background: #fff; border-radius: 22px; padding: 32px 26px 26px; max-width: 340px; width: 100%;
   text-align: center; position: relative; direction: rtl;
