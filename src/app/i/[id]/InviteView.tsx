@@ -682,7 +682,7 @@ export default function InviteView({
               ) : (
                 <>
                   <h2 className="rsvp-title">אנא אשרו הגעתכם</h2>
-                  <p className="rsvp-subtitle">ונוכל לסדר לכם מקום שמור בשולחן ✨</p>
+                  <p className="rsvp-subtitle">ונוכל לסדר לכם מקום שמור בשולחן</p>
 
                   <div className="rsvp-field">
                     <label>שם פרטי *</label>
