@@ -444,7 +444,7 @@ export default function InviteView({
                         <p className="lead-video-picked">✓ {leadPickedText}</p>
                       ) : leadStep === 0 ? (
                         <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
-                          <label>מה תאריך האירוע? (לא חובה)</label>
+                          <label>מה תאריך האירוע?</label>
                           <input type="date" value={leadEventDate} onChange={(e) => handleLeadDatePicked(e.target.value)} />
                         </div>
                       ) : leadStep === 1 ? (
