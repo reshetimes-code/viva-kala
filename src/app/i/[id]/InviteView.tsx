@@ -112,15 +112,44 @@ export default function InviteView({
   const [leadWantsEvent, setLeadWantsEvent] = useState<boolean | null>(null);
   const [leadEventDate, setLeadEventDate] = useState("");
   const [leadEventType, setLeadEventType] = useState("");
+  const [leadVenue, setLeadVenue] = useState("");
   const [leadFinished, setLeadFinished] = useState(false);
+  // The 3-question sequence (date -> event type -> venue) shown crossfading
+  // in place, one row, next to the autoplaying video - see the render below
+  // for how "picked"/"out" drive the fade. "question" = showing the input,
+  // "picked" = briefly showing the chosen value as plain text (date/type
+  // only - venue is free text, so it skips straight past this phase),
+  // "out" = fading out right before the next question fades in.
+  const [leadStep, setLeadStep] = useState<0 | 1 | 2>(0);
+  const [leadStepPhase, setLeadStepPhase] = useState<"question" | "picked" | "out">("question");
+  const [leadPickedText, setLeadPickedText] = useState("");
+
+  function advanceLeadStep(pickedLabel: string) {
+    setLeadPickedText(pickedLabel);
+    setLeadStepPhase("picked");
+    setTimeout(() => {
+      setLeadStepPhase("out");
+      setTimeout(() => {
+        setLeadStep((s) => (s < 2 ? ((s + 1) as 0 | 1 | 2) : s));
+        setLeadStepPhase("question");
+      }, 300);
+    }, 900);
+  }
+
+  function handleLeadDatePicked(value: string) {
+    setLeadEventDate(value);
+    if (value) advanceLeadStep(formatEventDate(value));
+  }
+
+  function handleLeadTypePicked(value: string) {
+    setLeadEventType(value);
+    if (value) advanceLeadStep(value);
+  }
 
   // The "planning an event too?" cross-sell no longer asks guests to fill in
   // a second form - they already gave their name and phone in the RSVP form
-  // above, so "כן" just forwards those (plus the date they add here) to the
-  // leads table. leads has no event_date column yet (adding one needs a DB
-  // migration nobody could run without touching a secret DATABASE_URL - the
-  // local Cloud SQL Auth Proxy password on file turned out to be stale), so
-  // the date rides along in the `name` field for now instead of being lost.
+  // above, so "כן" just forwards those (plus the date/type/venue collected
+  // by the video+questions step below) to the leads table.
   async function sendLeadFromRsvp() {
     if (leadWantsEvent) {
       setLeadPopupSending(true);
@@ -135,6 +164,7 @@ export default function InviteView({
             sourceInviteId: id,
             eventDate: leadEventDate || "",
             eventType: leadEventType || "",
+            eventVenue: leadVenue || "",
           }),
         });
       } finally {
@@ -268,7 +298,10 @@ export default function InviteView({
 
       {showLeadPopup && (
         <div className="lead-alert-overlay" onClick={leadFinished ? undefined : declineLead}>
-          <div className="lead-alert-card" onClick={(e) => e.stopPropagation()}>
+          <div
+            className={`lead-alert-card${leadWantsEvent === true ? " lead-alert-card-video" : ""}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             {leadFinished ? (
               <>
                 <div className="lead-alert-icon">✨</div>
@@ -302,52 +335,86 @@ export default function InviteView({
                   סיים
                 </button>
               </>
+            ) : leadWantsEvent === true ? (
+              <>
+                {/* The video is only ever mounted here, inside this branch -
+                    which only exists once the "כן, רוצה!" click below has
+                    fired setLeadWantsEvent(true). That click is what
+                    creates this iframe in the first place, which is the
+                    closest a cross-origin YouTube embed can get to
+                    inheriting the click's own "user gesture" - the actual
+                    trick that lets autoplay-with-sound work on mobile at
+                    all. It must never be mounted before that click. */}
+                <div className="lead-video-wrap">
+                  <iframe
+                    className="lead-video-iframe"
+                    src="https://www.youtube.com/embed/54P_ILj0EzM?autoplay=1&mute=0&playsinline=1&rel=0"
+                    title="סרטון היכרות"
+                    allow="autoplay; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+                <div className="lead-video-questions">
+                  <div key={`${leadStep}-${leadStepPhase}`} className={`lead-video-q lead-video-q-${leadStepPhase}`}>
+                    {leadStepPhase === "picked" ? (
+                      <p className="lead-video-picked">✓ {leadPickedText}</p>
+                    ) : leadStep === 0 ? (
+                      <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
+                        <label>מה תאריך האירוע? (לא חובה)</label>
+                        <input type="date" value={leadEventDate} onChange={(e) => handleLeadDatePicked(e.target.value)} />
+                      </div>
+                    ) : leadStep === 1 ? (
+                      <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
+                        <label>סוג האירוע? (לא חובה)</label>
+                        <select value={leadEventType} onChange={(e) => handleLeadTypePicked(e.target.value)}>
+                          <option value="">בחרו סוג אירוע</option>
+                          <option value="חתונה">חתונה</option>
+                          <option value="בר מצווה">בר מצווה</option>
+                          <option value="ברית">ברית</option>
+                          <option value="אחר">אחר</option>
+                        </select>
+                      </div>
+                    ) : (
+                      <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
+                        <label>איזה אולם? (לא חובה)</label>
+                        <input
+                          type="text"
+                          placeholder="שם האולם"
+                          value={leadVenue}
+                          onChange={(e) => setLeadVenue(e.target.value)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {leadStep === 2 && leadStepPhase === "question" && (
+                  <button
+                    type="button"
+                    className="lead-alert-yes"
+                    style={{ width: "100%", marginTop: 16 }}
+                    disabled={leadPopupSending}
+                    onClick={sendLeadFromRsvp}
+                  >
+                    שלחו
+                  </button>
+                )}
+              </>
             ) : (
               <>
                 <h3 className="welcome-alert-subtitle">רגע לפני שממשיכים...</h3>
                 <p className="welcome-alert-emphasis">חוגגים אירוע בקרוב? תרצו לקבל הטבה מיוחדת מאיתנו?</p>
                 <div className="lead-alert-row">
                   {/* "לא" needs no follow-up step at all - straight back to
-                      the underlying thank-you screen, same as before this
-                      flow grew a date question. Only "כן" opens that. */}
+                      the underlying thank-you screen. Only "כן" opens the
+                      video+questions stage above - and that click is also
+                      what's allowed to create/autoplay the video iframe. */}
                   <button type="button" className="lead-alert-no" onClick={declineLead}>
                     לא, תודה
                   </button>
-                  <button
-                    type="button"
-                    className={`lead-alert-yes${leadWantsEvent === true ? " active" : ""}`}
-                    onClick={() => setLeadWantsEvent(true)}
-                  >
+                  <button type="button" className="lead-alert-yes" onClick={() => setLeadWantsEvent(true)}>
                     כן, רוצה!
                   </button>
                 </div>
-                {leadWantsEvent === true && (
-                  <>
-                    <div className="rsvp-field" style={{ marginTop: 16, textAlign: "center" }}>
-                      <label>מה התאריך? (לא חובה)</label>
-                      <input type="date" value={leadEventDate} onChange={(e) => setLeadEventDate(e.target.value)} />
-                    </div>
-                    <div className="rsvp-field" style={{ marginTop: 16, textAlign: "center" }}>
-                      <label>סוג האירוע? (לא חובה)</label>
-                      <select value={leadEventType} onChange={(e) => setLeadEventType(e.target.value)}>
-                        <option value="">בחרו סוג אירוע</option>
-                        <option value="חתונה">חתונה</option>
-                        <option value="בר מצווה">בר מצווה</option>
-                        <option value="ברית">ברית</option>
-                        <option value="אחר">אחר</option>
-                      </select>
-                    </div>
-                    <button
-                      type="button"
-                      className="lead-alert-yes"
-                      style={{ width: "100%", marginTop: 16 }}
-                      disabled={leadPopupSending}
-                      onClick={sendLeadFromRsvp}
-                    >
-                      שלחו
-                    </button>
-                  </>
-                )}
               </>
             )}
           </div>

@@ -100,6 +100,8 @@ export interface StoredLead {
   /** What kind of event they're planning ("סוג האירוע?" in the same popup) -
    *  optional, one of a fixed short list (חתונה/בר מצווה/ברית/אחר). */
   eventType: string;
+  /** Which venue ("איזה אולם?" in the same popup) - optional, free text. */
+  eventVenue: string;
   createdAt: string;
 }
 
@@ -176,6 +178,7 @@ function rowToLead(row: any): StoredLead {
     sourceInviteId: row.source_invite_id,
     eventDate: row.event_date ?? "",
     eventType: row.event_type ?? "",
+    eventVenue: row.event_venue ?? "",
     createdAt: row.created_at.toISOString(),
   };
 }
@@ -426,8 +429,8 @@ export async function deleteTable(tableId: string, inviteId: string): Promise<bo
 // ---- Leads (from the "planning an event soon?" widget on guest invites) ----
 export async function insertLead(lead: Omit<StoredLead, "id" | "createdAt">): Promise<StoredLead> {
   const res = await getPool().query(
-    "INSERT INTO leads (name, phone, source_invite_id, event_date, event_type) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-    [lead.name, lead.phone, lead.sourceInviteId, lead.eventDate, lead.eventType]
+    "INSERT INTO leads (name, phone, source_invite_id, event_date, event_type, event_venue) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+    [lead.name, lead.phone, lead.sourceInviteId, lead.eventDate, lead.eventType, lead.eventVenue]
   );
   return rowToLead(res.rows[0]);
 }

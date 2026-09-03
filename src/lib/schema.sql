@@ -74,5 +74,6 @@ CREATE TABLE IF NOT EXISTS leads (
   source_invite_id TEXT NOT NULL DEFAULT '',
   event_date       TEXT NOT NULL DEFAULT '',
   event_type       TEXT NOT NULL DEFAULT '',
+  event_venue      TEXT NOT NULL DEFAULT '',
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );

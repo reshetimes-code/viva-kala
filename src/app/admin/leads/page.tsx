@@ -63,6 +63,7 @@ export default async function AdminLeadsPage() {
                     value={new Date(l.eventDate).toLocaleDateString("he-IL")}
                   />
                 )}
+                {l.eventVenue && <AdminCardRow label="אולם" value={l.eventVenue} />}
                 <AdminCardRow
                   label="מהזמנה"
                   value={l.sourceInviteId ? <Link href={`/i/${l.sourceInviteId}`}>{l.sourceInviteId}</Link> : "—"}

@@ -2016,6 +2016,32 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .lead-alert-yes.active { box-shadow: 0 0 0 2px #d4af7a inset, 0 12px 28px rgba(0,0,0,0.3); }
 .lead-alert-thanks { font-weight: 700; color: #1e7d3a; font-size: 1.05rem; }
 
+/* --- lead popup's video+questions stage (after "כן, רוצה!") ---
+   Wider card, video bleeding flush to the top/sides (the "half the popup"
+   video window), the cycling date/type/venue question row underneath. */
+.lead-alert-card-video { max-width: 380px; padding-bottom: 28px; }
+.lead-video-wrap {
+  margin: -32px -26px 18px; border-radius: 22px 22px 0 0; overflow: hidden;
+  aspect-ratio: 16 / 9; background: #000;
+}
+.lead-video-iframe { width: 100%; height: 100%; border: 0; display: block; }
+.lead-video-questions { min-height: 108px; display: flex; align-items: center; justify-content: center; }
+.lead-video-q { width: 100%; }
+@keyframes lead-video-q-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes lead-video-q-fade-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-6px); }
+}
+.lead-video-q-question, .lead-video-q-picked { animation: lead-video-q-fade-in .3s ease-out; }
+.lead-video-q-out { animation: lead-video-q-fade-out .3s ease-in forwards; }
+.lead-video-picked {
+  margin: 0; font-weight: 800; font-size: 1.15rem; color: #1e7d3a;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+
 .rsvp-choice-label { font-size: .82rem; color: #8a7a55; margin-top: 22px; margin-bottom: -6px; }
 .rsvp-choice-row { display: flex; gap: 14px; margin-top: 20px; }
 .rsvp-choice-btn {
