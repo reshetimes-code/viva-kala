@@ -100,7 +100,7 @@ export default function CategoryFieldsForm({
               ➕ הוספת פרטים להזמנה
             </button>
           ) : (
-            <div className="celebrate-box mt-2">
+            <div className="category-optional-fields mt-2">
               {optional.map((def) => (
                 <FieldInput
                   key={def.key}

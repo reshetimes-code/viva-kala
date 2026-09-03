@@ -37,12 +37,21 @@
    never in question again regardless of what preflight is or isn't doing. */
 *, *::before, *::after { box-sizing: border-box; }
 
-html { overflow-x: hidden; }
+/* overflow-x:hidden alone stops real horizontal overflow, but on iOS Safari
+   a full-screen fixed-position layout like the guest invite view can still
+   visually shift left/right under a horizontal swipe (elastic overscroll /
+   edge-swipe-back gesture) even with nothing actually overflowing.
+   touch-action:pan-y is the actual fix - it tells the browser this page
+   only ever handles vertical touch gestures itself, so it never hands a
+   horizontal drag to that rubber-band/navigation behavior. */
+html { overflow-x: hidden; touch-action: pan-y; overscroll-behavior-x: none; }
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: 'Heebo', Arial, Helvetica, sans-serif;
   overflow-x: hidden;
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
   max-width: 100vw;
   margin: 0; /* browsers default <body> to margin:8px - that's exactly what
                 was showing up as unwanted side gaps around a full-bleed
@@ -609,6 +618,18 @@ select.inputs-fields option { color: #111; }
   padding: 20px;
   margin-bottom: 15px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.2), 0 0 20px rgba(255,105,180,0.1);
+}
+
+/* Optional-field group inside CategoryFieldsForm - deliberately NOT the
+   padded/bordered .celebrate-box card above: that extra padding+border,
+   nested inside .category-section's own 25px padding, made every optional
+   input narrower and inset compared to the required inputs directly above
+   it, so the whole column stopped lining up. This has zero horizontal
+   padding so every input here is exactly as wide as the required ones,
+   with just a thin top divider for a light visual grouping instead. */
+.category-optional-fields {
+  padding-top: 14px;
+  border-top: 1px dashed rgba(255,255,255,0.25);
 }
 
 .btn-gradient-success {
@@ -1627,16 +1648,19 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   height: 100vh; height: 100dvh; width: 100vw !important; max-width: 100vw !important;
   overflow: hidden; margin: 0 !important;
   overscroll-behavior: none;
+  touch-action: pan-y;
 }
 .vpager-inner {
   display: flex; flex-direction: column; width: 100% !important; height: 200vh; height: 200dvh;
   transition: transform .5s cubic-bezier(.4,0,.2,1);
+  touch-action: pan-y;
 }
 .vpager-inner.show-rsvp { transform: translateY(-100vh); transform: translateY(-100dvh); }
 
 .inv-panel {
   height: 100vh; height: 100dvh; width: 100% !important; position: relative;
   display: flex; flex-direction: column; overflow: hidden;
+  touch-action: pan-y;
 }
 /* The actual image/card - a normal flex item that shrinks to make room for
    .pull-cta below it (a real sibling now, not an absolute overlay sitting
@@ -1834,7 +1858,8 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 /* RSVP panel — cream/gold, matches the mobile screenshot */
 .rsvp-panel {
   position: relative;
-  height: 100vh; height: 100dvh; width: 100%; overflow-y: auto;
+  height: 100vh; height: 100dvh; width: 100%; overflow-y: auto; overflow-x: hidden;
+  touch-action: pan-y; overscroll-behavior-x: none;
   background: radial-gradient(circle at 15% 10%, rgba(212,175,55,0.10), transparent 40%),
               radial-gradient(circle at 85% 85%, rgba(212,175,55,0.10), transparent 40%),
               #f5efe0;
