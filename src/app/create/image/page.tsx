@@ -131,6 +131,16 @@ export default function CreateInvitePage({
   // the event text to be drawn right into it - InvitePhotoCard's separate
   // text panel is skipped for those so the details never render twice.
   const [imageHasBakedText, setImageHasBakedText] = useState(!!initialData?.textStyle?.imageHasText);
+  // A snapshot of categoryFields at the exact moment the current baked-text
+  // image was generated. Editing name/date/venue/parents afterwards doesn't
+  // touch the image's actual pixels (the AI only draws what it was told at
+  // generation time) - comparing against this snapshot is how the "your
+  // edits changed the invitation" banner below knows the image is now
+  // out of sync with the form, instead of silently letting someone save an
+  // invite whose text fields don't match what guests will actually see.
+  const [bakedFieldsSnapshot, setBakedFieldsSnapshot] = useState<Record<string, string> | undefined>(
+    initialData?.textStyle?.imageHasText ? initialData?.categoryFields : undefined
+  );
   const [rawUploadImage, setRawUploadImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const aiModalRootRef = useRef<Root | null>(null);
@@ -195,6 +205,13 @@ export default function CreateInvitePage({
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  // True while categoryFields have drifted away from whatever was baked
+  // into the current AI-generated image - see bakedFieldsSnapshot above.
+  const imageIsStale =
+    imageHasBakedText &&
+    !!bakedFieldsSnapshot &&
+    JSON.stringify(categoryFields) !== JSON.stringify(bakedFieldsSnapshot);
 
   function updateCelebrant(i: number, field: keyof Celebrant, value: string) {
     setCelebrants((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
@@ -287,6 +304,10 @@ export default function CreateInvitePage({
                 setImageHasBakedText(true);
                 setTextStyle({ ...DEFAULT_TEXT_STYLE, imageHasText: true });
                 setImageDataUrl(url);
+                // The fields as of right now are exactly what was just
+                // drawn into the image - this is the "in sync" baseline the
+                // staleness check below compares future edits against.
+                setBakedFieldsSnapshot({ ...categoryFields });
                 Swal.close();
               }}
             />
@@ -334,6 +355,21 @@ export default function CreateInvitePage({
     }
     if (!imageDataUrl) {
       alertMissingField("חובה להעלות או ליצור תמונת הזמנה כדי ליצור את ההזמנה");
+      return;
+    }
+    if (imageIsStale) {
+      const { isConfirmed } = await Swal.fire({
+        icon: "warning",
+        title: "התמונה לא מעודכנת",
+        text: "שיניתם פרטים אחרי שהתמונה נוצרה - השינוי לא יופיע בהזמנה עד שתעדכנו את התמונה.",
+        confirmButtonText: "🪄 עדכון התמונה עכשיו",
+        showCancelButton: true,
+        cancelButtonText: "ביטול",
+        confirmButtonColor: "#d4af7a",
+        background: "#1f2a33",
+        color: "#fff",
+      });
+      if (isConfirmed) openAiDesigner();
       return;
     }
 
@@ -682,7 +718,20 @@ export default function CreateInvitePage({
                 <p className="upper-section-text" style={{ fontSize: 13, opacity: 0.8, textAlign: "center" }}>
                   ✨ ככה זה ייראה אצל האורחים - הכל מתעצב לבד:
                 </p>
-                <div style={{ aspectRatio: "9 / 16", maxWidth: 260, margin: "12px auto 0", borderRadius: 16, overflow: "hidden" }}>
+                {imageIsStale && (
+                  <div className="stale-image-banner">
+                    <p>⚠️ שיניתם פרטים אחרי שהתמונה נוצרה - היא עדיין מציגה את הפרטים הישנים.</p>
+                    <button type="button" className="stale-image-update-btn" onClick={openAiDesigner}>
+                      🪄 עדכון התמונה עם הפרטים החדשים
+                    </button>
+                  </div>
+                )}
+                <div
+                  style={{
+                    aspectRatio: "9 / 16", maxWidth: 260, margin: "12px auto 0", borderRadius: 16, overflow: "hidden",
+                    opacity: imageIsStale ? 0.55 : 1, filter: imageIsStale ? "grayscale(.4)" : "none",
+                  }}
+                >
                   {imageHasBakedText ? (
                     // The AI already drew the event's text into the photo
                     // itself - showing it straight, no overlay panel on top

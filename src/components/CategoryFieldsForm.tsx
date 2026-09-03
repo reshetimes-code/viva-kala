@@ -120,7 +120,14 @@ export default function CategoryFieldsForm({
 function FieldInput({ def, value, onChange }: { def: FieldDef; value: string; onChange: (v: string) => void }) {
   return (
     <div className="mt-3">
-      <label className="bottom-section-text">{def.label}</label>
+      {/* The instant there's a single character in the field, a small ✓
+          badge appears right next to its label - immediate visual proof
+          the edit registered, before the user has any reason to trust
+          that typing here actually "did" anything. */}
+      <label className="bottom-section-text field-label-row">
+        <span>{def.label}</span>
+        {value.trim() && <span className="field-saved-badge">✓ נשמר</span>}
+      </label>
       <input
         className="inputs-fields"
         type={def.type === "textarea" ? "text" : def.type}

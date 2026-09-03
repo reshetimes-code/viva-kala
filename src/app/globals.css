@@ -586,6 +586,26 @@ body {
 .upper-section-text, .bottom-section-text {
   font-weight: 600; color: #fff; margin-bottom: 8px; display: block; font-size: 1.05rem;
 }
+.field-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.field-saved-badge {
+  display: inline-flex; align-items: center; gap: 3px; font-size: .78rem; font-weight: 800;
+  color: #34d399; background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.4);
+  border-radius: 999px; padding: 2px 10px; white-space: nowrap;
+}
+
+/* Shown over the AI-generated preview once form fields have drifted away
+   from whatever the image actually has baked into its pixels - see
+   imageIsStale in create/image/page.tsx. */
+.stale-image-banner {
+  max-width: 260px; margin: 12px auto 0; text-align: center;
+  background: rgba(220,38,38,0.12); border: 1.5px solid rgba(220,38,38,0.4); border-radius: 14px;
+  padding: 12px 14px;
+}
+.stale-image-banner p { margin: 0 0 10px; color: #fecaca; font-size: .85rem; font-weight: 600; line-height: 1.5; }
+.stale-image-update-btn {
+  border: none; border-radius: 999px; padding: 10px 18px; font-weight: 800; font-size: .88rem;
+  background: linear-gradient(135deg, #d4af7a, #f0d9a8); color: #1c1c1e; cursor: pointer;
+}
 
 .inputs-fields {
   width: 100%;
