@@ -13,6 +13,14 @@ export interface TextStyle {
    *  is skipped entirely (the caller just shows the photo) so the event
    *  details never end up rendered twice. */
   imageHasText?: boolean;
+  /** The raw English prompt (before the "portrait/9:16" suffix api/ai-invite
+   *  appends server-side) that produced the current baked-text image - rides
+   *  along on the same already-flexible JSONB column as imageHasText above,
+   *  for the same reason. Lets a later field edit (see bakedFieldsSnapshot
+   *  in create/image/page.tsx) regenerate the image by substituting just the
+   *  changed Hebrew values into this same prompt, instead of sending the
+   *  user through the whole style-preference chat again for a typo fix. */
+  lastImagePrompt?: string;
 }
 
 // Used whenever a real analysis (heuristic below, or the AI-vision call

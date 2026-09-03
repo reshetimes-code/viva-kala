@@ -26,7 +26,7 @@ export default function AiDesignerChat({
 }: {
   eventCategory?: string;
   categoryFields?: Record<string, string>;
-  onGenerated: (imageDataUrl: string) => void;
+  onGenerated: (imageDataUrl: string, imagePrompt: string) => void;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [turn, setTurn] = useState<ChatTurn | null>(null);
@@ -35,6 +35,11 @@ export default function AiDesignerChat({
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  // The exact prompt that produced resultUrl - handed back to onGenerated
+  // alongside the image so a later field edit can regenerate by
+  // substituting just the changed values into this same prompt, instead of
+  // re-running the whole style-preference chat.
+  const [resultPrompt, setResultPrompt] = useState("");
   const startedRef = useRef(false);
 
   async function askChat(nextMessages: ChatMessage[]) {
@@ -78,6 +83,7 @@ export default function AiDesignerChat({
         return;
       }
       setResultUrl(data.imageDataUrl);
+      setResultPrompt(prompt);
     } catch {
       setError("שגיאת רשת - נסו שוב");
     } finally {
@@ -117,7 +123,7 @@ export default function AiDesignerChat({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={resultUrl} alt="תצוגה מקדימה שנוצרה ב-AI" className="ai-invite-result-img" />
         <div className="ai-invite-result-actions">
-          <button type="button" className="ai-invite-use-btn" onClick={() => onGenerated(resultUrl)}>
+          <button type="button" className="ai-invite-use-btn" onClick={() => onGenerated(resultUrl, resultPrompt)}>
             ✓ מושלם, נשתמש בזה
           </button>
           <button type="button" className="ai-invite-retry-btn" onClick={tweakAgain}>

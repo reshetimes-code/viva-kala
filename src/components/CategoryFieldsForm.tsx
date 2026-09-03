@@ -24,22 +24,30 @@ export default function CategoryFieldsForm({
   const optional = defs.filter((d) => !d.required);
   const [showOptional, setShowOptional] = useState(false);
 
-  // Same transient "✓ נשמר" flash as the seating page's table-assignment
-  // confirmation (gm-saved-badge) - pops in the moment a field changes,
-  // then fades back out on its own a moment later, instead of a static
-  // badge that just sits there permanently once a field has content.
+  // Same transient save confirmation as the seating page's table-assignment
+  // badge (gm-saved-badge), but in two stages so the "save" itself actually
+  // reads as an action happening, not just text appearing: a brief spinner
+  // ("שומר...") the instant a field changes, then it flips to the "✓
+  // השינוי נשמר" badge, which fades back out on its own a moment later.
   const [justSavedKey, setJustSavedKey] = useState<string | null>(null);
+  const [savePhase, setSavePhase] = useState<"saving" | "saved">("saving");
   const [saveTick, setSaveTick] = useState(0);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const doneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function setField(key: string, value: string) {
     onChange({ ...values, [key]: value });
     setJustSavedKey(key);
+    setSavePhase("saving");
     setSaveTick((t) => t + 1);
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
+    if (savingTimer.current) clearTimeout(savingTimer.current);
+    if (doneTimer.current) clearTimeout(doneTimer.current);
+    savingTimer.current = setTimeout(() => {
+      setSavePhase((cur) => (cur === "saving" ? "saved" : cur));
+    }, 450);
+    doneTimer.current = setTimeout(() => {
       setJustSavedKey((cur) => (cur === key ? null : cur));
-    }, 1600);
+    }, 450 + 1600);
   }
 
   // Dev/testing convenience only - fills every field (required + optional)
@@ -96,6 +104,7 @@ export default function CategoryFieldsForm({
           value={values[def.key] ?? ""}
           onChange={(v) => setField(def.key, v)}
           justSavedTick={justSavedKey === def.key ? saveTick : null}
+          savePhase={savePhase}
         />
       ))}
 
@@ -128,6 +137,7 @@ export default function CategoryFieldsForm({
                   value={values[def.key] ?? ""}
                   onChange={(v) => setField(def.key, v)}
                   justSavedTick={justSavedKey === def.key ? saveTick : null}
+                  savePhase={savePhase}
                 />
               ))}
             </div>
@@ -143,24 +153,36 @@ function FieldInput({
   value,
   onChange,
   justSavedTick,
+  savePhase,
 }: {
   def: FieldDef;
   value: string;
   onChange: (v: string) => void;
   /** Non-null exactly while this field is the one that just changed - its
    *  value changes on every edit (even to the same field again) so the
-   *  badge below remounts (via the `key`) and its pop-in/fade-out CSS
-   *  animation replays instead of doing nothing on an already-mounted,
-   *  already-finished-animating element. */
+   *  indicator below remounts (via the `key`) and its animation replays
+   *  instead of doing nothing on an already-mounted, already-finished
+   *  element. */
   justSavedTick: number | null;
+  /** "saving" for a brief moment right after the edit (spinner - makes the
+   *  save actually read as an action happening), then "saved" (the ✓ badge,
+   *  which fades itself out via CSS). */
+  savePhase: "saving" | "saved";
 }) {
   return (
     <div className="mt-3">
       <label className="bottom-section-text field-label-row">
         <span>{def.label}</span>
         {justSavedTick != null && (
-          <span key={justSavedTick} className="field-saved-badge">
-            ✓ נשמר
+          <span key={justSavedTick}>
+            {savePhase === "saving" ? (
+              <span className="field-saving-indicator">
+                <span className="field-saving-spinner" aria-hidden="true" />
+                שומר...
+              </span>
+            ) : (
+              <span className="field-saved-badge">✓ השינוי נשמר</span>
+            )}
           </span>
         )}
       </label>

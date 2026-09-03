@@ -141,6 +141,12 @@ export default function CreateInvitePage({
   const [bakedFieldsSnapshot, setBakedFieldsSnapshot] = useState<Record<string, string> | undefined>(
     initialData?.textStyle?.imageHasText ? initialData?.categoryFields : undefined
   );
+  // The raw prompt that produced the current baked-text image - see
+  // TextStyle.lastImagePrompt. Lets "🪄 עדכון התמונה" (below) regenerate by
+  // substituting just the changed field values into this same prompt
+  // instead of sending the user through the whole style chat again.
+  const [lastImagePrompt, setLastImagePrompt] = useState<string | undefined>(initialData?.textStyle?.lastImagePrompt);
+  const [quickUpdating, setQuickUpdating] = useState(false);
   const [rawUploadImage, setRawUploadImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const aiModalRootRef = useRef<Root | null>(null);
@@ -297,13 +303,14 @@ export default function CreateInvitePage({
             <AiDesignerChat
               eventCategory={eventCategory ?? partyType}
               categoryFields={usesCustomFields ? categoryFields : undefined}
-              onGenerated={(url) => {
+              onGenerated={(url, prompt) => {
                 // Its own prompt asked Gemini to draw the event's text right
                 // into the image - InvitePhotoCard's separate panel would
                 // just duplicate that, so it's marked here to be skipped.
                 setImageHasBakedText(true);
-                setTextStyle({ ...DEFAULT_TEXT_STYLE, imageHasText: true });
+                setTextStyle({ ...DEFAULT_TEXT_STYLE, imageHasText: true, lastImagePrompt: prompt });
                 setImageDataUrl(url);
+                setLastImagePrompt(prompt);
                 // The fields as of right now are exactly what was just
                 // drawn into the image - this is the "in sync" baseline the
                 // staleness check below compares future edits against.
@@ -319,6 +326,75 @@ export default function CreateInvitePage({
         aiModalRootRef.current = null;
       },
     });
+  }
+
+  // "🪄 עדכון התמונה" after editing a field - regenerates by substituting
+  // just the changed Hebrew values into the exact prompt that made the
+  // current image, so the result keeps the same style/colors/composition
+  // instead of sending the user through the whole style-preference chat
+  // again for, say, fixing a spelling in a name. Falls back to the full
+  // chat (openAiDesigner) when there's no prompt to start from (an invite
+  // baked before this existed) or none of the changed values could be
+  // found in it verbatim to substitute.
+  async function quickUpdateImage() {
+    if (!lastImagePrompt || !bakedFieldsSnapshot) {
+      openAiDesigner();
+      return;
+    }
+    let updatedPrompt = lastImagePrompt;
+    let changedAny = false;
+    for (const key of Object.keys(categoryFields)) {
+      const oldVal = (bakedFieldsSnapshot[key] ?? "").trim();
+      const newVal = (categoryFields[key] ?? "").trim();
+      if (!oldVal || !newVal || oldVal === newVal) continue;
+      if (updatedPrompt.includes(oldVal)) {
+        updatedPrompt = updatedPrompt.split(oldVal).join(newVal);
+        changedAny = true;
+      }
+    }
+    if (!changedAny) {
+      openAiDesigner();
+      return;
+    }
+
+    setQuickUpdating(true);
+    try {
+      const res = await fetch("/api/ai-invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: updatedPrompt }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        Swal.fire({
+          icon: "error",
+          title: "שגיאה בעדכון התמונה",
+          text: data.error || "נסו שוב",
+          confirmButtonText: "הבנתי",
+          confirmButtonColor: "#d4af7a",
+          background: "#1f2a33",
+          color: "#fff",
+        });
+        return;
+      }
+      setImageDataUrl(data.imageDataUrl);
+      setImageHasBakedText(true);
+      setTextStyle({ ...DEFAULT_TEXT_STYLE, imageHasText: true, lastImagePrompt: updatedPrompt });
+      setLastImagePrompt(updatedPrompt);
+      setBakedFieldsSnapshot({ ...categoryFields });
+    } catch {
+      Swal.fire({
+        icon: "error",
+        title: "שגיאת רשת",
+        text: "נסו שוב",
+        confirmButtonText: "הבנתי",
+        confirmButtonColor: "#d4af7a",
+        background: "#1f2a33",
+        color: "#fff",
+      });
+    } finally {
+      setQuickUpdating(false);
+    }
   }
 
   function alertMissingField(text: string) {
@@ -369,7 +445,7 @@ export default function CreateInvitePage({
         background: "#1f2a33",
         color: "#fff",
       });
-      if (isConfirmed) openAiDesigner();
+      if (isConfirmed) quickUpdateImage();
       return;
     }
 
@@ -721,8 +797,20 @@ export default function CreateInvitePage({
                 {imageIsStale && (
                   <div className="stale-image-banner">
                     <p>⚠️ שיניתם פרטים אחרי שהתמונה נוצרה - היא עדיין מציגה את הפרטים הישנים.</p>
-                    <button type="button" className="stale-image-update-btn" onClick={openAiDesigner}>
-                      🪄 עדכון התמונה עם הפרטים החדשים
+                    <button
+                      type="button"
+                      className="stale-image-update-btn"
+                      onClick={quickUpdateImage}
+                      disabled={quickUpdating}
+                    >
+                      {quickUpdating ? (
+                        <>
+                          <span className="stale-image-update-spinner" aria-hidden="true" />
+                          מעדכן את התמונה...
+                        </>
+                      ) : (
+                        "🪄 עדכון התמונה עם הפרטים החדשים"
+                      )}
                     </button>
                   </div>
                 )}
