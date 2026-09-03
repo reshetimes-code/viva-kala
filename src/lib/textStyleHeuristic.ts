@@ -13,13 +13,26 @@ export interface TextStyle {
    *  is skipped entirely (the caller just shows the photo) so the event
    *  details never end up rendered twice. */
   imageHasText?: boolean;
-  /** The raw English prompt (before the "portrait/9:16" suffix api/ai-invite
-   *  appends server-side) that produced the current baked-text image - rides
-   *  along on the same already-flexible JSONB column as imageHasText above,
-   *  for the same reason. Lets a later field edit (see bakedFieldsSnapshot
-   *  in create/image/page.tsx) regenerate the image by substituting just the
-   *  changed Hebrew values into this same prompt, instead of sending the
-   *  user through the whole style-preference chat again for a typo fix. */
+  /** The ORIGINAL raw English prompt from the very first generation for this
+   *  image - set once and never touched again. Every later "🪄 עדכון התמונה"
+   *  correction is built fresh from this same fixed base plus a single
+   *  clean correction list (see quickUpdateImage in create/image/page.tsx),
+   *  instead of stacking a new "IMPORTANT CORRECTION" block from the
+   *  previous correction each time - stacking corrections onto corrections
+   *  onto corrections (especially a pair that add then immediately undo the
+   *  same edit) is exactly what confused the model into corrupting a name
+   *  into gibberish once, so this field exists specifically to prevent a
+   *  repeat. */
+  baseImagePrompt?: string;
+  /** categoryFields exactly as they were at that same original generation -
+   *  the anchor every later correction diffs the CURRENT fields against
+   *  (not against whatever the last correction happened to change), so the
+   *  correction list sent to Gemini is always the true cumulative diff from
+   *  the original, never a contradictory edit-of-an-edit history. */
+  originalFieldsSnapshot?: Record<string, string>;
+  /** The most recent prompt actually sent (base + that one clean correction
+   *  list) - kept for reference/debugging only, never used as the base for
+   *  a future correction (baseImagePrompt above always is). */
   lastImagePrompt?: string;
 }
 

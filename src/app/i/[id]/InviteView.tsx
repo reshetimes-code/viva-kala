@@ -114,6 +114,10 @@ export default function InviteView({
   const [leadEventType, setLeadEventType] = useState("");
   const [leadVenue, setLeadVenue] = useState("");
   const [leadFinished, setLeadFinished] = useState(false);
+  // "לסיור הוירטואלי" opens the 360 tour inside an in-page iframe modal
+  // instead of navigating away (target="_blank") - guests stay on the
+  // invite; "חזור להזמנה" below just closes this modal.
+  const [tourOpen, setTourOpen] = useState(false);
   // The 3-question sequence (date -> event type -> venue) shown crossfading
   // in place, one row, next to the autoplaying video - see the render below
   // for how "picked"/"out" drive the fade. "question" = showing the input,
@@ -309,30 +313,16 @@ export default function InviteView({
                 <p className="welcome-alert-emphasis" style={{ marginTop: 6 }}>
                   רוצים לראות איך זה נראה בשטח? סיור 360° באולם:
                 </p>
-                <a
-                  href="https://go3d.co.il/360/yama/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="lead-alert-yes"
-                  style={{ display: "block", textDecoration: "none", marginTop: 14 }}
-                >
-                  לסיור הוירטואלי 🎥
-                </a>
-                <button type="button" className="lead-alert-no" style={{ width: "100%", marginTop: 10 }} onClick={declineLead}>
-                  לא תודה
-                </button>
-              </>
-            ) : leadPopupSent ? (
-              <>
-                <div className="lead-alert-icon">🎉</div>
-                <p className="lead-alert-thanks">מעולה! ניצור איתכם קשר בקרוב</p>
                 <button
                   type="button"
                   className="lead-alert-yes"
-                  style={{ marginTop: 14 }}
-                  onClick={() => setLeadFinished(true)}
+                  style={{ display: "block", width: "100%", marginTop: 14 }}
+                  onClick={() => setTourOpen(true)}
                 >
-                  סיים
+                  לסיור הוירטואלי 🎥
+                </button>
+                <button type="button" className="lead-alert-no" style={{ width: "100%", marginTop: 10 }} onClick={declineLead}>
+                  לא תודה
                 </button>
               </>
             ) : leadWantsEvent === true ? (
@@ -344,59 +334,84 @@ export default function InviteView({
                     closest a cross-origin YouTube embed can get to
                     inheriting the click's own "user gesture" - the actual
                     trick that lets autoplay-with-sound work on mobile at
-                    all. It must never be mounted before that click. */}
+                    all. It must never be mounted before that click. Stays
+                    mounted (and playing) through both the question-cycling
+                    below AND the "thank you" message once sent - it only
+                    unmounts (stops) when "סיים" moves on to leadFinished,
+                    which is a completely separate branch with no video. */}
                 <div className="lead-video-wrap">
                   <iframe
                     className="lead-video-iframe"
-                    src="https://www.youtube.com/embed/54P_ILj0EzM?autoplay=1&mute=0&playsinline=1&rel=0"
+                    src="https://www.youtube.com/embed/XRxZVb2xZDs?autoplay=1&mute=0&playsinline=1&rel=0"
                     title="סרטון היכרות"
                     allow="autoplay; encrypted-media; picture-in-picture"
                     allowFullScreen
                   />
                 </div>
                 <div className="lead-video-questions">
-                  <div key={`${leadStep}-${leadStepPhase}`} className={`lead-video-q lead-video-q-${leadStepPhase}`}>
-                    {leadStepPhase === "picked" ? (
-                      <p className="lead-video-picked">✓ {leadPickedText}</p>
-                    ) : leadStep === 0 ? (
-                      <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
-                        <label>מה תאריך האירוע? (לא חובה)</label>
-                        <input type="date" value={leadEventDate} onChange={(e) => handleLeadDatePicked(e.target.value)} />
+                  {leadPopupSent ? (
+                    <div className="lead-video-q lead-video-q-question">
+                      <div className="lead-video-thanks">
+                        <div className="lead-alert-icon" style={{ marginBottom: 4 }}>🎉</div>
+                        <p className="lead-alert-thanks">נציג מטעם האולם יצור קשר בקרוב...</p>
                       </div>
-                    ) : leadStep === 1 ? (
-                      <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
-                        <label>סוג האירוע? (לא חובה)</label>
-                        <select value={leadEventType} onChange={(e) => handleLeadTypePicked(e.target.value)}>
-                          <option value="">בחרו סוג אירוע</option>
-                          <option value="חתונה">חתונה</option>
-                          <option value="בר מצווה">בר מצווה</option>
-                          <option value="ברית">ברית</option>
-                          <option value="אחר">אחר</option>
-                        </select>
-                      </div>
-                    ) : (
-                      <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
-                        <label>איזה אולם? (לא חובה)</label>
-                        <input
-                          type="text"
-                          placeholder="שם האולם"
-                          value={leadVenue}
-                          onChange={(e) => setLeadVenue(e.target.value)}
-                        />
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div key={`${leadStep}-${leadStepPhase}`} className={`lead-video-q lead-video-q-${leadStepPhase}`}>
+                      {leadStepPhase === "picked" ? (
+                        <p className="lead-video-picked">✓ {leadPickedText}</p>
+                      ) : leadStep === 0 ? (
+                        <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
+                          <label>מה תאריך האירוע? (לא חובה)</label>
+                          <input type="date" value={leadEventDate} onChange={(e) => handleLeadDatePicked(e.target.value)} />
+                        </div>
+                      ) : leadStep === 1 ? (
+                        <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
+                          <label>סוג האירוע? (לא חובה)</label>
+                          <select value={leadEventType} onChange={(e) => handleLeadTypePicked(e.target.value)}>
+                            <option value="">בחרו סוג אירוע</option>
+                            <option value="חתונה">חתונה</option>
+                            <option value="בר מצווה">בר מצווה</option>
+                            <option value="ברית">ברית</option>
+                            <option value="אחר">אחר</option>
+                          </select>
+                        </div>
+                      ) : (
+                        <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
+                          <label>איזה אולם? (לא חובה)</label>
+                          <input
+                            type="text"
+                            placeholder="שם האולם"
+                            value={leadVenue}
+                            onChange={(e) => setLeadVenue(e.target.value)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                {leadStep === 2 && leadStepPhase === "question" && (
+                {leadPopupSent ? (
                   <button
                     type="button"
                     className="lead-alert-yes"
                     style={{ width: "100%", marginTop: 16 }}
-                    disabled={leadPopupSending}
-                    onClick={sendLeadFromRsvp}
+                    onClick={() => setLeadFinished(true)}
                   >
-                    שלחו
+                    סיים
                   </button>
+                ) : (
+                  leadStep === 2 &&
+                  leadStepPhase === "question" && (
+                    <button
+                      type="button"
+                      className="lead-alert-yes"
+                      style={{ width: "100%", marginTop: 16 }}
+                      disabled={leadPopupSending}
+                      onClick={sendLeadFromRsvp}
+                    >
+                      שלחו
+                    </button>
+                  )
                 )}
               </>
             ) : (
@@ -418,6 +433,21 @@ export default function InviteView({
               </>
             )}
           </div>
+        </div>
+      )}
+
+      {tourOpen && (
+        <div className="tour-modal-overlay">
+          <iframe
+            className="tour-modal-iframe"
+            src="https://go3d.co.il/360/yama/"
+            title="סיור וירטואלי 360°"
+            allow="accelerometer; gyroscope; fullscreen"
+            allowFullScreen
+          />
+          <button type="button" className="tour-modal-back-btn" onClick={() => setTourOpen(false)}>
+            ← חזור להזמנה
+          </button>
         </div>
       )}
 
@@ -490,6 +520,7 @@ export default function InviteView({
                 <i className="a1">▲</i>
                 <i className="a2">▲</i>
               </span>
+              <span className="back-to-inv-label">צפייה בהזמנה</span>
             </button>
 
             <div className="rsvp-card">

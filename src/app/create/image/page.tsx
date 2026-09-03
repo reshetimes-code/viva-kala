@@ -141,11 +141,19 @@ export default function CreateInvitePage({
   const [bakedFieldsSnapshot, setBakedFieldsSnapshot] = useState<Record<string, string> | undefined>(
     initialData?.textStyle?.imageHasText ? initialData?.categoryFields : undefined
   );
-  // The raw prompt that produced the current baked-text image - see
-  // TextStyle.lastImagePrompt. Lets "🪄 עדכון התמונה" (below) regenerate by
-  // substituting just the changed field values into this same prompt
-  // instead of sending the user through the whole style chat again.
-  const [lastImagePrompt, setLastImagePrompt] = useState<string | undefined>(initialData?.textStyle?.lastImagePrompt);
+  // The FIXED anchor a correction is always built from - the very first
+  // prompt/fields for this image, set once and never touched again. Every
+  // "🪄 עדכון התמונה" diffs the current fields against originalFieldsSnapshot
+  // (not against whatever a previous correction happened to change) and
+  // sends baseImagePrompt + one clean correction list - never a correction
+  // stacked on top of a previous correction. Falls back to the older
+  // lastImagePrompt field for invites saved before this existed.
+  const [baseImagePrompt, setBaseImagePrompt] = useState<string | undefined>(
+    initialData?.textStyle?.baseImagePrompt ?? initialData?.textStyle?.lastImagePrompt
+  );
+  const [originalFieldsSnapshot, setOriginalFieldsSnapshot] = useState<Record<string, string> | undefined>(
+    initialData?.textStyle?.originalFieldsSnapshot ?? (initialData?.textStyle?.imageHasText ? initialData?.categoryFields : undefined)
+  );
   const [quickUpdating, setQuickUpdating] = useState(false);
   const [rawUploadImage, setRawUploadImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -308,13 +316,23 @@ export default function CreateInvitePage({
                 // into the image - InvitePhotoCard's separate panel would
                 // just duplicate that, so it's marked here to be skipped.
                 setImageHasBakedText(true);
-                setTextStyle({ ...DEFAULT_TEXT_STYLE, imageHasText: true, lastImagePrompt: prompt });
+                const fieldsNow = { ...categoryFields };
+                setTextStyle({
+                  ...DEFAULT_TEXT_STYLE,
+                  imageHasText: true,
+                  baseImagePrompt: prompt,
+                  originalFieldsSnapshot: fieldsNow,
+                  lastImagePrompt: prompt,
+                });
                 setImageDataUrl(url);
-                setLastImagePrompt(prompt);
-                // The fields as of right now are exactly what was just
-                // drawn into the image - this is the "in sync" baseline the
-                // staleness check below compares future edits against.
-                setBakedFieldsSnapshot({ ...categoryFields });
+                // This is a brand-new base image (whether it's the very
+                // first one, or the user picked "🔄 יצירה מחדש" to start
+                // over) - both anchors reset to right now, same as the
+                // "in sync" baseline the staleness check below compares
+                // future edits against.
+                setBaseImagePrompt(prompt);
+                setOriginalFieldsSnapshot(fieldsNow);
+                setBakedFieldsSnapshot(fieldsNow);
                 Swal.close();
               }}
             />
@@ -329,41 +347,47 @@ export default function CreateInvitePage({
   }
 
   // "🪄 עדכון התמונה" after editing a field - regenerates in ONE direct call,
-  // no chat, no questions. Earlier this tried to literally find-and-replace
-  // the old value inside the saved prompt text, and silently fell back to
-  // the whole style-preference chat whenever that exact substring wasn't
-  // found (e.g. the AI phrased the name slightly differently in its own
-  // prompt) - which is exactly the "it just sent me back to the questions"
-  // bug this replaces. Now it always tells Gemini directly, in plain
-  // English, exactly which fields changed to what - Gemini finds the right
-  // text in its own design semantically instead of needing a literal
-  // string match - and only the full chat (openAiDesigner) is used when
-  // there's no saved prompt to correct at all (an invite baked before this
-  // existed).
+  // no chat, no questions. Always built from the FIXED baseImagePrompt/
+  // originalFieldsSnapshot (never from a previous correction) - a real bug
+  // found in production: the earlier version kept appending a new
+  // "IMPORTANT CORRECTION" block onto whatever the previous correction had
+  // already produced, and a quick add-then-undo edit (a stray character
+  // typed and immediately deleted) became TWO contradictory correction
+  // blocks stacked on each other ("change X to Y" ... "change Y back to
+  // X") - which is exactly what corrupted a name into gibberish in the
+  // generated image. Diffing against the one original snapshot instead
+  // means the correction list sent to Gemini is always the true, current,
+  // non-contradictory cumulative diff - never edit-of-an-edit history.
   async function quickUpdateImage() {
-    if (!lastImagePrompt || !bakedFieldsSnapshot) {
+    if (!baseImagePrompt || !originalFieldsSnapshot) {
       openAiDesigner();
       return;
     }
     const defs = eventCategory ? CATEGORY_FIELD_DEFS[eventCategory] ?? [] : [];
     const corrections: string[] = [];
     for (const key of Object.keys(categoryFields)) {
-      const oldVal = (bakedFieldsSnapshot[key] ?? "").trim();
+      const oldVal = (originalFieldsSnapshot[key] ?? "").trim();
       const newVal = (categoryFields[key] ?? "").trim();
       if (!newVal || oldVal === newVal) continue;
       const label = defs.find((d) => d.key === key)?.label.replace(/\s*\(לא חובה\)\s*$/, "") ?? key;
       corrections.push(
         oldVal
-          ? `The "${label}" text currently reads "${oldVal}" - change it to "${newVal}".`
-          : `Add the "${label}" text: "${newVal}".`
+          ? `The "${label}" text must read exactly "${newVal}" (not "${oldVal}").`
+          : `Add the "${label}" text, exactly: "${newVal}".`
       );
     }
-    if (corrections.length === 0) return; // nothing actually changed since the last generation
+    if (corrections.length === 0) {
+      // Fields are back to exactly what they were at the original
+      // generation - the base prompt alone already matches, nothing to ask
+      // Gemini to change.
+      setBakedFieldsSnapshot({ ...categoryFields });
+      return;
+    }
 
     const updatedPrompt = [
-      lastImagePrompt,
+      baseImagePrompt,
       "",
-      "IMPORTANT CORRECTION: regenerate this exact same finished invitation design - identical style, colors, layout, composition, background, typography - but with these specific text corrections, nothing else changed:",
+      "IMPORTANT CORRECTION: regenerate this exact same finished invitation design - identical style, colors, layout, composition, background, typography - but with these specific text corrections, nothing else changed. Render every Hebrew word with perfect, exact spelling - check each one character by character against the quoted text before finalizing:",
       ...corrections,
     ].join("\n");
 
@@ -389,8 +413,15 @@ export default function CreateInvitePage({
       }
       setImageDataUrl(data.imageDataUrl);
       setImageHasBakedText(true);
-      setTextStyle({ ...DEFAULT_TEXT_STYLE, imageHasText: true, lastImagePrompt: updatedPrompt });
-      setLastImagePrompt(updatedPrompt);
+      // baseImagePrompt/originalFieldsSnapshot deliberately stay untouched -
+      // only the "is the preview in sync" tracking moves forward.
+      setTextStyle((prev) => ({
+        ...(prev ?? DEFAULT_TEXT_STYLE),
+        imageHasText: true,
+        baseImagePrompt,
+        originalFieldsSnapshot,
+        lastImagePrompt: updatedPrompt,
+      }));
       setBakedFieldsSnapshot({ ...categoryFields });
     } catch {
       Swal.fire({
@@ -578,7 +609,14 @@ export default function CreateInvitePage({
           {eventCategory && (
           <>
           {usesCustomFields ? (
-            <CategoryFieldsForm category={eventCategory} values={categoryFields} onChange={setCategoryFields} />
+            <CategoryFieldsForm
+              category={eventCategory}
+              values={categoryFields}
+              onChange={setCategoryFields}
+              imageIsStale={imageIsStale}
+              quickUpdating={quickUpdating}
+              onUpdateImage={quickUpdateImage}
+            />
           ) : (
           <>
           {/* Basic info */}
@@ -761,8 +799,6 @@ export default function CreateInvitePage({
 
           {/* Image */}
           <div className="category-section media-section">
-            <h3 className="category-title">🖼 איך תרצו לעצב את ההזמנה</h3>
-
             <input
               ref={fileInputRef}
               type="file"
@@ -804,26 +840,10 @@ export default function CreateInvitePage({
                 <p className="upper-section-text" style={{ fontSize: 13, opacity: 0.8, textAlign: "center" }}>
                   ✨ ככה זה ייראה אצל האורחים - הכל מתעצב לבד:
                 </p>
-                {imageIsStale && (
-                  <div className="stale-image-banner">
-                    <p>⚠️ שיניתם פרטים אחרי שהתמונה נוצרה - היא עדיין מציגה את הפרטים הישנים.</p>
-                    <button
-                      type="button"
-                      className="stale-image-update-btn"
-                      onClick={quickUpdateImage}
-                      disabled={quickUpdating}
-                    >
-                      {quickUpdating ? (
-                        <>
-                          <span className="stale-image-update-spinner" aria-hidden="true" />
-                          מעדכן את התמונה...
-                        </>
-                      ) : (
-                        "🪄 עדכון התמונה עם הפרטים החדשים"
-                      )}
-                    </button>
-                  </div>
-                )}
+                {/* The "⚠️ עדכון התמונה" banner itself now lives inside
+                    CategoryFieldsForm (right by the fields that go stale) -
+                    this preview just keeps the dimmed/desaturated look so
+                    it's visually obvious the image shown here is outdated. */}
                 <div
                   style={{
                     aspectRatio: "9 / 16", maxWidth: 260, margin: "12px auto 0", borderRadius: 16, overflow: "hidden",

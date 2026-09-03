@@ -14,10 +14,19 @@ export default function CategoryFieldsForm({
   category,
   values,
   onChange,
+  imageIsStale,
+  quickUpdating,
+  onUpdateImage,
 }: {
   category: EventCategory;
   values: Record<string, string>;
   onChange: (values: Record<string, string>) => void;
+  /** True once a field here has drifted from what's actually baked into the
+   *  AI-generated image - shows the "⚠️ עדכון התמונה" banner below, right
+   *  in this form, instead of only down by the image preview. */
+  imageIsStale?: boolean;
+  quickUpdating?: boolean;
+  onUpdateImage?: () => void;
 }) {
   const defs = CATEGORY_FIELD_DEFS[category] ?? [];
   const required = defs.filter((d) => d.required);
@@ -121,9 +130,10 @@ export default function CategoryFieldsForm({
                 background: "#dc2626",
                 color: "#fff",
                 fontWeight: 700,
-                fontSize: "1.4rem",
-                padding: "18px 27px",
+                fontSize: ".95rem",
+                padding: "10px 20px",
                 cursor: "pointer",
+                whiteSpace: "nowrap",
               }}
             >
               ➕ הוספת פרטים להזמנה
@@ -142,6 +152,22 @@ export default function CategoryFieldsForm({
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {imageIsStale && (
+        <div className="stale-image-banner">
+          <p>⚠️ שיניתם פרטים אחרי שהתמונה נוצרה - היא עדיין מציגה את הפרטים הישנים.</p>
+          <button type="button" className="stale-image-update-btn" onClick={onUpdateImage} disabled={quickUpdating}>
+            {quickUpdating ? (
+              <>
+                <span className="stale-image-update-spinner" aria-hidden="true" />
+                מעדכן את התמונה...
+              </>
+            ) : (
+              "🪄 עדכון התמונה עם הפרטים החדשים"
+            )}
+          </button>
         </div>
       )}
     </div>

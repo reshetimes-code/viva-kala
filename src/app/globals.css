@@ -1835,11 +1835,17 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 
 .back-to-inv-cta {
   position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
-  z-index: 5; background: none; border: none; cursor: pointer;
-  padding: 10px 22px; display: flex; flex-direction: column; align-items: center;
+  z-index: 5; cursor: pointer;
+  padding: 6px 18px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px;
   color: #b8860b;
+  /* Was fully transparent (no background/border) with only the bouncing
+     arrows and no label - read as decorative motion, not an actual button.
+     A soft pill + a text label give it real clickable affordance. */
+  background: rgba(255,255,255,0.85); border: 1px solid rgba(184,134,11,0.35);
+  border-radius: 999px; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
 }
 .back-to-inv-cta .pull-arrows i { color: #b8860b; font-size: 1rem; }
+.back-to-inv-label { font-size: .78rem; font-weight: 700; font-family: 'Assistant', sans-serif; }
 
 .blank-share-fab {
   position: fixed; bottom: 24px; right: 24px; z-index: 20;
@@ -2019,7 +2025,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 /* --- lead popup's video+questions stage (after "כן, רוצה!") ---
    Wider card, video bleeding flush to the top/sides (the "half the popup"
    video window), the cycling date/type/venue question row underneath. */
-.lead-alert-card-video { max-width: 380px; padding-bottom: 28px; }
+.lead-alert-card-video { max-width: 460px; padding-bottom: 28px; }
 .lead-video-wrap {
   margin: -32px -26px 18px; border-radius: 22px 22px 0 0; overflow: hidden;
   aspect-ratio: 16 / 9; background: #000;
@@ -2040,6 +2046,21 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .lead-video-picked {
   margin: 0; font-weight: 800; font-size: 1.15rem; color: #1e7d3a;
   display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.lead-video-thanks { display: flex; flex-direction: column; align-items: center; }
+
+/* --- 360 virtual tour, opened in-page instead of navigating away --- */
+.tour-modal-overlay {
+  position: fixed; inset: 0; z-index: 80; background: #000;
+  display: flex; flex-direction: column; animation: landing-fade-up .25s ease-out;
+}
+.tour-modal-iframe { flex: 1; width: 100%; border: 0; }
+.tour-modal-back-btn {
+  flex: none; width: 100%; box-sizing: border-box;
+  padding: 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  border: none; border-top: 1px solid rgba(255,255,255,0.15);
+  background: #1c1c1e; color: #d4af7a; font-weight: 700; font-size: 1rem;
+  cursor: pointer; font-family: 'Assistant', sans-serif;
 }
 
 .rsvp-choice-label { font-size: .82rem; color: #8a7a55; margin-top: 22px; margin-bottom: -6px; }
