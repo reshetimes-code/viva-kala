@@ -587,10 +587,20 @@ body {
   font-weight: 600; color: #fff; margin-bottom: 8px; display: block; font-size: 1.05rem;
 }
 .field-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+/* Same pop-in/fade-out confirmation as the seating page's table-assignment
+   badge (.gm-saved-badge / @keyframes gm-saved-fade) - reused here so every
+   "your edit was registered" moment in the app looks and feels the same. */
+@keyframes field-saved-fade {
+  0% { opacity: 0; transform: translateY(-4px); }
+  15% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
 .field-saved-badge {
   display: inline-flex; align-items: center; gap: 3px; font-size: .78rem; font-weight: 800;
   color: #34d399; background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.4);
   border-radius: 999px; padding: 2px 10px; white-space: nowrap;
+  animation: field-saved-fade 1.6s ease forwards;
 }
 
 /* Shown over the AI-generated preview once form fields have drifted away

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CATEGORY_FIELD_DEFS, type FieldDef } from "@/lib/categoryFields";
 import type { EventCategory } from "@/lib/eventCategories";
 
@@ -24,8 +24,22 @@ export default function CategoryFieldsForm({
   const optional = defs.filter((d) => !d.required);
   const [showOptional, setShowOptional] = useState(false);
 
+  // Same transient "✓ נשמר" flash as the seating page's table-assignment
+  // confirmation (gm-saved-badge) - pops in the moment a field changes,
+  // then fades back out on its own a moment later, instead of a static
+  // badge that just sits there permanently once a field has content.
+  const [justSavedKey, setJustSavedKey] = useState<string | null>(null);
+  const [saveTick, setSaveTick] = useState(0);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   function setField(key: string, value: string) {
     onChange({ ...values, [key]: value });
+    setJustSavedKey(key);
+    setSaveTick((t) => t + 1);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      setJustSavedKey((cur) => (cur === key ? null : cur));
+    }, 1600);
   }
 
   // Dev/testing convenience only - fills every field (required + optional)
@@ -76,7 +90,13 @@ export default function CategoryFieldsForm({
       </button>
 
       {required.map((def) => (
-        <FieldInput key={def.key} def={def} value={values[def.key] ?? ""} onChange={(v) => setField(def.key, v)} />
+        <FieldInput
+          key={def.key}
+          def={def}
+          value={values[def.key] ?? ""}
+          onChange={(v) => setField(def.key, v)}
+          justSavedTick={justSavedKey === def.key ? saveTick : null}
+        />
       ))}
 
       {optional.length > 0 && (
@@ -107,6 +127,7 @@ export default function CategoryFieldsForm({
                   def={def}
                   value={values[def.key] ?? ""}
                   onChange={(v) => setField(def.key, v)}
+                  justSavedTick={justSavedKey === def.key ? saveTick : null}
                 />
               ))}
             </div>
@@ -117,16 +138,31 @@ export default function CategoryFieldsForm({
   );
 }
 
-function FieldInput({ def, value, onChange }: { def: FieldDef; value: string; onChange: (v: string) => void }) {
+function FieldInput({
+  def,
+  value,
+  onChange,
+  justSavedTick,
+}: {
+  def: FieldDef;
+  value: string;
+  onChange: (v: string) => void;
+  /** Non-null exactly while this field is the one that just changed - its
+   *  value changes on every edit (even to the same field again) so the
+   *  badge below remounts (via the `key`) and its pop-in/fade-out CSS
+   *  animation replays instead of doing nothing on an already-mounted,
+   *  already-finished-animating element. */
+  justSavedTick: number | null;
+}) {
   return (
     <div className="mt-3">
-      {/* The instant there's a single character in the field, a small ✓
-          badge appears right next to its label - immediate visual proof
-          the edit registered, before the user has any reason to trust
-          that typing here actually "did" anything. */}
       <label className="bottom-section-text field-label-row">
         <span>{def.label}</span>
-        {value.trim() && <span className="field-saved-badge">✓ נשמר</span>}
+        {justSavedTick != null && (
+          <span key={justSavedTick} className="field-saved-badge">
+            ✓ נשמר
+          </span>
+        )}
       </label>
       <input
         className="inputs-fields"
