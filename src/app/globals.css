@@ -1835,14 +1835,9 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 
 .back-to-inv-cta {
   position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
-  z-index: 5; cursor: pointer;
+  z-index: 5; cursor: pointer; background: none; border: none;
   padding: 6px 18px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px;
   color: #b8860b;
-  /* Was fully transparent (no background/border) with only the bouncing
-     arrows and no label - read as decorative motion, not an actual button.
-     A soft pill + a text label give it real clickable affordance. */
-  background: rgba(255,255,255,0.85); border: 1px solid rgba(184,134,11,0.35);
-  border-radius: 999px; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
 }
 .back-to-inv-cta .pull-arrows i { color: #b8860b; font-size: 1rem; }
 .back-to-inv-label { font-size: .78rem; font-weight: 700; font-family: 'Assistant', sans-serif; }
@@ -1941,7 +1936,12 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .rsvp-bg-scrim { position: absolute; inset: 0; z-index: 0; background: rgba(245,239,224,0.9); }
 .rsvp-title {
   font-family: 'Assistant', sans-serif; font-weight: 800;
-  font-size: clamp(1.7rem, 7vw, 2.2rem); color: #b8860b; margin: 0 0 30px; line-height: 1.3;
+  font-size: clamp(1.7rem, 7vw, 2.2rem); color: #b8860b; margin: 0 0 8px; line-height: 1.3;
+}
+.rsvp-subtitle {
+  font-family: 'Assistant', sans-serif; font-weight: 600;
+  font-size: clamp(.95rem, 3.6vw, 1.08rem); color: #4a3f30; opacity: .85;
+  margin: 0 0 26px; line-height: 1.5;
 }
 .rsvp-field { margin-bottom: 20px; text-align: right; }
 .rsvp-field label { display: block; font-weight: 700; color: #4a3f30; margin-bottom: 8px; }
@@ -1949,6 +1949,14 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 999px; border: 1px solid #d8cba8;
   background: #fff; font-size: 1rem; text-align: center; font-family: 'Assistant', sans-serif; color: #4a3f30;
 }
+/* iOS Safari's native <input type="date"> calendar-icon control doesn't
+   respect a very rounded (999px pill) border-radius - it can visibly
+   poke out past the rounded corner. A calmer radius gives it room. Only
+   used here (the lead-popup video question row) - the first place a
+   type="date" field ever used the pill-shaped .rsvp-field style; every
+   other date field in the app already uses the 12px-radius .inputs-fields
+   style instead, so nothing else needs this. */
+.lead-video-questions .rsvp-field input[type="date"] { border-radius: 16px; }
 .rsvp-allergy-q { color: #b8860b; font-weight: 700; margin: 20px 0; font-size: 1.1rem; }
 
 .rsvp-stepper { display: flex; align-items: center; justify-content: center; gap: 22px; }
@@ -2031,6 +2039,13 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   aspect-ratio: 16 / 9; background: #000;
 }
 .lead-video-iframe { width: 100%; height: 100%; border: 0; display: block; }
+/* The YT IFrame Player API replaces #lead-yt-player-target with its own
+   generated <iframe> (not carrying over the div's className) - this
+   targets it structurally instead so it still fills the wrap. */
+.lead-video-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
+.lead-video-wrap-collapsed {
+  height: 1px; margin: 0; opacity: 0; pointer-events: none; overflow: hidden; aspect-ratio: unset;
+}
 .lead-video-questions { min-height: 108px; display: flex; align-items: center; justify-content: center; }
 .lead-video-q { width: 100%; }
 @keyframes lead-video-q-fade-in {

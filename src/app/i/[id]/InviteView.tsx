@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import { TemplateCard, TEMPLATE_CTA_COLORS, type TemplateFields } from "@/lib/templates";
 import { wazeUrl, googleMapsUrl } from "@/lib/navLinks";
@@ -118,6 +118,76 @@ export default function InviteView({
   // instead of navigating away (target="_blank") - guests stay on the
   // invite; "חזור להזמנה" below just closes this modal.
   const [tourOpen, setTourOpen] = useState(false);
+  // Once they've actually looked at the tour, "לא תודה" no longer makes
+  // sense as a label (they already said yes to it) - becomes a plain
+  // "תודה" closing acknowledgment instead. Stays "לא תודה" the whole time
+  // they never opened the tour at all.
+  const [tourVisited, setTourVisited] = useState(false);
+  // The YouTube IFrame Player instance backing the lead-video slot -
+  // preloaded (muted, not playing) the moment the RSVP popup shows, so
+  // "כן, רוצה!" can call playVideo() synchronously inside its own click
+  // handler. That's the actual difference that makes autoplay-with-sound
+  // work on iOS Safari: a raw <iframe src="...autoplay=1"> only created at
+  // click time relies on YouTube's own page noticing the URL param and
+  // calling play() on itself later, asynchronously - by then the browser
+  // no longer considers it tied to the original tap.
+  const ytPlayerRef = useRef<{
+    playVideo: () => void;
+    unMute: () => void;
+    setVolume: (v: number) => void;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!showLeadPopup) return;
+    let cancelled = false;
+
+    function createPlayer() {
+      if (cancelled || ytPlayerRef.current) return;
+      const YT = (window as unknown as { YT?: { Player: new (...args: unknown[]) => unknown } }).YT;
+      if (!YT) return;
+      ytPlayerRef.current = new YT.Player("lead-yt-player-target", {
+        videoId: "XRxZVb2xZDs",
+        width: "100%",
+        height: "100%",
+        playerVars: { autoplay: 0, mute: 1, playsinline: 1, controls: 1, rel: 0 },
+      }) as typeof ytPlayerRef.current;
+    }
+
+    const w = window as unknown as { YT?: { Player: unknown }; onYouTubeIframeAPIReady?: () => void };
+    if (w.YT?.Player) {
+      createPlayer();
+    } else {
+      if (!document.getElementById("youtube-iframe-api-script")) {
+        const tag = document.createElement("script");
+        tag.id = "youtube-iframe-api-script";
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.body.appendChild(tag);
+      }
+      const prevReady = w.onYouTubeIframeAPIReady;
+      w.onYouTubeIframeAPIReady = () => {
+        prevReady?.();
+        createPlayer();
+      };
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showLeadPopup]);
+
+  // "כן, רוצה!" - the click itself is what's allowed to start playback.
+  function handleWantsEventClick() {
+    setLeadWantsEvent(true);
+    try {
+      const p = ytPlayerRef.current;
+      p?.unMute();
+      p?.setVolume(100);
+      p?.playVideo();
+    } catch {
+      // Player not ready yet (very slow network) - the visible player's
+      // own controls still let the guest press play manually.
+    }
+  }
   // The 3-question sequence (date -> event type -> venue) shown crossfading
   // in place, one row, next to the autoplaying video - see the render below
   // for how "picked"/"out" drive the fade. "question" = showing the input,
@@ -301,11 +371,33 @@ export default function InviteView({
       )}
 
       {showLeadPopup && (
-        <div className="lead-alert-overlay" onClick={leadFinished ? undefined : declineLead}>
+        // Tapping the dark overlay outside the card used to close the whole
+        // popup (declineLead) - easy to trigger by accident on a phone, and
+        // it silently threw away whatever the guest had already answered
+        // partway through the video+questions flow. The only way to close
+        // this now is one of the explicit "לא, תודה"/"לא תודה" buttons.
+        <div className="lead-alert-overlay">
           <div
             className={`lead-alert-card${leadWantsEvent === true ? " lead-alert-card-video" : ""}`}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Mounted for the whole lifetime of the popup (not just once
+                "כן, רוצה!" is clicked) so the YouTube IFrame Player can
+                preload in advance - collapsed to an invisible sliver until
+                the video stage. A raw <iframe src="...autoplay=1"> created
+                only at click time (the previous approach) relies on
+                YouTube's OWN page noticing the autoplay param and calling
+                play() on itself, asynchronously, disconnected from the
+                actual click - which is exactly what iOS Safari blocks.
+                Calling player.playVideo() directly, synchronously, inside
+                the click handler is the real fix - it only works reliably
+                because the player already exists by then. */}
+            <div
+              className={`lead-video-wrap${leadWantsEvent === true && !leadFinished ? "" : " lead-video-wrap-collapsed"}`}
+            >
+              <div id="lead-yt-player-target" className="lead-video-iframe" />
+            </div>
+
             {leadFinished ? (
               <>
                 <div className="lead-alert-icon">✨</div>
@@ -317,42 +409,23 @@ export default function InviteView({
                   type="button"
                   className="lead-alert-yes"
                   style={{ display: "block", width: "100%", marginTop: 14 }}
-                  onClick={() => setTourOpen(true)}
+                  onClick={() => {
+                    setTourVisited(true);
+                    setTourOpen(true);
+                  }}
                 >
                   לסיור הוירטואלי 🎥
                 </button>
                 <button type="button" className="lead-alert-no" style={{ width: "100%", marginTop: 10 }} onClick={declineLead}>
-                  לא תודה
+                  {tourVisited ? "תודה" : "לא תודה"}
                 </button>
               </>
             ) : leadWantsEvent === true ? (
               <>
-                {/* The video is only ever mounted here, inside this branch -
-                    which only exists once the "כן, רוצה!" click below has
-                    fired setLeadWantsEvent(true). That click is what
-                    creates this iframe in the first place, which is the
-                    closest a cross-origin YouTube embed can get to
-                    inheriting the click's own "user gesture" - the actual
-                    trick that lets autoplay-with-sound work on mobile at
-                    all. It must never be mounted before that click. Stays
-                    mounted (and playing) through both the question-cycling
-                    below AND the "thank you" message once sent - it only
-                    unmounts (stops) when "סיים" moves on to leadFinished,
-                    which is a completely separate branch with no video. */}
-                <div className="lead-video-wrap">
-                  <iframe
-                    className="lead-video-iframe"
-                    src="https://www.youtube.com/embed/XRxZVb2xZDs?autoplay=1&mute=0&playsinline=1&rel=0"
-                    title="סרטון היכרות"
-                    allow="autoplay; encrypted-media; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
                 <div className="lead-video-questions">
                   {leadPopupSent ? (
                     <div className="lead-video-q lead-video-q-question">
                       <div className="lead-video-thanks">
-                        <div className="lead-alert-icon" style={{ marginBottom: 4 }}>🎉</div>
                         <p className="lead-alert-thanks">נציג מטעם האולם יצור קשר בקרוב...</p>
                       </div>
                     </div>
@@ -422,11 +495,12 @@ export default function InviteView({
                   {/* "לא" needs no follow-up step at all - straight back to
                       the underlying thank-you screen. Only "כן" opens the
                       video+questions stage above - and that click is also
-                      what's allowed to create/autoplay the video iframe. */}
+                      what's allowed to call playVideo() on the pre-loaded
+                      player (see handleWantsEventClick). */}
                   <button type="button" className="lead-alert-no" onClick={declineLead}>
                     לא, תודה
                   </button>
-                  <button type="button" className="lead-alert-yes" onClick={() => setLeadWantsEvent(true)}>
+                  <button type="button" className="lead-alert-yes" onClick={handleWantsEventClick}>
                     כן, רוצה!
                   </button>
                 </div>
@@ -549,6 +623,7 @@ export default function InviteView({
               ) : (
                 <>
                   <h2 className="rsvp-title">אנא אשרו הגעתכם</h2>
+                  <p className="rsvp-subtitle">ונוכל לסדר לכם מקום שמור בשולחן ✨</p>
 
                   <div className="rsvp-field">
                     <label>שם פרטי *</label>
