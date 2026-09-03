@@ -10,7 +10,7 @@ import CategoryFieldsForm from "@/components/CategoryFieldsForm";
 import InvitePhotoCard from "@/components/InvitePhotoCard";
 import ImageCropModal from "@/components/ImageCropModal";
 import { EVENT_CATEGORIES, isEventCategory, type EventCategory } from "@/lib/eventCategories";
-import { hasCustomFields, findMissingRequiredField, readCommonFields, buildHeadline, buildExtraDetailLines, formatEventDate } from "@/lib/categoryFields";
+import { CATEGORY_FIELD_DEFS, hasCustomFields, findMissingRequiredField, readCommonFields, buildHeadline, buildExtraDetailLines, formatEventDate } from "@/lib/categoryFields";
 import { computeTextStyleFromCanvas, DEFAULT_TEXT_STYLE, type TextStyle } from "@/lib/textStyleHeuristic";
 
 // Background photos are shown full-bleed behind the invitation text, at the
@@ -328,34 +328,44 @@ export default function CreateInvitePage({
     });
   }
 
-  // "🪄 עדכון התמונה" after editing a field - regenerates by substituting
-  // just the changed Hebrew values into the exact prompt that made the
-  // current image, so the result keeps the same style/colors/composition
-  // instead of sending the user through the whole style-preference chat
-  // again for, say, fixing a spelling in a name. Falls back to the full
-  // chat (openAiDesigner) when there's no prompt to start from (an invite
-  // baked before this existed) or none of the changed values could be
-  // found in it verbatim to substitute.
+  // "🪄 עדכון התמונה" after editing a field - regenerates in ONE direct call,
+  // no chat, no questions. Earlier this tried to literally find-and-replace
+  // the old value inside the saved prompt text, and silently fell back to
+  // the whole style-preference chat whenever that exact substring wasn't
+  // found (e.g. the AI phrased the name slightly differently in its own
+  // prompt) - which is exactly the "it just sent me back to the questions"
+  // bug this replaces. Now it always tells Gemini directly, in plain
+  // English, exactly which fields changed to what - Gemini finds the right
+  // text in its own design semantically instead of needing a literal
+  // string match - and only the full chat (openAiDesigner) is used when
+  // there's no saved prompt to correct at all (an invite baked before this
+  // existed).
   async function quickUpdateImage() {
     if (!lastImagePrompt || !bakedFieldsSnapshot) {
       openAiDesigner();
       return;
     }
-    let updatedPrompt = lastImagePrompt;
-    let changedAny = false;
+    const defs = eventCategory ? CATEGORY_FIELD_DEFS[eventCategory] ?? [] : [];
+    const corrections: string[] = [];
     for (const key of Object.keys(categoryFields)) {
       const oldVal = (bakedFieldsSnapshot[key] ?? "").trim();
       const newVal = (categoryFields[key] ?? "").trim();
-      if (!oldVal || !newVal || oldVal === newVal) continue;
-      if (updatedPrompt.includes(oldVal)) {
-        updatedPrompt = updatedPrompt.split(oldVal).join(newVal);
-        changedAny = true;
-      }
+      if (!newVal || oldVal === newVal) continue;
+      const label = defs.find((d) => d.key === key)?.label.replace(/\s*\(לא חובה\)\s*$/, "") ?? key;
+      corrections.push(
+        oldVal
+          ? `The "${label}" text currently reads "${oldVal}" - change it to "${newVal}".`
+          : `Add the "${label}" text: "${newVal}".`
+      );
     }
-    if (!changedAny) {
-      openAiDesigner();
-      return;
-    }
+    if (corrections.length === 0) return; // nothing actually changed since the last generation
+
+    const updatedPrompt = [
+      lastImagePrompt,
+      "",
+      "IMPORTANT CORRECTION: regenerate this exact same finished invitation design - identical style, colors, layout, composition, background, typography - but with these specific text corrections, nothing else changed:",
+      ...corrections,
+    ].join("\n");
 
     setQuickUpdating(true);
     try {
