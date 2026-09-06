@@ -227,6 +227,27 @@ export default function CreateInvitePage({
     };
   }, [imageDataUrl, imageHasBakedText]);
 
+  // How many of the 10 AI design-generations/design-chat-edits are left
+  // for this account (quickUpdateImage's plain field fixes never touch
+  // this - see MAX_IMAGE_REGENERATIONS in api/ai-invite/route.ts). null
+  // until the first fetch resolves, so the bubble below simply doesn't
+  // render rather than flashing "0" first.
+  const [regenerationsRemaining, setRegenerationsRemaining] = useState<number | null>(null);
+  async function refreshRegenerationsRemaining() {
+    try {
+      const res = await fetch("/api/ai-invite");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (typeof data.regenerationsRemaining === "number") setRegenerationsRemaining(data.regenerationsRemaining);
+    } catch {
+      // Non-critical display-only counter - a failed fetch just leaves
+      // whatever was already shown (or nothing yet).
+    }
+  }
+  useEffect(() => {
+    refreshRegenerationsRemaining();
+  }, []);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -345,6 +366,7 @@ export default function CreateInvitePage({
                 setOriginalFieldsSnapshot(fieldsNow);
                 setBakedFieldsSnapshot(fieldsNow);
                 setBakedCategorySnapshot(eventCategory);
+                refreshRegenerationsRemaining();
                 Swal.close();
               }}
             />
@@ -425,6 +447,10 @@ export default function CreateInvitePage({
       willClose: () => {
         aiModalRootRef.current?.unmount();
         aiModalRootRef.current = null;
+        // Refreshed on close regardless of how (used/canceled/×) - simpler
+        // and just as accurate as threading the count through every one of
+        // DesignChangeChat's own successful-edit callbacks individually.
+        refreshRegenerationsRemaining();
       },
     });
   }
@@ -658,6 +684,17 @@ export default function CreateInvitePage({
         <div className="ai-fullscreen-loader" role="status" aria-live="polite">
           <span className="ai-fullscreen-loader-spinner" aria-hidden="true" />
           <p>מעדכן את התמונה עם הפרטים החדשים...</p>
+        </div>
+      )}
+      {/* A sibling of .create-wrapper, not nested inside any
+          .category-section - those have their own backdrop-filter, which
+          would silently turn position:fixed here into "fixed to that
+          scrolling card" instead of the real screen (the exact bug already
+          hit once with the stale-image banner). Rendered directly under
+          .create-page (no filter/transform of its own) needs no portal. */}
+      {regenerationsRemaining !== null && eventCategory && (
+        <div className="regen-bubble">
+          נשאר עוד {regenerationsRemaining} שינויי{regenerationsRemaining === 1 ? " " : "ים "}עיצוב לחשבון
         </div>
       )}
       <div className="create-wrapper">

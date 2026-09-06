@@ -563,6 +563,29 @@ body {
   box-shadow: 0 6px 25px rgba(0,0,0,0.35);
 }
 
+/* "נשאר עוד X שינויים..." - a speech bubble fixed near the top-left,
+   opposite the "חזרה" back button, gently wiggling to draw the eye without
+   being an outright animated distraction (small amplitude, slow, eases
+   in/out at the ends instead of a sharp back-and-forth). */
+@keyframes regen-bubble-wiggle {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+.regen-bubble {
+  position: fixed; top: 88px; left: 16px; z-index: 60; max-width: 150px;
+  background: #d4af7a; color: #1c1c1e; font-family: 'Assistant', sans-serif;
+  font-weight: 800; font-size: .82rem; line-height: 1.35; text-align: center;
+  padding: 10px 12px; border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.4);
+  animation: regen-bubble-wiggle 3.2s ease-in-out infinite;
+}
+.regen-bubble::after {
+  content: ""; position: absolute; bottom: -8px; left: 28px;
+  width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 9px solid #d4af7a;
+}
+
 .create-title {
   color: #fff; font-weight: 700; text-align: center; margin: 20px 0;
   font-size: 1.8rem;

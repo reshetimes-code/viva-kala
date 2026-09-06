@@ -198,3 +198,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "שגיאת רשת מול שירות ה-AI" }, { status: 502 });
   }
 }
+
+// Lets the create-flow show "נשארו לכם X שינויים עיצוביים" right away, on
+// page load - before the user has made any AI call at all this session -
+// instead of only after their first generation/design-chat response.
+export async function GET() {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "יש להתחבר" }, { status: 401 });
+  }
+  const used = await getUserImageRegenerationsUsed(user.id);
+  return NextResponse.json({ regenerationsUsed: used, regenerationsRemaining: Math.max(0, MAX_IMAGE_REGENERATIONS - used) });
+}
