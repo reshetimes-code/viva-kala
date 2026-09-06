@@ -573,7 +573,10 @@ body {
   75% { transform: translateX(4px); }
 }
 .regen-bubble {
-  position: fixed; top: 88px; left: 16px; z-index: 60; max-width: 150px;
+  /* top:50px lines up with "חזרה" (.create-page's 20px + .create-wrapper's
+     30px padding-top puts that button's own top edge right there) - level
+     with it, and above "יצירת הזמנה לאירוע" which comes right after. */
+  position: fixed; top: 50px; left: 16px; z-index: 60; max-width: 150px;
   background: #d4af7a; color: #1c1c1e; font-family: 'Assistant', sans-serif;
   font-weight: 800; font-size: .82rem; line-height: 1.35; text-align: center;
   padding: 10px 12px; border-radius: 16px;
