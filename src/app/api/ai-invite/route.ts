@@ -133,6 +133,22 @@ export async function POST(req: Request) {
     }
   }
 
+  // How many independent attempts to generate in parallel, offered to the
+  // user as options to pick between (DesignChangeChat) - all of them
+  // together still cost exactly ONE credit (checked/incremented once,
+  // below), same as a single-variant call. Capped at 3 regardless of what
+  // the client asks for - a display/cost safety net, not a real setting.
+  const variantCount = Math.min(Math.max(1, Number(body?.variantCount) || 1), 3);
+
+  // Nudges each parallel attempt to actually diverge from the others
+  // rather than relying purely on incidental sampling variance - without
+  // this, two calls with the identical prompt can come back near-identical,
+  // defeating the point of offering a choice.
+  const variantPrompt = (i: number) =>
+    variantCount > 1
+      ? `${prompt}\n\nThis is option ${i + 1} of ${variantCount} independent alternatives being generated for the client to choose between - keep every protection/instruction above exactly as stated, but make your own independent creative interpretation of exactly how to fit the change in, so this option reads as meaningfully different from the other alternative(s) - not a near-duplicate.`
+      : prompt;
+
   // The image block goes BEFORE the text block when present, so the model
   // sees "here is the actual image" before it reads "edit only this text in
   // it" - this is a real edit of those exact pixels, not a blind
@@ -140,63 +156,78 @@ export async function POST(req: Request) {
   // can't reproduce identically twice) - that mismatch used to be the real
   // cause of a plain typo fix coming back with a randomly different-looking
   // background/style.
-  const input = baseImagePart
-    ? [{ type: "image", mime_type: baseImagePart.mimeType, data: baseImagePart.data }, { type: "text", text: prompt }]
-    : [{ type: "text", text: prompt }];
+  function buildInput(text: string) {
+    return baseImagePart
+      ? [{ type: "image", mime_type: baseImagePart.mimeType, data: baseImagePart.data }, { type: "text", text }]
+      : [{ type: "text", text }];
+  }
 
-  try {
-    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      body: JSON.stringify({ model, input }),
-    });
+  interface ImageContent { data?: string; mime_type?: string }
 
-    const data = await res.json().catch(() => null);
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: data?.error?.message || "שגיאה ביצירת התמונה" },
-        { status: 502 }
-      );
-    }
+  async function generateOne(text: string): Promise<{ dataUrl: string } | { error: string }> {
+    try {
+      const res = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey as string },
+        body: JSON.stringify({ model, input: buildInput(text) }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) return { error: data?.error?.message || "שגיאה ביצירת התמונה" };
 
-    // `output_image` is the documented convenience field for the last
-    // generated image; fall back to scanning the steps timeline for an
-    // image content block in case a particular response omits it.
-    interface ImageContent { data?: string; mime_type?: string }
-    let imageContent: ImageContent | undefined = data?.output_image;
-    if (!imageContent?.data) {
-      for (const step of data?.steps ?? []) {
-        const found = (step?.content ?? []).find((c: ImageContent & { type?: string }) => c?.type === "image" && c?.data);
-        if (found) {
-          imageContent = found;
-          break;
+      // `output_image` is the documented convenience field for the last
+      // generated image; fall back to scanning the steps timeline for an
+      // image content block in case a particular response omits it.
+      let imageContent: ImageContent | undefined = data?.output_image;
+      if (!imageContent?.data) {
+        for (const step of data?.steps ?? []) {
+          const found = (step?.content ?? []).find((c: ImageContent & { type?: string }) => c?.type === "image" && c?.data);
+          if (found) {
+            imageContent = found;
+            break;
+          }
         }
       }
+      if (!imageContent?.data) return { error: "לא התקבלה תמונה מהשירות" };
+      const mimeType = imageContent.mime_type || "image/png";
+      return { dataUrl: `data:${mimeType};base64,${imageContent.data}` };
+    } catch {
+      return { error: "שגיאת רשת מול שירות ה-AI" };
     }
-    const base64 = imageContent?.data;
-    if (!base64) {
-      return NextResponse.json({ error: "לא התקבלה תמונה מהשירות" }, { status: 502 });
-    }
-
-    // Counts against the quota unless it's the one free-correction path,
-    // and only once Gemini actually returned an image - a failed/errored
-    // call above already returned early without reaching here, so it never
-    // costs quota either.
-    let regenerationsUsed: number | undefined;
-    if (!isFreeCorrection) {
-      regenerationsUsed = await incrementUserImageRegenerations(user.id);
-    }
-
-    const mimeType = imageContent?.mime_type || "image/png";
-    return NextResponse.json({
-      imageDataUrl: `data:${mimeType};base64,${base64}`,
-      ...(regenerationsUsed !== undefined
-        ? { regenerationsUsed, regenerationsRemaining: Math.max(0, MAX_IMAGE_REGENERATIONS - regenerationsUsed) }
-        : {}),
-    });
-  } catch {
-    return NextResponse.json({ error: "שגיאת רשת מול שירות ה-AI" }, { status: 502 });
   }
+
+  const results = await Promise.all(
+    Array.from({ length: variantCount }, (_, i) => generateOne(variantPrompt(i)))
+  );
+  const dataUrls = results.filter((r): r is { dataUrl: string } => "dataUrl" in r).map((r) => r.dataUrl);
+
+  if (dataUrls.length === 0) {
+    const firstError = results.find((r): r is { error: string } => "error" in r);
+    return NextResponse.json({ error: firstError?.error || "שגיאה ביצירת התמונה" }, { status: 502 });
+  }
+
+  // Counts against the quota unless it's the one free-correction path, and
+  // only once at least one variant actually came back - a fully failed
+  // call above already returned early without reaching here, so it never
+  // costs quota either. Exactly one credit no matter how many variants
+  // were requested/succeeded.
+  let regenerationsUsed: number | undefined;
+  if (!isFreeCorrection) {
+    regenerationsUsed = await incrementUserImageRegenerations(user.id);
+  }
+  const quotaFields =
+    regenerationsUsed !== undefined
+      ? { regenerationsUsed, regenerationsRemaining: Math.max(0, MAX_IMAGE_REGENERATIONS - regenerationsUsed) }
+      : {};
+
+  // variantCount>1 always responds with `variants` (even if only one came
+  // back - some failed) so the client has one consistent shape to handle;
+  // variantCount===1 (every existing caller) keeps the original single
+  // `imageDataUrl` shape untouched.
+  return NextResponse.json(
+    variantCount > 1
+      ? { variants: dataUrls, ...quotaFields }
+      : { imageDataUrl: dataUrls[0], ...quotaFields }
+  );
 }
 
 // Lets the create-flow show "נשארו לכם X שינויים עיצוביים" right away, on

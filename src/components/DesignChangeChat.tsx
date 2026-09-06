@@ -38,6 +38,11 @@ export default function DesignChangeChat({
   const [error, setError] = useState("");
   const [remaining, setRemaining] = useState<number | null>(null);
   const [blocked, setBlocked] = useState(false);
+  // Two independent attempts come back per request (one credit total, not
+  // two - see variantCount in api/ai-invite/route.ts) - held here until the
+  // client picks one; currentImage/changed only update once they do, so
+  // "ביטול" at that point cleanly discards both without half-applying one.
+  const [pendingVariants, setPendingVariants] = useState<string[] | null>(null);
 
   async function sendRequest() {
     const text = input.trim();
@@ -84,7 +89,7 @@ export default function DesignChangeChat({
       const res = await fetch("/api/ai-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, baseImage: currentImage }),
+        body: JSON.stringify({ prompt, baseImage: currentImage, variantCount: 2 }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -92,8 +97,9 @@ export default function DesignChangeChat({
         if (res.status === 403) setBlocked(true);
         return;
       }
-      setCurrentImage(data.imageDataUrl);
-      setChanged(true);
+      // variantCount:2 always gets `variants` back (even if only one made
+      // it - the other failed) - see api/ai-invite/route.ts.
+      setPendingVariants(data.variants ?? (data.imageDataUrl ? [data.imageDataUrl] : []));
       setInput("");
       if (typeof data.regenerationsRemaining === "number") setRemaining(data.regenerationsRemaining);
     } catch {
@@ -101,6 +107,48 @@ export default function DesignChangeChat({
     } finally {
       setLoading(false);
     }
+  }
+
+  function pickVariant(url: string) {
+    setCurrentImage(url);
+    setChanged(true);
+    setPendingVariants(null);
+  }
+
+  if (pendingVariants && pendingVariants.length > 0) {
+    return (
+      <div className="ai-invite-form">
+        <p className="ai-invite-note" style={{ fontWeight: 700 }}>
+          {pendingVariants.length > 1 ? "בחרו את הגרסה שאהבתם יותר:" : "הנה התוצאה:"}
+        </p>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: pendingVariants.length > 1 ? "1fr 1fr" : "1fr",
+            gap: 10,
+            marginBottom: 16,
+          }}
+        >
+          {pendingVariants.map((url, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => pickVariant(url)}
+              style={{
+                border: "2px solid #d4af7a", borderRadius: 14, overflow: "hidden", padding: 0, cursor: "pointer",
+                background: "none", aspectRatio: "9 / 16", display: "block",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt={`אפשרות ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </button>
+          ))}
+        </div>
+        <button type="button" className="ai-invite-retry-btn" onClick={onClose} style={{ width: "100%" }}>
+          ביטול
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -124,7 +172,7 @@ export default function DesignChangeChat({
       {loading ? (
         <div className="ai-chat-loading">
           <span className="ai-chat-spinner" aria-hidden="true" />
-          <p className="ai-chat-question">מבצע את השינוי...</p>
+          <p className="ai-chat-question">יוצר שתי אפשרויות לבחירה...</p>
         </div>
       ) : (
         !blocked && (
