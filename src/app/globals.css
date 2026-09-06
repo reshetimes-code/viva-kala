@@ -2024,6 +2024,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 }
 .welcome-alert-overlay {
   position: fixed; inset: 0; z-index: 60; background: rgba(20,15,10,0.55);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   display: flex; align-items: center; justify-content: center; padding: 24px;
   animation: landing-fade-up .3s ease-out;
 }
@@ -2054,6 +2055,11 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 /* --- lead-gen popup shown right after RSVP is submitted, before "thank you" --- */
 .lead-alert-overlay {
   position: fixed; inset: 0; z-index: 65; background: rgba(20,15,10,0.55);
+  /* Blurs whatever's behind the popup (the thank-you screen's own photo/
+     text) instead of just dimming it - fades in/out together with the
+     opacity transition below, so it's gone the instant the popup closes,
+     same as the dim tint. */
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   display: flex; align-items: center; justify-content: center; padding: 24px;
   opacity: 1; transition: opacity .25s ease;
 }
