@@ -17,10 +17,17 @@ import { useState } from "react";
  *  whatever the latest successful edit produced. */
 export default function DesignChangeChat({
   imageUrl,
+  eventDetails,
   onUse,
   onClose,
 }: {
   imageUrl: string;
+  /** One-line plain-language summary of what's already known about this
+   *  event ("סוג אירוע: בר מצווה. חוגג/ת: אריאל לוי. תאריך: 30/09/2026...")
+   *  - lets the model complete a vague/partial request sensibly (see
+   *  sendRequest below) instead of inserting exactly the literal text
+   *  typed, dangling mid-sentence. */
+  eventDetails?: string;
   onUse: (newImageUrl: string) => void;
   onClose: () => void;
 }) {
@@ -46,11 +53,22 @@ export default function DesignChangeChat({
       // called out by name and explicitly protected, not just implied by
       // "keep everything else the same".
       const prompt = [
-        "This is the exact current invitation image, attached. The person who made this invitation typed this one request, in their own words, describing ONE thing they want changed or added:",
+        "You are a professional invitation graphic designer helping a client who is not experienced at writing AI prompts. This is the exact current invitation image, attached. The client typed this one request, in their own words, describing ONE thing they want changed or added:",
         `"${text}"`,
-        "Apply ONLY that one requested change. Do NOT remove, delete, retype, resize, move, or otherwise alter ANY text or element that already exists in the image, unless the request explicitly names that exact thing as what to change or remove. This absolutely includes: the event category label/headline (e.g. \"בר מצווה\", \"בת מצווה\", \"חתונה\", \"חינה\"), every name, the date, the time, the venue/address, and every decorative element - all of it must stay pixel-identical unless the request is specifically about that exact element. If the request asks to ADD something (a sentence, a line, a symbol), insert it as a brand new, separate element - make room for it by adjusting empty space or the overall composition, never by shrinking, replacing, or deleting an existing element to fit the new one in.",
+        eventDetails && `Known details about this event (use these to fill in context intelligently - see below): ${eventDetails}.`,
+        // The actual production failure this guards against: a client
+        // asked to add "הנכם מוזמנים ל..." (a template opening phrase that
+        // trails off) and the model inserted that exact literal fragment,
+        // dangling mid-sentence - a broken result the client would have
+        // had to spend ANOTHER credit fixing. A real professional designer
+        // would obviously complete it ("...לבר המצווה של אריאל") using the
+        // event's own details, not transcribe a half-finished instruction.
+        "If the request is a partial phrase, a template-like opening ('...', 'תוסיפו משפט כמו...', a sentence that trails off), or otherwise vague, use good professional judgment to complete it into a natural, polished, GRAMMATICALLY COMPLETE sentence using the known event details above (names, category, date, venue) and what's already visible in the image - never insert a literal half-finished fragment. The goal is the best-looking finished result in one try, the way a professional designer would interpret a client's brief - not a literal transcription of exactly the words typed.",
+        "Apply ONLY that one requested change (now sensibly completed if needed). Do NOT remove, delete, retype, resize, move, or otherwise alter ANY text or element that already exists in the image, unless the request explicitly names that exact thing as what to change or remove. This absolutely includes: the event category label/headline (e.g. \"בר מצווה\", \"בת מצווה\", \"חתונה\", \"חינה\"), every name, the date, the time, the venue/address, and every decorative element - all of it must stay pixel-identical unless the request is specifically about that exact element. If the request asks to ADD something (a sentence, a line, a symbol), insert it as a brand new, separate element - make room for it by adjusting empty space or the overall composition, never by shrinking, replacing, or deleting an existing element to fit the new one in.",
         "Render every Hebrew word with perfect, exact spelling - copy any existing text exactly as it already appears in the image, character by character, do not invent, merge, drop, or add letters, and do not translate anything to English.",
-      ].join("\n");
+      ]
+        .filter(Boolean)
+        .join("\n");
       const res = await fetch("/api/ai-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

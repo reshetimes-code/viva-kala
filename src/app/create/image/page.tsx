@@ -380,6 +380,30 @@ export default function CreateInvitePage({
     });
   }
 
+  // Handed to DesignChangeChat so it can complete a vague/partial request
+  // ("add 'הנכם מוזמנים ל...'") sensibly instead of inserting exactly that
+  // literal, dangling text - see the prompt in DesignChangeChat itself for
+  // why that matters (a real production failure, not a hypothetical one).
+  function buildEventDetailsSummaryForChat(): string {
+    const parts: string[] = [];
+    if (eventCategory) parts.push(`סוג אירוע: ${eventCategory}`);
+    if (usesCustomFields) {
+      const common = readCommonFields(categoryFields);
+      const name =
+        categoryFields.celebrantName || [categoryFields.groomName, categoryFields.brideName].filter(Boolean).join(" ו");
+      if (name) parts.push(`חוגג/ת: ${name}`);
+      if (categoryFields.familyName) parts.push(`משפחת ${categoryFields.familyName}`);
+      if (common.eventDate) parts.push(`תאריך: ${formatEventDate(common.eventDate)}`);
+      if (common.venue) parts.push(`מקום: ${common.venue}`);
+    } else {
+      const names = celebrants.map((c) => c.name).filter(Boolean).join(", ");
+      if (names) parts.push(`חוגג/ת: ${names}`);
+      if (eventDate) parts.push(`תאריך: ${formatEventDate(eventDate)}`);
+      if (address) parts.push(`מקום: ${address}`);
+    }
+    return parts.join(". ");
+  }
+
   // "💬 בקשו שינוי בצ'אט" - free-text design requests on the CURRENT image
   // ("add a sentence above the name", "make the background blue"), as
   // opposed to quickUpdateImage's structured field-only fixes. A real
@@ -435,6 +459,7 @@ export default function CreateInvitePage({
             </button>
             <DesignChangeChat
               imageUrl={imageDataUrl}
+              eventDetails={buildEventDetailsSummaryForChat()}
               onUse={(newUrl) => {
                 setImageDataUrl(newUrl);
                 Swal.close();
