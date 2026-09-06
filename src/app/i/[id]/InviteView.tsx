@@ -574,18 +574,22 @@ export default function InviteView({
             ) : (
               <>
                 <h3 className="welcome-alert-subtitle">רגע לפני שממשיכים...</h3>
-                <p className="welcome-alert-emphasis">חוגגים אירוע בקרוב? תרצו לקבל הטבה מיוחדת מאיתנו?</p>
+                <p className="welcome-alert-emphasis lead-benefit-prompt">
+                  חוגגים אירוע בקרוב? תרצו לקבל הטבה מיוחדת מאיתנו?
+                </p>
                 <div className="lead-alert-row">
                   {/* "לא" needs no follow-up step at all - straight back to
                       the underlying thank-you screen. Only "כן" opens the
                       video+questions stage above - and that click is also
                       what's allowed to call playVideo() on the pre-loaded
-                      player (see handleWantsEventClick). */}
-                  <button type="button" className="lead-alert-no" onClick={declineLead}>
-                    לא, תודה
-                  </button>
+                      player (see handleWantsEventClick). Full-width "כן" on
+                      top, "לא" below it - not side by side - so the primary
+                      action is the one that's hard to miss. */}
                   <button type="button" className="lead-alert-yes" onClick={handleWantsEventClick}>
                     כן, רוצה!
+                  </button>
+                  <button type="button" className="lead-alert-no" onClick={declineLead}>
+                    לא, תודה
                   </button>
                 </div>
               </>

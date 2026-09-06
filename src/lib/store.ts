@@ -1,5 +1,5 @@
 import type { EventCategory } from "@/lib/eventCategories";
-import { getPool } from "@/lib/db";
+import { getPool, ensureUserQuotaColumn } from "@/lib/db";
 import { deleteStoredImage } from "@/lib/imageStorage";
 
 // How long a past event's invite (and its RSVPs/tables/uploaded photo) is
@@ -230,6 +230,26 @@ export async function insertUser(username: string, passwordHash: string): Promis
     [username, passwordHash]
   );
   return rowToUser(res.rows[0]);
+}
+
+// AI design-generation quota - counts only genuinely new designs (the
+// guided form and the AI-designer chat), never a text-only correction of an
+// existing image (see /api/ai-invite's own baseImage check for why that
+// split lives there, not here). Kept as a running per-account total with no
+// reset - see MAX_IMAGE_REGENERATIONS in the route for the actual cap.
+export async function getUserImageRegenerationsUsed(userId: number): Promise<number> {
+  await ensureUserQuotaColumn();
+  const res = await getPool().query("SELECT image_regenerations_used FROM users WHERE id = $1", [userId]);
+  return res.rows[0]?.image_regenerations_used ?? 0;
+}
+
+export async function incrementUserImageRegenerations(userId: number): Promise<number> {
+  await ensureUserQuotaColumn();
+  const res = await getPool().query(
+    "UPDATE users SET image_regenerations_used = image_regenerations_used + 1 WHERE id = $1 RETURNING image_regenerations_used",
+    [userId]
+  );
+  return res.rows[0]?.image_regenerations_used ?? 0;
 }
 
 // ---- Sessions ----

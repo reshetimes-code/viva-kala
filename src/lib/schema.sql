@@ -5,10 +5,17 @@
 -- SERIAL, so nothing about how callers create rows has to change.
 
 CREATE TABLE IF NOT EXISTS users (
-  id            SERIAL PRIMARY KEY,
-  username      TEXT NOT NULL UNIQUE,
-  password_hash TEXT NOT NULL,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                        SERIAL PRIMARY KEY,
+  username                  TEXT NOT NULL UNIQUE,
+  password_hash             TEXT NOT NULL,
+  created_at                TIMESTAMPTZ NOT NULL DEFAULT now(),
+  -- Running count of genuinely new AI-generated designs (guided form + AI
+  -- designer chat) - never incremented for a text-only correction of an
+  -- existing image. See MAX_IMAGE_REGENERATIONS in api/ai-invite/route.ts.
+  -- An already-running database gets this column via the idempotent
+  -- ALTER TABLE in db.ts's ensureUserQuotaColumn() instead - this
+  -- definition only matters for a brand new database.
+  image_regenerations_used INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS sessions (

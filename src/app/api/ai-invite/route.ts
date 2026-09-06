@@ -1,5 +1,14 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { getUserImageRegenerationsUsed, incrementUserImageRegenerations } from "@/lib/store";
+
+// Each call here is a real Gemini image-generation cost - capped per
+// account so one user can't run up an unbounded bill. Only counts a
+// genuinely NEW design (guided form / AI-designer chat, no `baseImage`
+// attached) - a text-only correction of an EXISTING image (baseImage
+// present, see below) is free and uncapped, since that's just fixing a
+// typo/date/address on a design that was already paid for once.
+const MAX_IMAGE_REGENERATIONS = 10;
 
 // Generates an invitation background/design image from a guided form +
 // optional free text, via Google's Gemini image-generation models through
@@ -46,6 +55,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "יש למלא לפחות פרט אחד" }, { status: 400 });
   }
 
+  // A `baseImage` means "edit this exact existing image" (a text-only
+  // correction on an already-generated design, from quickUpdateImage in
+  // create/image/page.tsx) rather than a brand-new design from scratch -
+  // that distinction is exactly what the quota below keys off of.
+  const rawBaseImage = typeof body?.baseImage === "string" ? body.baseImage : "";
+  const baseImageMatch = /^data:([^;]+);base64,(.+)$/.exec(rawBaseImage);
+  const isCorrection = !!baseImageMatch;
+
+  if (!isCorrection) {
+    const used = await getUserImageRegenerationsUsed(user.id);
+    if (used >= MAX_IMAGE_REGENERATIONS) {
+      return NextResponse.json(
+        {
+          error: `הגעתם למגבלה של ${MAX_IMAGE_REGENERATIONS} עיצובים חדשים לחשבון. תיקון טקסט (שמות, תאריך, כתובת, שעה) בהזמנה קיימת אינו כלול במגבלה ותמיד זמין.`,
+        },
+        { status: 403 }
+      );
+    }
+  }
+
   // "3:4" was Imagen's own `parameters.aspectRatio` - the Interactions API
   // doesn't take a matching structured field for this model family, so the
   // ratio requirement is folded into the prompt text itself instead, same
@@ -72,14 +101,22 @@ export async function POST(req: Request) {
 
   const model = process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image";
 
+  // The image block goes BEFORE the text block when present, so the model
+  // sees "here is the actual image" before it reads "edit only this text in
+  // it" - this is a real edit of those exact pixels, not a blind
+  // regenerate-from-a-description (which a from-scratch generation model
+  // can't reproduce identically twice) - that mismatch used to be the real
+  // cause of a plain typo fix coming back with a randomly different-looking
+  // background/style.
+  const input = isCorrection
+    ? [{ type: "image", mime_type: baseImageMatch![1], data: baseImageMatch![2] }, { type: "text", text: prompt }]
+    : [{ type: "text", text: prompt }];
+
   try {
     const res = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      body: JSON.stringify({
-        model,
-        input: [{ type: "text", text: prompt }],
-      }),
+      body: JSON.stringify({ model, input }),
     });
 
     const data = await res.json().catch(() => null);
@@ -107,6 +144,13 @@ export async function POST(req: Request) {
     const base64 = imageContent?.data;
     if (!base64) {
       return NextResponse.json({ error: "לא התקבלה תמונה מהשירות" }, { status: 502 });
+    }
+
+    // Only a genuinely new design counts against the quota, and only once
+    // Gemini actually returned one - a failed/errored call above already
+    // returned early without reaching here, so it never costs quota either.
+    if (!isCorrection) {
+      await incrementUserImageRegenerations(user.id);
     }
 
     const mimeType = imageContent?.mime_type || "image/png";

@@ -102,6 +102,13 @@ const FOOTER_COLUMNS = [
       { label: "הרשמה", href: "/signup" },
     ],
   },
+  {
+    title: "משפטי",
+    links: [
+      { label: "הצהרת נגישות", href: "/accessibility" },
+      { label: "מדיניות פרטיות", href: "/privacy" },
+    ],
+  },
 ];
 
 function RibbonDoodle({ className }: { className?: string }) {

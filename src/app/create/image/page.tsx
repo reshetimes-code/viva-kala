@@ -358,8 +358,24 @@ export default function CreateInvitePage({
   // generated image. Diffing against the one original snapshot instead
   // means the correction list sent to Gemini is always the true, current,
   // non-contradictory cumulative diff - never edit-of-an-edit history.
+  // Editing an existing (already-saved) invite starts with imageDataUrl
+  // pointing at a stored "/uploads/..." path, not a data: URL - the AI edit
+  // call below needs the actual base64 bytes to attach as an image input,
+  // so a stored path is fetched and converted first. A freshly-generated-
+  // this-session image is already a data: URL and returns as-is.
+  async function toDataUrl(src: string): Promise<string> {
+    if (src.startsWith("data:")) return src;
+    const blob = await (await fetch(src)).blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
   async function quickUpdateImage() {
-    if (!baseImagePrompt || !originalFieldsSnapshot) {
+    if (!baseImagePrompt || !originalFieldsSnapshot || !imageDataUrl) {
       openAiDesigner();
       return;
     }
@@ -384,19 +400,26 @@ export default function CreateInvitePage({
       return;
     }
 
+    // The actual current image is attached below (as `baseImage`) so this is
+    // a true edit of those exact pixels, not a blind re-describe-and-
+    // regenerate from text alone - a from-scratch generation model has no
+    // way to reproduce the same background/colors/fonts twice from a prompt
+    // alone, which is exactly what used to make a plain typo fix come back
+    // with a randomly different-looking design. With the real image in
+    // hand, the model only needs to touch the specific text called out
+    // below, not reconstruct the whole thing from a description.
     const updatedPrompt = [
-      baseImagePrompt,
-      "",
-      "IMPORTANT CORRECTION: regenerate this exact same finished invitation design - identical style, colors, layout, composition, background, typography - but with these specific text corrections, nothing else changed. Render every Hebrew word with perfect, exact spelling - check each one character by character against the quoted text before finalizing:",
+      "This is the exact current invitation image, attached. Edit ONLY the specific text corrections listed below - keep every other pixel unchanged: same style, colors, layout, composition, background, decorative elements and typography. Render every Hebrew word with perfect, exact spelling - check each one character by character against the quoted text before finalizing:",
       ...corrections,
     ].join("\n");
 
     setQuickUpdating(true);
     try {
+      const baseImage = await toDataUrl(imageDataUrl);
       const res = await fetch("/api/ai-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: updatedPrompt }),
+        body: JSON.stringify({ prompt: updatedPrompt, baseImage }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -538,6 +561,12 @@ export default function CreateInvitePage({
   return (
     <DesktopPhoneWrapper title={editInviteId ? "עריכת ההזמנה" : "יצירת הזמנה"}>
     <div className="create-page">
+      {quickUpdating && (
+        <div className="ai-fullscreen-loader" role="status" aria-live="polite">
+          <span className="ai-fullscreen-loader-spinner" aria-hidden="true" />
+          <p>מעדכן את התמונה עם הפרטים החדשים...</p>
+        </div>
+      )}
       <div className="create-wrapper">
         <div className="mb-4">
           <a href="/dashboard" className="create-back-link">
