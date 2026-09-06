@@ -152,11 +152,14 @@ export default function InviteView({
       if (!document.getElementById("lead-yt-player-target")) return;
       const YT = (window as unknown as { YT?: { Player: new (...args: unknown[]) => unknown } }).YT;
       if (!YT) return;
+      // loop:1 alone only loops a real playlist - for a single video it also
+      // needs playlist set to that same video's own ID, otherwise it just
+      // stops at the end like normal.
       ytPlayerRef.current = new YT.Player("lead-yt-player-target", {
         videoId: "XRxZVb2xZDs",
         width: "100%",
         height: "100%",
-        playerVars: { autoplay: 0, mute: 1, playsinline: 1, controls: 1, rel: 0 },
+        playerVars: { autoplay: 0, mute: 1, playsinline: 1, controls: 1, rel: 0, loop: 1, playlist: "XRxZVb2xZDs" },
       }) as typeof ytPlayerRef.current;
     }
 
