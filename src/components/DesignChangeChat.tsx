@@ -38,10 +38,18 @@ export default function DesignChangeChat({
     setLoading(true);
     setError("");
     try {
+      // Written defensively on purpose: the person typing this request is
+      // not someone experienced at prompting an AI image model - in
+      // testing, a plain "add a sentence above the name" made the model
+      // DELETE the existing category label ("בר מצווה") entirely instead
+      // of adding a new line above it untouched. Every existing element is
+      // called out by name and explicitly protected, not just implied by
+      // "keep everything else the same".
       const prompt = [
-        "This is the exact current invitation image, attached. Apply ONLY this specific design change requested by the person who made this invitation - keep everything else exactly the same (style, colors, layout, existing text, decorative elements) unless the request itself implies otherwise:",
+        "This is the exact current invitation image, attached. The person who made this invitation typed this one request, in their own words, describing ONE thing they want changed or added:",
         `"${text}"`,
-        "Render every Hebrew word with perfect, exact spelling - copy any existing names/dates/venue text exactly as it already appears in the image, do not invent, merge, drop, or add letters.",
+        "Apply ONLY that one requested change. Do NOT remove, delete, retype, resize, move, or otherwise alter ANY text or element that already exists in the image, unless the request explicitly names that exact thing as what to change or remove. This absolutely includes: the event category label/headline (e.g. \"בר מצווה\", \"בת מצווה\", \"חתונה\", \"חינה\"), every name, the date, the time, the venue/address, and every decorative element - all of it must stay pixel-identical unless the request is specifically about that exact element. If the request asks to ADD something (a sentence, a line, a symbol), insert it as a brand new, separate element - make room for it by adjusting empty space or the overall composition, never by shrinking, replacing, or deleting an existing element to fit the new one in.",
+        "Render every Hebrew word with perfect, exact spelling - copy any existing text exactly as it already appears in the image, character by character, do not invent, merge, drop, or add letters, and do not translate anything to English.",
       ].join("\n");
       const res = await fetch("/api/ai-invite", {
         method: "POST",
