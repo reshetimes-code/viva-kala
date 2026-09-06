@@ -141,6 +141,15 @@ export default function CreateInvitePage({
   const [bakedFieldsSnapshot, setBakedFieldsSnapshot] = useState<Record<string, string> | undefined>(
     initialData?.textStyle?.imageHasText ? initialData?.categoryFields : undefined
   );
+  // Same idea as bakedFieldsSnapshot, but for the category itself - changing
+  // "מה חוגגים?" (e.g. בר מצווה -> בת מצווה, or -> חתונה) after the image was
+  // generated didn't used to trip the staleness check at all whenever the
+  // field VALUES happened to stay identical (categoryFields keys are shared
+  // across the bar/bat-mitzvah categories) - the banner/button just silently
+  // never appeared even though the baked image still shows the old category.
+  const [bakedCategorySnapshot, setBakedCategorySnapshot] = useState<EventCategory | undefined>(
+    initialData?.textStyle?.imageHasText ? initialData?.eventCategory : undefined
+  );
   // The FIXED anchor a correction is always built from - the very first
   // prompt/fields for this image, set once and never touched again. Every
   // "🪄 עדכון התמונה" diffs the current fields against originalFieldsSnapshot
@@ -220,12 +229,13 @@ export default function CreateInvitePage({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // True while categoryFields have drifted away from whatever was baked
-  // into the current AI-generated image - see bakedFieldsSnapshot above.
+  // True while categoryFields (or the category itself) have drifted away
+  // from whatever was baked into the current AI-generated image - see
+  // bakedFieldsSnapshot/bakedCategorySnapshot above.
   const imageIsStale =
     imageHasBakedText &&
     !!bakedFieldsSnapshot &&
-    JSON.stringify(categoryFields) !== JSON.stringify(bakedFieldsSnapshot);
+    (JSON.stringify(categoryFields) !== JSON.stringify(bakedFieldsSnapshot) || eventCategory !== bakedCategorySnapshot);
 
   function updateCelebrant(i: number, field: keyof Celebrant, value: string) {
     setCelebrants((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
@@ -333,6 +343,7 @@ export default function CreateInvitePage({
                 setBaseImagePrompt(prompt);
                 setOriginalFieldsSnapshot(fieldsNow);
                 setBakedFieldsSnapshot(fieldsNow);
+                setBakedCategorySnapshot(eventCategory);
                 Swal.close();
               }}
             />
@@ -392,11 +403,24 @@ export default function CreateInvitePage({
           : `Add the "${label}" text, exactly: "${newVal}".`
       );
     }
+    // The category itself (e.g. בר מצווה -> בת מצווה, or -> חתונה) can
+    // change with the field VALUES staying identical (the bar/bat-mitzvah
+    // categories share the same field keys) - that wouldn't show up in the
+    // per-field diff above at all, so it's checked separately against
+    // bakedCategorySnapshot (what the image currently baked-in reflects,
+    // not the very first generation's category).
+    const categoryChanged = eventCategory !== bakedCategorySnapshot;
+    if (categoryChanged && eventCategory && bakedCategorySnapshot) {
+      corrections.push(
+        `This was designed for a "${bakedCategorySnapshot}" event - it is now a "${eventCategory}" event instead. Update any category-specific wording, labels, or symbols in the image accordingly.`
+      );
+    }
     if (corrections.length === 0) {
-      // Fields are back to exactly what they were at the original
-      // generation - the base prompt alone already matches, nothing to ask
-      // Gemini to change.
+      // Fields (and category) are back to exactly what they were at the
+      // original generation - the base prompt alone already matches,
+      // nothing to ask Gemini to change.
       setBakedFieldsSnapshot({ ...categoryFields });
+      setBakedCategorySnapshot(eventCategory);
       return;
     }
 
@@ -446,6 +470,7 @@ export default function CreateInvitePage({
         lastImagePrompt: updatedPrompt,
       }));
       setBakedFieldsSnapshot({ ...categoryFields });
+      setBakedCategorySnapshot(eventCategory);
     } catch {
       Swal.fire({
         icon: "error",
