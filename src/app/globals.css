@@ -542,6 +542,10 @@ body {
   direction: rtl;
   color: #fff;
   padding: 20px;
+  /* Room for .confirmation-section below, now fixed to the bottom of the
+     screen - without this, the fixed bar would sit on top of (and hide)
+     whatever the last section in the normal scroll flow happens to be. */
+  padding-bottom: 130px;
 }
 
 .create-wrapper { max-width: 760px; margin: 0 auto; padding: 30px 0; }
@@ -581,6 +585,21 @@ body {
 
 .basic-info-section, .datetime-section, .location-section, .media-section, .confirmation-section {
   border-right: 5px solid #d4af7a;
+}
+
+/* Pinned to the bottom of the screen (not just the bottom of the scrolling
+   form) so the submit button/panel is always visible regardless of scroll
+   position, instead of only reachable after scrolling all the way down a
+   potentially long form. Overrides several .category-section base values
+   (margin/border-radius/etc.) - same selector specificity, wins by simply
+   coming later in the file. */
+.confirmation-section {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+  max-width: 760px; margin: 0 auto; border-radius: 20px 20px 0 0;
+  border-right: none; border-top: 4px solid #d4af7a;
+  background: #14232c; backdrop-filter: blur(14px);
+  padding: 16px 25px calc(16px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.4);
 }
 
 .upper-section-text, .bottom-section-text {
