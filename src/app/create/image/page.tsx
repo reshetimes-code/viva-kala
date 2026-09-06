@@ -891,8 +891,8 @@ export default function CreateInvitePage({
 
             {usesCustomFields && eventCategory && imageDataUrl && (
               <div className="mt-4">
-                <p className="upper-section-text" style={{ fontSize: 13, opacity: 0.8, textAlign: "center" }}>
-                  ✨ ככה זה ייראה אצל האורחים - הכל מתעצב לבד:
+                <p className="upper-section-text" style={{ fontSize: 17, fontWeight: 800, opacity: 0.95, textAlign: "center" }}>
+                  ככה ההזמנה תראה אצל האורחים
                 </p>
                 {/* The "⚠️ עדכון התמונה" banner itself now lives inside
                     CategoryFieldsForm (right by the fields that go stale) -
