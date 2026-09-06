@@ -58,10 +58,13 @@ export async function POST(req: Request) {
   // A `baseImage` means "edit this exact existing image" (a text-only
   // correction on an already-generated design, from quickUpdateImage in
   // create/image/page.tsx) rather than a brand-new design from scratch -
-  // that distinction is exactly what the quota below keys off of.
-  const rawBaseImage = typeof body?.baseImage === "string" ? body.baseImage : "";
-  const baseImageMatch = /^data:([^;]+);base64,(.+)$/.exec(rawBaseImage);
-  const isCorrection = !!baseImageMatch;
+  // that distinction is exactly what the quota below keys off of. It's
+  // either a data: URL (an image generated earlier this session, still in
+  // client state) or a plain https:// URL (an already-saved invite's photo,
+  // stored on Google Cloud Storage) - resolved to actual bytes below,
+  // AFTER the quota check, since fetching it costs nothing quota-wise.
+  const rawBaseImage = typeof body?.baseImage === "string" ? body.baseImage.trim() : "";
+  const isCorrection = !!rawBaseImage;
 
   if (!isCorrection) {
     const used = await getUserImageRegenerationsUsed(user.id);
@@ -101,6 +104,31 @@ export async function POST(req: Request) {
 
   const model = process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image";
 
+  // Resolve baseImage to actual bytes. A data: URL (fresh this-session
+  // image) is parsed directly; a plain URL (an already-saved invite's
+  // photo, on Google Cloud Storage) is fetched right here, server-side -
+  // deliberately NOT done in the browser, because that bucket has no CORS
+  // policy allowing a page on this app's origin to read it via fetch() -
+  // exactly what broke every "quick update" on an already-saved invite
+  // (surfacing to the user only as a generic "שגיאת רשת") before this
+  // moved server-side, where CORS doesn't apply at all.
+  let baseImagePart: { mimeType: string; data: string } | null = null;
+  if (isCorrection) {
+    const dataUrlMatch = /^data:([^;]+);base64,(.+)$/.exec(rawBaseImage);
+    if (dataUrlMatch) {
+      baseImagePart = { mimeType: dataUrlMatch[1], data: dataUrlMatch[2] };
+    } else {
+      try {
+        const imgRes = await fetch(rawBaseImage);
+        if (!imgRes.ok) throw new Error(`fetch failed: ${imgRes.status}`);
+        const buf = Buffer.from(await imgRes.arrayBuffer());
+        baseImagePart = { mimeType: imgRes.headers.get("content-type") || "image/webp", data: buf.toString("base64") };
+      } catch {
+        return NextResponse.json({ error: "לא ניתן היה לטעון את התמונה הקיימת" }, { status: 502 });
+      }
+    }
+  }
+
   // The image block goes BEFORE the text block when present, so the model
   // sees "here is the actual image" before it reads "edit only this text in
   // it" - this is a real edit of those exact pixels, not a blind
@@ -108,8 +136,8 @@ export async function POST(req: Request) {
   // can't reproduce identically twice) - that mismatch used to be the real
   // cause of a plain typo fix coming back with a randomly different-looking
   // background/style.
-  const input = isCorrection
-    ? [{ type: "image", mime_type: baseImageMatch![1], data: baseImageMatch![2] }, { type: "text", text: prompt }]
+  const input = baseImagePart
+    ? [{ type: "image", mime_type: baseImagePart.mimeType, data: baseImagePart.data }, { type: "text", text: prompt }]
     : [{ type: "text", text: prompt }];
 
   try {

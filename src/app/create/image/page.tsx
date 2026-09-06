@@ -370,20 +370,17 @@ export default function CreateInvitePage({
   // means the correction list sent to Gemini is always the true, current,
   // non-contradictory cumulative diff - never edit-of-an-edit history.
   // Editing an existing (already-saved) invite starts with imageDataUrl
-  // pointing at a stored "/uploads/..." path, not a data: URL - the AI edit
-  // call below needs the actual base64 bytes to attach as an image input,
-  // so a stored path is fetched and converted first. A freshly-generated-
-  // this-session image is already a data: URL and returns as-is.
-  async function toDataUrl(src: string): Promise<string> {
-    if (src.startsWith("data:")) return src;
-    const blob = await (await fetch(src)).blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  }
+  // pointing at a stored image URL (Google Cloud Storage), not a data: URL -
+  // the AI edit call needs the actual base64 bytes to attach as an image
+  // input. That conversion happens SERVER-SIDE (see /api/ai-invite) rather
+  // than fetching it here in the browser first: a stored invite's photo
+  // lives on storage.googleapis.com, a different origin than this app, and
+  // the bucket has no CORS policy allowing a page on this origin to read it
+  // via fetch() - every "quick update" on an already-saved invite failed
+  // with a browser-console CORS error (surfacing here only as a generic
+  // "שגיאת רשת") before this moved server-side, where CORS doesn't apply at
+  // all. A freshly-generated-this-session image is already a data: URL, so
+  // the server just uses it as-is either way.
 
   async function quickUpdateImage() {
     if (!baseImagePrompt || !originalFieldsSnapshot || !imageDataUrl) {
@@ -439,11 +436,10 @@ export default function CreateInvitePage({
 
     setQuickUpdating(true);
     try {
-      const baseImage = await toDataUrl(imageDataUrl);
       const res = await fetch("/api/ai-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: updatedPrompt, baseImage }),
+        body: JSON.stringify({ prompt: updatedPrompt, baseImage: imageDataUrl }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -891,7 +887,10 @@ export default function CreateInvitePage({
 
             {usesCustomFields && eventCategory && imageDataUrl && (
               <div className="mt-4">
-                <p className="upper-section-text" style={{ fontSize: 17, fontWeight: 800, opacity: 0.95, textAlign: "center" }}>
+                <p
+                  className="upper-section-text"
+                  style={{ fontSize: 17, fontWeight: 800, opacity: 0.95, textAlign: "center", fontFamily: "'Assistant', sans-serif" }}
+                >
                   ככה ההזמנה תראה אצל האורחים
                 </p>
                 {/* The "⚠️ עדכון התמונה" banner itself now lives inside
