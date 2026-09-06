@@ -65,15 +65,15 @@ export interface TemplateDef {
 
 export const TEMPLATES: TemplateDef[] = [
   { id: "cream-script", label: "סקריפט זהב על קרם", swatch: "linear-gradient(135deg,#f6efe2,#d9b96a)", photoStyle: "round", categories: ["חתונה"] },
-  { id: "dark-gold", label: "כהה ומינימלי בזהב", swatch: "linear-gradient(135deg,#1b1b1f,#c9a24b)", photoStyle: "square", categories: ["חתונה", "בר/בת מצווה"] },
+  { id: "dark-gold", label: "כהה ומינימלי בזהב", swatch: "linear-gradient(135deg,#1b1b1f,#c9a24b)", photoStyle: "square", categories: ["חתונה", "בר/בת מצווה", "בר מצווה", "בת מצווה"] },
   { id: "floral-blush", label: "מסגרת פרחונית", swatch: "linear-gradient(135deg,#f7e3e6,#c98a93)", photoStyle: "header", categories: ["חתונה", "חינה"] },
-  { id: "navy-bold", label: "נייבי מודגש", swatch: "linear-gradient(135deg,#12213f,#c9a24b)", photoStyle: "footer", categories: ["חתונה", "בר/בת מצווה", "אחר"] },
+  { id: "navy-bold", label: "נייבי מודגש", swatch: "linear-gradient(135deg,#12213f,#c9a24b)", photoStyle: "footer", categories: ["חתונה", "בר/בת מצווה", "בר מצווה", "בת מצווה", "אחר"] },
   { id: "line-frame", label: "מסגרת קווים דקה", swatch: "linear-gradient(135deg,#ffffff,#9aa0a8)", photoStyle: "side", categories: ["חתונה"] },
   { id: "botanical-green", label: "בוטני ירוק", swatch: "linear-gradient(135deg,#f3f1e6,#5c7a5c)", photoStyle: "background", categories: ["חתונה", "חינה"] },
   { id: "sunset-tropical", label: "שקיעה טרופית", swatch: "linear-gradient(135deg,#2f7c85,#f2a154)", photoStyle: "round", categories: ["חתונה"] },
-  { id: "gold-ornate-dark", label: "זהב מהודר על כהה", swatch: "linear-gradient(135deg,#2a1240,#d4af37)", photoStyle: "square", categories: ["בר/בת מצווה", "חתונה"] },
+  { id: "gold-ornate-dark", label: "זהב מהודר על כהה", swatch: "linear-gradient(135deg,#2a1240,#d4af37)", photoStyle: "square", categories: ["בר/בת מצווה", "בר מצווה", "בת מצווה", "חתונה"] },
   { id: "birthday-fun", label: "יום הולדת צבעוני", swatch: "linear-gradient(135deg,#e6379a,#ff8fc7)", photoStyle: "round", categories: ["יום הולדת"] },
-  { id: "festive-balloons", label: "חגיגי עם בלונים", swatch: "linear-gradient(135deg,#f5efd8,#c9a24b)", photoStyle: "header", categories: ["יום הולדת", "בר/בת מצווה"] },
+  { id: "festive-balloons", label: "חגיגי עם בלונים", swatch: "linear-gradient(135deg,#f5efd8,#c9a24b)", photoStyle: "header", categories: ["יום הולדת", "בר/בת מצווה", "בר מצווה", "בת מצווה"] },
 ];
 
 /** Per-template accent colors for UI chrome that sits OUTSIDE the card itself

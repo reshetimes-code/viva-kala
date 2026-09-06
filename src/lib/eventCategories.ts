@@ -3,10 +3,25 @@
 // category picked on the landing page means the same thing everywhere
 // downstream, instead of two parallel "type of event" concepts drifting
 // apart.
-export type EventCategory = "חתונה" | "בר/בת מצווה" | "חינה" | "יום הולדת" | "אחר";
+//
+// "בר/בת מצווה" used to be one combined choice - split into "בר מצווה" and
+// "בת מצווה" so the celebrant's actual gender is known up front (correct
+// wording in the headline/fields) instead of a generic "חתן/כלת המצווה"
+// guess. The combined value stays a valid EventCategory (kept out of
+// EVENT_CATEGORIES below, so it's never offered as a new choice) purely so
+// an invite saved before this split keeps loading/rendering exactly as it
+// always did - CATEGORY_FIELD_DEFS/buildHeadline in categoryFields.ts still
+// have an entry for it.
+export type EventCategory = "חתונה" | "בר/בת מצווה" | "בר מצווה" | "בת מצווה" | "חינה" | "יום הולדת" | "אחר";
 
-export const EVENT_CATEGORIES: EventCategory[] = ["חתונה", "בר/בת מצווה", "חינה", "יום הולדת", "אחר"];
+export const EVENT_CATEGORIES: EventCategory[] = ["חתונה", "בר מצווה", "בת מצווה", "חינה", "יום הולדת", "אחר"];
+
+// Every value that has ever been a real EventCategory, including the
+// retired combined one - this is what actually validates an incoming
+// value (e.g. an existing invite's stored category), NOT the picker list
+// above (which only offers new choices going forward).
+const ALL_EVENT_CATEGORIES: EventCategory[] = ["חתונה", "בר/בת מצווה", "בר מצווה", "בת מצווה", "חינה", "יום הולדת", "אחר"];
 
 export function isEventCategory(value: unknown): value is EventCategory {
-  return typeof value === "string" && (EVENT_CATEGORIES as string[]).includes(value);
+  return typeof value === "string" && (ALL_EVENT_CATEGORIES as string[]).includes(value);
 }

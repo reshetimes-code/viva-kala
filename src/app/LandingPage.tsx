@@ -275,7 +275,15 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
           {CATEGORIES.map((c, i) => (
             <Link
               key={c.id}
-              href={`/create/image?category=${encodeURIComponent(c.label)}`}
+              // "בר/בת מצווה" is the label here (a fine, standard umbrella
+              // phrase for a tile caption) but no longer a real choice for a
+              // NEW invite (see eventCategories.ts) - carrying it straight
+              // through as ?category= would silently start a new invite in
+              // the retired combined category instead of asking which one.
+              // No query param at all instead lets the existing "מה חוגגים?"
+              // popup (create/image/page.tsx) ask, now offering the real
+              // "בר מצווה"/"בת מצווה" split.
+              href={c.label === "בר/בת מצווה" ? "/create/image" : `/create/image?category=${encodeURIComponent(c.label)}`}
               className="landing-category-tile"
               style={{ transitionDelay: `${i * 90}ms` }}
             >

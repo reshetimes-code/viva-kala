@@ -8,11 +8,21 @@ export interface FieldDef {
   placeholder?: string;
 }
 
-// Only these three categories get a tailored field set - חתונה, בר/בת מצווה,
-// חינה. "יום הולדת" and "אחר" intentionally have no entry here and keep
-// today's existing generic form (celebrants[], invitedAs, willBe, ...)
-// completely unchanged - CategoryFieldsForm falls back to that when a
-// category has no definition below.
+// Only these categories get a tailored field set - חתונה, בר מצווה, בת
+// מצווה (+ the retired combined בר/בת מצווה, kept only for invites saved
+// before the split), חינה. "יום הולדת" and "אחר" intentionally have no
+// entry here and keep today's existing generic form (celebrants[],
+// invitedAs, willBe, ...) completely unchanged - CategoryFieldsForm falls
+// back to that when a category has no definition below.
+const BAR_BAT_MITZVAH_FIELDS_BASE: FieldDef[] = [
+  { key: "familyName", label: "משפחת", type: "text" },
+  { key: "parentsNames", label: "שמות ההורים (לא חובה)", type: "text" },
+  { key: "siblingsNames", label: "שמות האחים (לא חובה)", type: "text" },
+  { key: "eventDate", label: "תאריך", type: "date", required: true },
+  { key: "eventStart", label: "שעת התחלת האירוע", type: "time" },
+  { key: "venue", label: "מיקום האירוע", type: "text", required: true },
+];
+
 export const CATEGORY_FIELD_DEFS: Partial<Record<EventCategory, FieldDef[]>> = {
   "חתונה": [
     { key: "groomName", label: "שם החתן", type: "text", required: true },
@@ -24,15 +34,22 @@ export const CATEGORY_FIELD_DEFS: Partial<Record<EventCategory, FieldDef[]>> = {
     { key: "groomParents", label: "שמות הורי החתן (לא חובה)", type: "text" },
     { key: "brideParents", label: "שמות הורי הכלה (לא חובה)", type: "text" },
   ],
+  // Retired combined category - an invite saved before the בר/בת split
+  // still loads and edits with the exact same fields it always had.
   "בר/בת מצווה": [
     { key: "celebrantName", label: "שם חתן/כלת המצווה", type: "text", required: true },
     { key: "celebrantAge", label: "בן/בת 12/13 (לא חובה)", type: "text", placeholder: "לדוגמה: בן 13" },
-    { key: "familyName", label: "משפחת", type: "text" },
-    { key: "parentsNames", label: "שמות ההורים (לא חובה)", type: "text" },
-    { key: "siblingsNames", label: "שמות האחים (לא חובה)", type: "text" },
-    { key: "eventDate", label: "תאריך", type: "date", required: true },
-    { key: "eventStart", label: "שעת התחלת האירוע", type: "time" },
-    { key: "venue", label: "מיקום האירוע", type: "text", required: true },
+    ...BAR_BAT_MITZVAH_FIELDS_BASE,
+  ],
+  "בר מצווה": [
+    { key: "celebrantName", label: "שם חתן המצווה", type: "text", required: true },
+    { key: "celebrantAge", label: "גיל (לא חובה)", type: "text", placeholder: "לדוגמה: בן 13" },
+    ...BAR_BAT_MITZVAH_FIELDS_BASE,
+  ],
+  "בת מצווה": [
+    { key: "celebrantName", label: "שם בת המצווה", type: "text", required: true },
+    { key: "celebrantAge", label: "גיל (לא חובה)", type: "text", placeholder: "לדוגמה: בת 12" },
+    ...BAR_BAT_MITZVAH_FIELDS_BASE,
   ],
   "חינה": [
     { key: "groomName", label: "שם החתן", type: "text", required: true },
@@ -76,6 +93,8 @@ export interface HeadlineParts {
 const CATEGORY_INTRO: Partial<Record<EventCategory, string>> = {
   "חתונה": "בשמחה ובאהבה אנו מזמינים אתכם לחגוג עמנו",
   "בר/בת מצווה": "בשמחה רבה אנו מזמינים אתכם לחגוג עמנו",
+  "בר מצווה": "בשמחה רבה אנו מזמינים אתכם לחגוג עמנו",
+  "בת מצווה": "בשמחה רבה אנו מזמינים אתכם לחגוג עמנו",
   "חינה": "מזמינים אתכם לחגוג עמנו את ליל החינה",
 };
 
@@ -99,7 +118,9 @@ export function buildHeadline(
       if (names.length === 0) return null;
       return { line1: names.join(" ו"), intro };
     }
-    case "בר/בת מצווה": {
+    case "בר/בת מצווה":
+    case "בר מצווה":
+    case "בת מצווה": {
       if (!fields.celebrantName) return null;
       return {
         line1: fields.celebrantName,
