@@ -2124,10 +2124,16 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    picked date is right before moving on. */
 .lead-video-confirm { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .lead-video-confirm .lead-video-picked { color: #4a3f30; font-size: 1.05rem; }
+.lead-video-confirm-row { display: flex; gap: 10px; }
 .lead-video-confirm-btn {
   border: none; border-radius: 999px; padding: 10px 26px; font-weight: 800; font-size: .92rem;
   font-family: 'Assistant', sans-serif; cursor: pointer; color: #fff;
   background: linear-gradient(135deg, #1c1c1e, #2f2f32); box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+}
+/* "התבלבלתי" - a clearly secondary/undo action next to the primary
+   "אישור", not another dark filled button competing with it. */
+.lead-video-confirm-btn-secondary {
+  color: #4a3f30; background: #fff; border: 1px solid #d8cba8; box-shadow: none;
 }
 
 /* --- 360 virtual tour, opened in-page instead of navigating away --- */

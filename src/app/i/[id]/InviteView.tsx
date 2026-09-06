@@ -250,6 +250,17 @@ export default function InviteView({
     }, 300);
   }
 
+  // "התבלבלתי" on the "זה התאריך?" confirm step - back to the date input
+  // itself (not the next question) so they can just re-pick it. No fade
+  // transition here (unlike confirmLeadDate's "out") since this is
+  // correcting a mistake, not advancing - snapping straight back reads as
+  // "undo", not as another step in the sequence.
+  function backToDatePicker() {
+    setLeadEventDate("");
+    setLeadPickedText("");
+    setLeadStepPhase("question");
+  }
+
   function handleLeadTypePicked(value: string) {
     setLeadEventType(value);
     if (value) advanceLeadStep(value);
@@ -486,9 +497,18 @@ export default function InviteView({
                       {leadStepPhase === "confirm" ? (
                         <div className="lead-video-confirm">
                           <p className="lead-video-picked">זה התאריך? {leadPickedText}</p>
-                          <button type="button" className="lead-video-confirm-btn" onClick={confirmLeadDate}>
-                            ✓ אישור
-                          </button>
+                          <div className="lead-video-confirm-row">
+                            <button type="button" className="lead-video-confirm-btn" onClick={confirmLeadDate}>
+                              ✓ אישור
+                            </button>
+                            <button
+                              type="button"
+                              className="lead-video-confirm-btn lead-video-confirm-btn-secondary"
+                              onClick={backToDatePicker}
+                            >
+                              התבלבלתי
+                            </button>
+                          </div>
                         </div>
                       ) : leadStepPhase === "picked" ? (
                         <p className="lead-video-picked">✓ {leadPickedText}</p>
