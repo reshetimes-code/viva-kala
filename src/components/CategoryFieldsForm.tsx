@@ -83,7 +83,7 @@ export default function CategoryFieldsForm({
       ))}
 
       {optional.length > 0 && (
-        <div className="mt-3" style={{ textAlign: "right" }}>
+        <div className="mt-3" style={{ textAlign: "center" }}>
           {!showOptional ? (
             <button
               type="button"

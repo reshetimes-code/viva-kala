@@ -75,11 +75,9 @@ export default function DesignChangeChat({
 
   return (
     <div className="ai-invite-form">
-      <p className="ai-invite-note">
-        💬 כתבו כל בקשת שינוי עיצובי - למשל &quot;תוסיפו משפט מעל השם&quot; או &quot;תשנו את הרקע לגוון כחול&quot;. כל בקשה כאן
-        נספרת במסגרת 10 שינויי העיצוב לחשבון (בשונה מתיקון שם/תאריך/כתובת/שעה, שתמיד חינם וללא הגבלה).
-      </p>
-
+      {/* Full explanation moved to a SweetAlert notice shown before this
+          modal even opens (see openDesignChangeChat in create/image/
+          page.tsx) - it was easy to skip as fine print inline here. */}
       {remaining !== null && (
         <p className="ai-invite-note" style={{ fontWeight: 700, opacity: 0.85, marginBottom: 8 }}>
           נותרו {remaining} שינויי עיצוב לחשבון.
@@ -102,12 +100,19 @@ export default function DesignChangeChat({
         !blocked && (
           <div className="ai-invite-field">
             <label>מה לשנות?</label>
-            <input
+            <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="לדוגמה: תוסיפו משפט מעל השם..."
+              rows={4}
               onKeyDown={(e) => {
-                if (e.key === "Enter") sendRequest();
+                // Enter sends, Shift+Enter still adds a line break - a
+                // plain <input> couldn't offer that at all, and a request
+                // here is often more than one short line.
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendRequest();
+                }
               }}
             />
             {input.trim() && (

@@ -366,6 +366,27 @@ export default function CreateInvitePage({
   // component itself sends baseImage without the freeCorrection flag.
   function openDesignChangeChat() {
     if (!imageDataUrl) return;
+    // The full explanation used to sit as inline text inside the chat
+    // itself - moved to its own notice, shown once before the chat opens,
+    // so it actually gets read instead of blending into the form as fine
+    // print. Kept short on purpose (the quota rule alone, not a full essay).
+    Swal.fire({
+      icon: "warning",
+      title: "שימו לב - חשוב לקרוא",
+      html:
+        'כתבו כל בקשת שינוי עיצובי - למשל "הוסיפו משפט מעל השם" או "שנו את הרקע לגוון כחול".<br><br>' +
+        "<b>כל בקשה כאן נספרת</b> במסגרת 10 שינויי העיצוב לחשבון (בשונה מתיקון שם/תאריך/כתובת/שעה, שתמיד חינם וללא הגבלה).",
+      confirmButtonText: "הבנתי, בואו נתחיל",
+      confirmButtonColor: "#d4af7a",
+      background: "#1f2a33",
+      color: "#fff",
+    }).then((result) => {
+      if (result.isConfirmed) openDesignChangeChatModal();
+    });
+  }
+
+  function openDesignChangeChatModal() {
+    if (!imageDataUrl) return;
     const container = document.createElement("div");
     Swal.fire({
       html: container,
