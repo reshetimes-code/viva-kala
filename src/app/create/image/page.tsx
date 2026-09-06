@@ -1062,7 +1062,7 @@ export default function CreateInvitePage({
                   <button type="button" className="image-choice-btn image-choice-btn-ai" onClick={openDesignChangeChat}>
                     שינוי עיצובי בצ&apos;אט
                   </button>
-                  <button type="button" className="image-choice-btn image-choice-btn-ai" onClick={() => setImageDataUrl(null)}>
+                  <button type="button" className="image-choice-btn" onClick={() => setImageDataUrl(null)}>
                     יצירה מחדש
                   </button>
                 </div>
