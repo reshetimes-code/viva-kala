@@ -468,8 +468,10 @@ export default function InviteView({
               <>
                 <div className="lead-alert-icon">✨</div>
                 <p className="lead-alert-thanks">בהצלחה באירוע הבא שלכם!</p>
-                <p className="welcome-alert-emphasis" style={{ marginTop: 6 }}>
-                  רוצים לראות איך זה נראה בשטח? סיור 360° באולם:
+                <p className="welcome-alert-emphasis lead-tour-prompt" style={{ marginTop: 6 }}>
+                  רוצים לראות איך זה נראה בשטח?
+                  <br />
+                  סיור 360° באולם:
                 </p>
                 <button
                   type="button"

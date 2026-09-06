@@ -2042,6 +2042,9 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   font-size: 1.5rem; font-weight: 800; color: #b8860b; line-height: 1.4; margin-bottom: 24px;
 }
 .welcome-alert-highlight { color: #c62828; }
+/* Overrides .welcome-alert-emphasis's default gold for this one prompt -
+   a bright, unmissable red instead, split onto its own two lines. */
+.lead-tour-prompt { color: #ff1a1a; text-align: center; }
 .welcome-alert-cta {
   width: 100%; padding: 15px; border-radius: 999px; border: 1.5px solid rgba(212,175,55,0.5);
   background: linear-gradient(135deg, #1c1c1e, #2f2f32); color: #d4af7a; font-weight: 700; font-size: 1.05rem;
