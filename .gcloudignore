@@ -1,0 +1,10 @@
+.gcloudignore
+.git
+.gitignore
+node_modules/
+.next/
+.claude-backups/
+data/
+public/uploads/
+*.log
+npm-debug.log*
