@@ -783,7 +783,10 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    .image-choice-btn's own width:100% (meant for the stacked picker above)
    would fight for space here, so both get an explicit flex share instead. */
 .design-actions-row { display: flex; gap: 10px; }
-.design-actions-row .image-choice-btn { flex: 1; width: auto; padding: 14px 8px; font-size: .92rem; }
+.design-actions-row .image-choice-btn {
+  flex: 1; width: auto; padding: 14px 8px; font-size: .95rem;
+  font-family: 'Assistant', sans-serif; font-weight: 800;
+}
 
 /* .alert-error elsewhere assumes a dark page background (light pink text) -
    override just inside the AI chat's own white popup so it stays readable. */
