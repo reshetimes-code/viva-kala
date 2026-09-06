@@ -790,9 +790,11 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 /* "יצירה מחדש" / "שינוי עיצובי בצ'אט" side by side under the preview -
    .image-choice-btn's own width:100% (meant for the stacked picker above)
    would fight for space here, so both get an explicit flex share instead. */
-.design-actions-row { display: flex; gap: 10px; }
+/* Stacked - "שינוי עיצובי בצ'אט" on top, "יצירה מחדש" below it - both in
+   the same existing beige/gold (.image-choice-btn-ai), not side by side. */
+.design-actions-row { display: flex; flex-direction: column; gap: 10px; }
 .design-actions-row .image-choice-btn {
-  flex: 1; width: auto; padding: 14px 8px; font-size: .95rem;
+  width: 100%; padding: 14px 8px; font-size: .95rem;
   font-family: 'Assistant', sans-serif; font-weight: 800;
 }
 

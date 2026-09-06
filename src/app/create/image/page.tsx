@@ -976,11 +976,11 @@ export default function CreateInvitePage({
                     image people can actually see at this point, instead of
                     "יצירה מחדש" sitting alone up by the upload controls. */}
                 <div className="design-actions-row mt-3">
-                  <button type="button" className="image-choice-btn" onClick={() => setImageDataUrl(null)}>
-                    יצירה מחדש
-                  </button>
                   <button type="button" className="image-choice-btn image-choice-btn-ai" onClick={openDesignChangeChat}>
                     שינוי עיצובי בצ&apos;אט
+                  </button>
+                  <button type="button" className="image-choice-btn image-choice-btn-ai" onClick={() => setImageDataUrl(null)}>
+                    יצירה מחדש
                   </button>
                 </div>
               </div>
