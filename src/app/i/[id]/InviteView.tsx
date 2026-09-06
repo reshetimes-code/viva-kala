@@ -680,6 +680,8 @@ export default function InviteView({
             <div className="rsvp-card">
               {submitted ? (
                 <div className="rsvp-thanks-screen">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className="rsvp-thanks-image" src="/party.png" alt="" aria-hidden="true" />
                   <p className="rsvp-thanks">
                     {submitted === "yes" ? "תודה שאישרתם הגעה!" : "תודה על התגובה"}
                   </p>
