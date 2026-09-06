@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import DesktopPhoneWrapper from "@/components/DesktopPhoneWrapper";
 import AiDesignerChat from "@/components/AiDesignerChat";
+import DesignChangeChat from "@/components/DesignChangeChat";
 import CategoryFieldsForm from "@/components/CategoryFieldsForm";
 import InvitePhotoCard from "@/components/InvitePhotoCard";
 import ImageCropModal from "@/components/ImageCropModal";
@@ -357,6 +358,56 @@ export default function CreateInvitePage({
     });
   }
 
+  // "💬 בקשו שינוי בצ'אט" - free-text design requests on the CURRENT image
+  // ("add a sentence above the name", "make the background blue"), as
+  // opposed to quickUpdateImage's structured field-only fixes. A real
+  // visual edit, so unlike that one it counts against the shared AI-design
+  // quota (see MAX_IMAGE_REGENERATIONS in api/ai-invite/route.ts) - the
+  // component itself sends baseImage without the freeCorrection flag.
+  function openDesignChangeChat() {
+    if (!imageDataUrl) return;
+    const container = document.createElement("div");
+    Swal.fire({
+      html: container,
+      showConfirmButton: false,
+      showCloseButton: false,
+      width: "min(560px, 96vw)",
+      padding: "1.6em 1.2em",
+      background: "#fff",
+      didOpen: () => {
+        aiModalRootRef.current = createRoot(container);
+        aiModalRootRef.current.render(
+          <>
+            <button
+              type="button"
+              onClick={() => Swal.close()}
+              aria-label="סגירה"
+              style={{
+                position: "absolute", top: 10, right: 14, zIndex: 10,
+                background: "none", border: "none", fontSize: "1.6rem", lineHeight: 1,
+                color: "#999", cursor: "pointer", padding: 4,
+              }}
+            >
+              ×
+            </button>
+            <DesignChangeChat
+              imageUrl={imageDataUrl}
+              onUse={(newUrl) => {
+                setImageDataUrl(newUrl);
+                Swal.close();
+              }}
+              onClose={() => Swal.close()}
+            />
+          </>
+        );
+      },
+      willClose: () => {
+        aiModalRootRef.current?.unmount();
+        aiModalRootRef.current = null;
+      },
+    });
+  }
+
   // "🪄 עדכון התמונה" after editing a field - regenerates in ONE direct call,
   // no chat, no questions. Always built from the FIXED baseImagePrompt/
   // originalFieldsSnapshot (never from a previous correction) - a real bug
@@ -439,7 +490,7 @@ export default function CreateInvitePage({
       const res = await fetch("/api/ai-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: updatedPrompt, baseImage: imageDataUrl }),
+        body: JSON.stringify({ prompt: updatedPrompt, baseImage: imageDataUrl, freeCorrection: true }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -857,15 +908,10 @@ export default function CreateInvitePage({
               onChange={handleImageSelect}
             />
 
-            {/* The image itself is already shown right below in the "ככה זה
-                ייראה אצל האורחים" preview - no need to repeat it here in a
-                second little box, just the way back to pick a different
-                one. */}
-            {imageDataUrl ? (
-              <button type="button" className="image-choice-btn" onClick={() => setImageDataUrl(null)}>
-                🔄 יצירה מחדש
-              </button>
-            ) : (
+            {/* The image itself is already shown right below in the "ככה
+                ההזמנה תראה אצל האורחים" preview, alongside "יצירה מחדש"/
+                "שינוי בצ'אט" - nothing to show here once there's an image. */}
+            {!imageDataUrl && (
               <div className="image-choice-buttons">
                 <button type="button" className="image-choice-btn image-choice-btn-ai" onClick={openAiDesigner}>
                   ✨ עם מעצב ה-AI
@@ -924,6 +970,18 @@ export default function CreateInvitePage({
                       textStyle={textStyle}
                     />
                   )}
+                </div>
+                {/* Moved down here, right under the actual preview, next to
+                    the new free-text design-change chat - both act on the
+                    image people can actually see at this point, instead of
+                    "יצירה מחדש" sitting alone up by the upload controls. */}
+                <div className="design-actions-row mt-3">
+                  <button type="button" className="image-choice-btn" onClick={() => setImageDataUrl(null)}>
+                    🔄 יצירה מחדש
+                  </button>
+                  <button type="button" className="image-choice-btn image-choice-btn-ai" onClick={openDesignChangeChat}>
+                    💬 שינוי עיצובי בצ&apos;אט
+                  </button>
                 </div>
               </div>
             )}

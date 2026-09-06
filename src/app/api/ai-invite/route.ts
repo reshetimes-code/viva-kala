@@ -3,11 +3,13 @@ import { getCurrentUser } from "@/lib/auth";
 import { getUserImageRegenerationsUsed, incrementUserImageRegenerations } from "@/lib/store";
 
 // Each call here is a real Gemini image-generation cost - capped per
-// account so one user can't run up an unbounded bill. Only counts a
-// genuinely NEW design (guided form / AI-designer chat, no `baseImage`
-// attached) - a text-only correction of an EXISTING image (baseImage
-// present, see below) is free and uncapped, since that's just fixing a
-// typo/date/address on a design that was already paid for once.
+// account so one user can't run up an unbounded bill. Free/uncapped ONLY
+// for `freeCorrection` (quickUpdateImage's plain structured-field fix -
+// typo/name/date/address/time on an already-generated image, nothing
+// visual). Everything else counts against this same shared pool: a brand
+// new design (guided form / AI-designer chat, no baseImage at all) AND a
+// free-text design-change request via the chat (DesignChangeChat -
+// baseImage present, but a real visual edit, not a plain field fix).
 const MAX_IMAGE_REGENERATIONS = 10;
 
 // Generates an invitation background/design image from a guided form +
@@ -55,23 +57,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "יש למלא לפחות פרט אחד" }, { status: 400 });
   }
 
-  // A `baseImage` means "edit this exact existing image" (a text-only
-  // correction on an already-generated design, from quickUpdateImage in
-  // create/image/page.tsx) rather than a brand-new design from scratch -
-  // that distinction is exactly what the quota below keys off of. It's
-  // either a data: URL (an image generated earlier this session, still in
-  // client state) or a plain https:// URL (an already-saved invite's photo,
-  // stored on Google Cloud Storage) - resolved to actual bytes below,
-  // AFTER the quota check, since fetching it costs nothing quota-wise.
+  // A `baseImage` means "edit this exact existing image" rather than a
+  // brand-new design from scratch. It's either a data: URL (an image
+  // generated earlier this session, still in client state) or a plain
+  // https:// URL (an already-saved invite's photo, on Google Cloud
+  // Storage) - resolved to actual bytes below, AFTER the quota check,
+  // since fetching it costs nothing quota-wise.
   const rawBaseImage = typeof body?.baseImage === "string" ? body.baseImage.trim() : "";
   const isCorrection = !!rawBaseImage;
+  // ONLY quickUpdateImage's plain structured-field fix sets this - a real
+  // visual edit via baseImage (a design-chat request) still costs quota
+  // even though it also attaches a baseImage.
+  const isFreeCorrection = isCorrection && body?.freeCorrection === true;
 
-  if (!isCorrection) {
+  if (!isFreeCorrection) {
     const used = await getUserImageRegenerationsUsed(user.id);
     if (used >= MAX_IMAGE_REGENERATIONS) {
       return NextResponse.json(
         {
-          error: `הגעתם למגבלה של ${MAX_IMAGE_REGENERATIONS} עיצובים חדשים לחשבון. תיקון טקסט (שמות, תאריך, כתובת, שעה) בהזמנה קיימת אינו כלול במגבלה ותמיד זמין.`,
+          error: `הגעתם למגבלה של ${MAX_IMAGE_REGENERATIONS} שינויי עיצוב לחשבון. תיקון טקסט בלבד (שמות, תאריך, כתובת, שעה) בהזמנה קיימת אינו כלול במגבלה ותמיד זמין.`,
         },
         { status: 403 }
       );
@@ -174,15 +178,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "לא התקבלה תמונה מהשירות" }, { status: 502 });
     }
 
-    // Only a genuinely new design counts against the quota, and only once
-    // Gemini actually returned one - a failed/errored call above already
-    // returned early without reaching here, so it never costs quota either.
-    if (!isCorrection) {
-      await incrementUserImageRegenerations(user.id);
+    // Counts against the quota unless it's the one free-correction path,
+    // and only once Gemini actually returned an image - a failed/errored
+    // call above already returned early without reaching here, so it never
+    // costs quota either.
+    let regenerationsUsed: number | undefined;
+    if (!isFreeCorrection) {
+      regenerationsUsed = await incrementUserImageRegenerations(user.id);
     }
 
     const mimeType = imageContent?.mime_type || "image/png";
-    return NextResponse.json({ imageDataUrl: `data:${mimeType};base64,${base64}` });
+    return NextResponse.json({
+      imageDataUrl: `data:${mimeType};base64,${base64}`,
+      ...(regenerationsUsed !== undefined
+        ? { regenerationsUsed, regenerationsRemaining: Math.max(0, MAX_IMAGE_REGENERATIONS - regenerationsUsed) }
+        : {}),
+    });
   } catch {
     return NextResponse.json({ error: "שגיאת רשת מול שירות ה-AI" }, { status: 502 });
   }

@@ -779,6 +779,12 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .image-choice-btn-ai { background: #d4af7a; color: #1c1c1e; border-color: #d4af7a; }
 .image-choice-btn-ai:hover, .image-choice-btn-ai:active { background: #c9a066; }
 
+/* "יצירה מחדש" / "שינוי עיצובי בצ'אט" side by side under the preview -
+   .image-choice-btn's own width:100% (meant for the stacked picker above)
+   would fight for space here, so both get an explicit flex share instead. */
+.design-actions-row { display: flex; gap: 10px; }
+.design-actions-row .image-choice-btn { flex: 1; width: auto; padding: 14px 8px; font-size: .92rem; }
+
 /* .alert-error elsewhere assumes a dark page background (light pink text) -
    override just inside the AI chat's own white popup so it stays readable. */
 .ai-invite-form .alert-error { background: #fdecec; color: #b42318; border-color: #f3b4b4; }
