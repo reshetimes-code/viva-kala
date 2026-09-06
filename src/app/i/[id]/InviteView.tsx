@@ -635,19 +635,15 @@ export default function InviteView({
 
         {wantRsvp && (
           <section className="rsvp-panel">
-            {/* Same photo as the invite itself, softened behind the form -
-                continuity with the designed invite instead of an unrelated
-                plain page for the RSVP step. Kept as its own absolutely-
-                positioned layer (not touching sibling elements' own
-                positioning) so it can never interfere with the back-arrow
-                button below. */}
-            {mode === "image" && imageUrl && (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="rsvp-bg-photo" src={imageUrl} alt="" aria-hidden="true" />
-                <div className="rsvp-bg-scrim" />
-              </>
-            )}
+            {/* Used to show the invite's own photo, blurred, behind a 90%-
+                opaque cream scrim - the remaining 10% let the photo's own
+                colors (whatever they happened to be) bleed through, visible
+                as odd discolored patches wherever the blurred photo was
+                locally darker/more saturated. A fully opaque scrim made the
+                photo layer pointless (completely hidden either way), so
+                it's gone - .rsvp-panel's own flat background below is the
+                only background now, guaranteed uniform regardless of any
+                photo. */}
             <button type="button" className="back-to-inv-cta" onClick={() => setShowRsvp(false)}>
               <span className="pull-arrows">
                 <i className="a1">▲</i>

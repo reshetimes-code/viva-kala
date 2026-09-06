@@ -1728,6 +1728,15 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   display: flex; flex-direction: column; width: 100% !important; height: 200vh; height: 200dvh;
   transition: transform .5s cubic-bezier(.4,0,.2,1);
   touch-action: pan-y;
+  /* Belt-and-suspenders alongside .vpager's own :has() background above -
+     this is the direct parent of .inv-panel/.rsvp-panel, so if any dvh
+     rounding ever leaves a sliver uncovered by either child's own
+     background, it's this element's paint that shows through, not
+     whatever is further behind it (.vpager, then body). Matches the RSVP
+     screen's own beige - never navy - since that's the only state where a
+     seam would actually be visible to a guest (.inv-panel's photo already
+     fills edge-to-edge on its own). */
+  background: #f5efe0;
 }
 .vpager-inner.show-rsvp { transform: translateY(-100vh); transform: translateY(-100dvh); }
 
@@ -1969,17 +1978,6 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   content: ""; display: block; width: 140px; height: 1.5px;
   background: rgba(74,63,48,0.35); margin: 0 auto 22px;
 }
-/* Heavily blurred so it reads as a soft floral/color texture at the edges -
-   not the actual name/date text ghosting through legibly behind the form,
-   which is what a lighter blur here used to look like. */
-.rsvp-bg-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; filter: blur(18px) saturate(1.1); transform: scale(1.1); }
-/* Fully opaque now, not 90% - the 10% that used to show through let the
-   actual event photo's own colors (a blue tint, on this invite) bleed into
-   the RSVP background, especially wherever the blurred photo was locally
-   darker/more saturated - that's what was reading as a "torn"/discolored
-   patch. Solid beige, matching .rsvp-panel's own flat color, guarantees a
-   completely uniform background regardless of what the photo looks like. */
-.rsvp-bg-scrim { position: absolute; inset: 0; z-index: 0; background: #f5efe0; }
 .rsvp-title {
   font-family: 'Assistant', sans-serif; font-weight: 800;
   font-size: clamp(1.7rem, 7vw, 2.2rem); color: #b8860b; margin: 0 0 8px; line-height: 1.3;
