@@ -542,10 +542,14 @@ body {
   direction: rtl;
   color: #fff;
   padding: 20px;
-  /* Room for .confirmation-section below, now fixed to the bottom of the
-     screen - without this, the fixed bar would sit on top of (and hide)
-     whatever the last section in the normal scroll flow happens to be. */
-  padding-bottom: 130px;
+  /* Room for .confirmation-section AND .stale-image-banner below, both
+     fixed to the bottom of the screen - without this, they'd sit on top of
+     (and hide) whatever the last section in the normal scroll flow happens
+     to be. Sized for both stacked (the common case is just the
+     confirmation bar, so this is occasionally more than strictly needed -
+     harmless extra blank space at the bottom, versus content actually
+     hidden underneath a fixed bar if it were too little). */
+  padding-bottom: 230px;
 }
 
 .create-wrapper { max-width: 760px; margin: 0 auto; padding: 30px 0; }
@@ -638,10 +642,14 @@ body {
 /* Shown over the AI-generated preview once form fields have drifted away
    from whatever the image actually has baked into its pixels - see
    imageIsStale in create/image/page.tsx. */
+/* Fixed to the bottom of the screen (above .confirmation-section, which is
+   also fixed there) so it stays visible while scrolling the form, instead
+   of scrolling away with the rest of the card it's declared inside. */
 .stale-image-banner {
-  max-width: 260px; margin: 12px auto 0; text-align: center;
-  background: rgba(220,38,38,0.12); border: 1.5px solid rgba(220,38,38,0.4); border-radius: 14px;
-  padding: 12px 14px;
+  position: fixed; left: 0; right: 0; bottom: 96px; z-index: 45;
+  max-width: 260px; margin: 0 auto; text-align: center;
+  background: #241010; border: 1.5px solid rgba(220,38,38,0.5); border-radius: 14px 14px 0 0;
+  padding: 12px 14px; box-shadow: 0 -6px 20px rgba(0,0,0,0.35);
 }
 .stale-image-banner p { margin: 0 0 10px; color: #fecaca; font-size: .85rem; font-weight: 600; line-height: 1.5; }
 .stale-image-update-btn {
