@@ -519,7 +519,7 @@ export default function InviteView({
                         </div>
                       ) : leadStep === 1 ? (
                         <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
-                          <label>סוג האירוע? (לא חובה)</label>
+                          <label>סוג האירוע?</label>
                           <select value={leadEventType} onChange={(e) => handleLeadTypePicked(e.target.value)}>
                             <option value="">בחרו סוג אירוע</option>
                             <option value="חתונה">חתונה</option>
@@ -530,7 +530,7 @@ export default function InviteView({
                         </div>
                       ) : (
                         <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
-                          <label>איזה אולם? (לא חובה)</label>
+                          <label>איזה אולם?</label>
                           <input
                             type="text"
                             placeholder="שם האולם"
