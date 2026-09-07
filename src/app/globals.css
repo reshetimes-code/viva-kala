@@ -899,6 +899,19 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 }
 .ai-chat-option-btn:hover, .ai-chat-option-btn:active { background: #f2e2c2; transform: translateY(-1px); }
 
+/* --- the deterministic "want to use your own photo, and how?" step at the
+   end of the chat (see AiDesignerChat.tsx) - a 2x2 icon grid instead of the
+   stacked-row .ai-chat-options above, since each option here is a layout
+   that reads far faster as a small picture than as text alone. --- */
+.ai-placement-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ai-placement-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 16px 10px; border-radius: 14px; border: 1.5px solid #d4af7a;
+  background: #fbf6ec; color: #1c1c1e; font-weight: 700; font-size: .9rem; cursor: pointer;
+  text-align: center; transition: background .2s ease, transform .2s ease;
+}
+.ai-placement-btn:hover, .ai-placement-btn:active { background: #f2e2c2; transform: translateY(-1px); }
+
 #submit-btn, .submit-btn {
   width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px;
   background: linear-gradient(135deg, #1c1c1e, #2f2f32);
@@ -1965,6 +1978,32 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .ipc-extra {
   font-family: 'Assistant', sans-serif; font-weight: 400; font-size: clamp(.82rem, 3.1vw, .95rem);
   color: #7a7568; line-height: 1.6; margin-top: 2px;
+}
+
+/* --- InvitePhotoCard's textStyle.photoPlacement layouts - photo and text
+   each get their own real space (a normal flex column) instead of the text
+   panel floating on top of the photo like .ipc-card/.ipc-panel above. Same
+   absolute+inset:0 reasoning as .ipc-card itself (see its comment) for why
+   this fills its positioned ancestor instead of using width/height:100%. */
+.ipc-layout-card {
+  position: absolute !important; inset: 0 !important; overflow: hidden;
+  display: flex; flex-direction: column; background: #fbf8f1;
+}
+.ipc-layout-photo { flex: none; width: 100%; object-fit: cover; }
+.ipc-layout-round .ipc-layout-photo, .ipc-layout-half .ipc-layout-photo { height: 50%; }
+.ipc-layout-quarter-top .ipc-layout-photo, .ipc-layout-quarter-bottom .ipc-layout-photo { height: 27%; }
+.ipc-layout-content {
+  flex: 1 1 auto; min-height: 0; overflow: auto;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  padding: 22px 20px; gap: 8px; direction: rtl;
+}
+/* "round": the photo isn't a banner at all, it's a small circle sitting
+   inline with the text, both centered in one flowing column. */
+.ipc-layout-round .ipc-layout-photo { display: none; }
+.ipc-round-photo {
+  width: 42%; aspect-ratio: 1; border-radius: 50%; object-fit: cover;
+  border: 3px solid rgba(201,162,75,0.55); margin-bottom: 4px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.18);
 }
 
 .pull-cta {

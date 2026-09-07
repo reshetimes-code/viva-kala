@@ -312,6 +312,22 @@ export default function CreateInvitePage({
       return;
     }
 
+    // One-time explainer, its own separate step - not sitting inline atop
+    // every single question turn inside the chat itself (which is what
+    // AiDesignerChat used to render it as, every re-render for the whole
+    // conversation).
+    Swal.fire({
+      icon: "info",
+      title: "מעצב/ת ה-AI",
+      text: "המעצב/ת הדיגיטלי/ת שלנו שואל/ת כמה שאלות קצרות - פשוט לוחצים על התשובה שהכי מתאימה לכם.",
+      confirmButtonText: "בואו נתחיל",
+      confirmButtonColor: "#d4af7a",
+      background: "#1f2a33",
+      color: "#fff",
+    }).then(() => openAiDesignerChat());
+  }
+
+  function openAiDesignerChat() {
     const container = document.createElement("div");
     Swal.fire({
       html: container,
@@ -343,29 +359,45 @@ export default function CreateInvitePage({
             <AiDesignerChat
               eventCategory={eventCategory ?? partyType}
               categoryFields={usesCustomFields ? categoryFields : undefined}
-              onGenerated={(url, prompt) => {
-                // Its own prompt asked Gemini to draw the event's text right
-                // into the image - InvitePhotoCard's separate panel would
-                // just duplicate that, so it's marked here to be skipped.
-                setImageHasBakedText(true);
-                const fieldsNow = { ...categoryFields };
-                setTextStyle({
-                  ...DEFAULT_TEXT_STYLE,
-                  imageHasText: true,
-                  baseImagePrompt: prompt,
-                  originalFieldsSnapshot: fieldsNow,
-                  lastImagePrompt: prompt,
-                });
+              onGenerated={(url, prompt, uploadedPhotoPlacement) => {
                 setImageDataUrl(url);
-                // This is a brand-new base image (whether it's the very
-                // first one, or the user picked "🔄 יצירה מחדש" to start
-                // over) - both anchors reset to right now, same as the
-                // "in sync" baseline the staleness check below compares
-                // future edits against.
-                setBaseImagePrompt(prompt);
-                setOriginalFieldsSnapshot(fieldsNow);
-                setBakedFieldsSnapshot(fieldsNow);
-                setBakedCategorySnapshot(eventCategory);
+                if (uploadedPhotoPlacement) {
+                  // The guest's own photo, chosen layout only - nothing was
+                  // drawn into it by the AI, so InvitePhotoCard's own text
+                  // panel still needs to render (imageHasBakedText stays
+                  // false), just in the layout they picked. None of the
+                  // AI-regeneration staleness tracking below applies here -
+                  // there's no prompt to diff future edits against.
+                  setImageHasBakedText(false);
+                  setTextStyle({ ...DEFAULT_TEXT_STYLE, photoPlacement: uploadedPhotoPlacement });
+                  setBaseImagePrompt(undefined);
+                  setOriginalFieldsSnapshot(undefined);
+                  setBakedFieldsSnapshot(undefined);
+                  setBakedCategorySnapshot(undefined);
+                } else {
+                  // Its own prompt asked Gemini to draw the event's text
+                  // right into the image - InvitePhotoCard's separate panel
+                  // would just duplicate that, so it's marked here to be
+                  // skipped.
+                  setImageHasBakedText(true);
+                  const fieldsNow = { ...categoryFields };
+                  setTextStyle({
+                    ...DEFAULT_TEXT_STYLE,
+                    imageHasText: true,
+                    baseImagePrompt: prompt,
+                    originalFieldsSnapshot: fieldsNow,
+                    lastImagePrompt: prompt,
+                  });
+                  // This is a brand-new base image (whether it's the very
+                  // first one, or the user picked "🔄 יצירה מחדש" to start
+                  // over) - both anchors reset to right now, same as the
+                  // "in sync" baseline the staleness check below compares
+                  // future edits against.
+                  setBaseImagePrompt(prompt);
+                  setOriginalFieldsSnapshot(fieldsNow);
+                  setBakedFieldsSnapshot(fieldsNow);
+                  setBakedCategorySnapshot(eventCategory);
+                }
                 refreshRegenerationsRemaining();
                 Swal.close();
               }}
