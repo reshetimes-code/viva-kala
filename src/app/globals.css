@@ -1680,7 +1680,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   width: 40px; height: 40px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.35);
-  font-size: 1.1rem; line-height: 1; cursor: pointer;
+  color: #fdf6ea; cursor: pointer;
   backdrop-filter: blur(4px); transition: background .2s ease;
 }
 .dash-logout-btn:hover { background: rgba(255,255,255,0.22); }
