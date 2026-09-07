@@ -857,6 +857,27 @@ export default function InviteView({
                 extraLines={buildExtraDetailLines(eventCategory, categoryFields)}
                 textStyle={textStyle}
               />
+            ) : textStyle?.imageHasText ? (
+              // The AI Designer bakes the couple's/celebrant's name, date,
+              // parents, venue etc. directly into the image pixels (see
+              // imageHasText in create/image/page.tsx) - object-fit:cover
+              // (used below for a plain photo, where losing some edge is
+              // harmless) was cropping that real content off the top and/or
+              // bottom on any phone whose actual visible viewport isn't
+              // exactly the 9:16 the image was generated at - WhatsApp's
+              // in-app browser chrome is the worst offender, but any device
+              // aspect ratio can trigger it. contain guarantees the whole
+              // image (every baked-in detail) is always fully visible; the
+              // blurred cover copy behind it fills the resulting letterbox
+              // bars so there's never a flat/empty gap on the sides.
+              <>
+                <div
+                  className="blank-bg blank-bg-photo"
+                  style={{ backgroundImage: `url(${JSON.stringify(imageUrl)})` }}
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="blank-image blank-image-contain" src={imageUrl} alt="הזמנה" />
+              </>
             ) : (
               <>
                 <div
