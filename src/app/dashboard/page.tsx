@@ -5,6 +5,7 @@ import { listInvitesByUser, countRsvpsForInvite, listTablesByInvite } from "@/li
 import InviteCard from "./InviteCard";
 import DesktopPhoneWrapper from "@/components/DesktopPhoneWrapper";
 import BottomNav from "@/components/BottomNav";
+import LogoutButton from "@/components/LogoutButton";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -49,6 +50,7 @@ export default async function DashboardPage() {
       <div className="dash-page">
         <div className="dash-header">
           <h1>ההזמנה שלי</h1>
+          <LogoutButton />
         </div>
 
         {!invite ? (

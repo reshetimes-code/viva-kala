@@ -1659,13 +1659,23 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .dash-stat-label { font-size: .78rem; color: #8a8f98; font-weight: 600; }
 
 .dash-header {
-  max-width: 1100px; margin: 0 auto 28px; display: flex; align-items: center;
+  position: relative; max-width: 1100px; margin: 0 auto 28px; display: flex; align-items: center;
   justify-content: center; text-align: center; flex-wrap: wrap; gap: 14px;
 }
 .dash-header h1 {
   font-size: 1.9rem; font-weight: 800; color: #fdf6ea;
   text-shadow: 0 2px 14px rgba(0,0,0,0.35);
 }
+.dash-logout-btn {
+  position: absolute; top: -4px; right: 0;
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.35);
+  font-size: 1.1rem; line-height: 1; cursor: pointer;
+  backdrop-filter: blur(4px); transition: background .2s ease;
+}
+.dash-logout-btn:hover { background: rgba(255,255,255,0.22); }
+.dash-logout-btn:disabled { opacity: .6; cursor: default; }
 
 /* --- fixed bottom action bar for the logged-in area --- */
 .bottom-nav {
