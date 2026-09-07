@@ -28,8 +28,10 @@ export const CATEGORY_FIELD_DEFS: Partial<Record<EventCategory, FieldDef[]>> = {
     { key: "groomName", label: "שם החתן", type: "text", required: true },
     { key: "brideName", label: "שם הכלה", type: "text", required: true },
     { key: "eventDate", label: "תאריך", type: "date", required: true },
-    { key: "ceremonyTime", label: "שעת טקס חופה וקידושין", type: "time" },
+    // Reception before ceremony, matching the real order of a wedding day
+    // (guests arrive at קבלת פנים first, the חופה itself comes after).
     { key: "receptionTime", label: "שעת קבלת פנים", type: "time" },
+    { key: "ceremonyTime", label: "שעת טקס חופה וקידושין", type: "time" },
     { key: "venue", label: "מיקום האירוע", type: "text", required: true },
     { key: "groomParents", label: "שמות הורי החתן (לא חובה)", type: "text" },
     { key: "brideParents", label: "שמות הורי הכלה (לא חובה)", type: "text" },
