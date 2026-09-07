@@ -898,6 +898,11 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   text-align: center; transition: background .2s ease, transform .2s ease;
 }
 .ai-chat-option-btn:hover, .ai-chat-option-btn:active { background: #f2e2c2; transform: translateY(-1px); }
+/* The parenthetical clarifying example on its own line under the main
+   option text (see OptionLabel in AiDesignerChat.tsx) - a lighter weight/
+   smaller size so it still reads as a secondary detail, not equal to the
+   option itself. */
+.ai-chat-option-sub { display: block; margin-top: 4px; font-weight: 500; font-size: .9rem; color: #7a6f56; }
 
 /* --- the deterministic "want to use your own photo, and how?" step at the
    end of the chat (see AiDesignerChat.tsx) - a 2x2 icon grid instead of the

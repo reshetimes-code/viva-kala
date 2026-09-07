@@ -70,6 +70,23 @@ function PlacementIcon({ placement }: { placement: UploadedPhotoPlacement }) {
   );
 }
 
+/** The AI's own option text often ends with a parenthetical clarifying
+ *  example ("קלאסי ויוקרתי (זהב ושיש)") - left inline it wraps mid-word
+ *  wherever the button happens to be narrow, splitting the parenthesis
+ *  itself across two lines. Rendered as its own line under the main text
+ *  instead, always a single clean unit regardless of button width. */
+function OptionLabel({ text }: { text: string }) {
+  const match = /^(.*?)\s*\(([^)]+)\)\s*$/.exec(text);
+  if (!match) return <>{text}</>;
+  const [, main, parenthetical] = match;
+  return (
+    <>
+      {main}
+      <span className="ai-chat-option-sub">({parenthetical})</span>
+    </>
+  );
+}
+
 /** Replaces the old static guided-form AI generator with an actual back-
  *  and-forth "designer" - one short question at a time, answered with a
  *  tap (never required to type), because whoever fills this out might
@@ -309,7 +326,7 @@ export default function AiDesignerChat({
           <div className="ai-chat-options">
             {(turn.options ?? []).map((opt) => (
               <button key={opt} type="button" className="ai-chat-option-btn" onClick={() => chooseOption(opt)}>
-                {opt}
+                <OptionLabel text={opt} />
               </button>
             ))}
           </div>
