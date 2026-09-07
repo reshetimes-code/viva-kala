@@ -898,29 +898,31 @@ export default function InviteView({
             ) : textStyle?.imageHasText ? (
               // The AI Designer bakes the couple's/celebrant's name, date,
               // parents, venue etc. directly into the image pixels (see
-              // imageHasText in create/image/page.tsx). object-fit:contain
-              // (this branch's previous approach) guaranteed nothing was
-              // ever cropped, but on a device whose aspect ratio doesn't
-              // match the generated canvas closely, it left a visible empty
-              // bar on two edges - not "dynamic/full-width" like a plain
-              // photo. The generation prompt now asks for a tall ~9:19.5
-              // canvas that closely matches real phone screens, with an
-              // explicit instruction to keep all text safely inset from the
-              // edges (see ai-invite/route.ts + ai-designer/chat/route.ts) -
-              // so a plain edge-to-edge cover-fit, same as a regular photo
-              // below, always fills the screen completely with zero gaps,
-              // and only ever trims a thin sliver of decorative background
-              // on an unusually-shaped device, never the real text. No
-              // .blank-fade darkening overlay here (unlike the plain-photo
-              // branch) - it would dim baked-in text like the venue/parents
-              // line near the bottom edge.
+              // imageHasText in create/image/page.tsx). Always cover (100%
+              // width AND height, like the plain photo below - "plasticine
+              // that molds to whatever height is left after the bottom bar,
+              // stretched to full width" is exactly what cover already does,
+              // since .inv-media is a flex sibling that already shrinks to
+              // leave the bar its own real space rather than overlapping
+              // it). What cover doesn't decide on its own is WHICH edge
+              // absorbs the crop when the container's ratio doesn't exactly
+              // match the image's - center (the default) trims a bit off
+              // BOTH top and bottom, cutting into the photo/name up top too.
+              // object-position:top anchors the top edge exactly to the
+              // container's top edge instead, so any necessary crop comes
+              // only from the bottom - matched by the generation prompt's
+              // ~9:19.5 canvas + 8%-edge-margin instruction (ai-invite/
+              // route.ts + ai-designer/chat/route.ts), so on most devices
+              // there's nothing to crop at all, and on an outlier device
+              // it's only ever the lowest-priority line (e.g. parents'
+              // names) that gives way, never the photo or the headline.
               <>
                 <div
                   className="blank-bg"
                   style={{ background: "linear-gradient(to bottom, #4c6b85 0%, #4c6b85 34%, #323a3c 66%, #323a3c 100%)" }}
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="blank-image" src={imageUrl} alt="הזמנה" />
+                <img className="blank-image blank-image-anchor-top" src={imageUrl} alt="הזמנה" />
               </>
             ) : (
               <>
