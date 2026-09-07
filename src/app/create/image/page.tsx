@@ -10,6 +10,7 @@ import DesignChangeChat from "@/components/DesignChangeChat";
 import CategoryFieldsForm from "@/components/CategoryFieldsForm";
 import InvitePhotoCard from "@/components/InvitePhotoCard";
 import ImageCropModal from "@/components/ImageCropModal";
+import { TemplateCard, type TemplateFields } from "@/lib/templates";
 import { EVENT_CATEGORIES, isEventCategory, type EventCategory } from "@/lib/eventCategories";
 import { CATEGORY_FIELD_DEFS, hasCustomFields, findMissingRequiredField, readCommonFields, buildHeadline, buildExtraDetailLines, formatEventDate } from "@/lib/categoryFields";
 import { computeTextStyleFromCanvas, DEFAULT_TEXT_STYLE, type TextStyle } from "@/lib/textStyleHeuristic";
@@ -132,6 +133,14 @@ export default function CreateInvitePage({
   // the event text to be drawn right into it - InvitePhotoCard's separate
   // text panel is skipped for those so the details never render twice.
   const [imageHasBakedText, setImageHasBakedText] = useState(!!initialData?.textStyle?.imageHasText);
+  // Set only via AiDesignerChat's "want to use your own photo?" step for a
+  // wedding - real CSS/SVG text from the coded template gallery instead of
+  // anything AI-drawn, so there's zero spelling-error risk. When set, this
+  // invite is actually submitted as mode:"template" (see handleSubmit) -
+  // imageDataUrl/categoryFields above still hold whatever was typed into
+  // this page's own form, but the coded template's own fields are what
+  // actually gets saved and shown to guests.
+  const [codedTemplate, setCodedTemplate] = useState<{ templateId: string; templateFields: TemplateFields } | null>(null);
   // A snapshot of categoryFields at the exact moment the current baked-text
   // image was generated. Editing name/date/venue/parents afterwards doesn't
   // touch the image's actual pixels (the AI only draws what it was told at
@@ -359,12 +368,23 @@ export default function CreateInvitePage({
             <AiDesignerChat
               eventCategory={eventCategory ?? partyType}
               categoryFields={usesCustomFields ? categoryFields : undefined}
-              onGenerated={(url, prompt) => {
+              onGenerated={(url, prompt, codedTemplateResult) => {
+                if (codedTemplateResult) {
+                  // The guest's own photo, used as-is by a coded template's
+                  // real CSS/SVG text - no AI drawing involved, so none of
+                  // the AI-regeneration staleness tracking below applies.
+                  setCodedTemplate(codedTemplateResult);
+                  setImageDataUrl(url);
+                  setImageHasBakedText(false);
+                  Swal.close();
+                  return;
+                }
                 // Its own prompt asked Gemini to draw the event's text right
                 // into the image (whether or not the guest's own photo was
                 // folded into that same prompt+generation) - InvitePhotoCard's
                 // separate panel would just duplicate that, so it's marked
                 // here to be skipped.
+                setCodedTemplate(null);
                 setImageHasBakedText(true);
                 const fieldsNow = { ...categoryFields };
                 setTextStyle({
@@ -705,6 +725,10 @@ export default function CreateInvitePage({
           eventCategory,
           categoryFields: usesCustomFields ? categoryFields : undefined,
           textStyle: usesCustomFields ? textStyle : undefined,
+          // Real CSS/SVG text via the coded template gallery instead of an
+          // AI-drawn image - the API route stores/serves this exactly like
+          // any invite made through /create/templates.
+          ...(codedTemplate ? { mode: "template", templateId: codedTemplate.templateId, templateFields: codedTemplate.templateFields } : {}),
         }),
       });
       const data = await res.json();
@@ -1057,7 +1081,9 @@ export default function CreateInvitePage({
                     opacity: imageIsStale ? 0.55 : 1, filter: imageIsStale ? "grayscale(.4)" : "none",
                   }}
                 >
-                  {imageHasBakedText ? (
+                  {codedTemplate ? (
+                    <TemplateCard templateId={codedTemplate.templateId} fields={codedTemplate.templateFields} />
+                  ) : imageHasBakedText ? (
                     // The AI already drew the event's text into the photo
                     // itself - showing it straight, no overlay panel on top
                     // that would just repeat the same details a second time.
@@ -1084,10 +1110,21 @@ export default function CreateInvitePage({
                     image people can actually see at this point, instead of
                     "יצירה מחדש" sitting alone up by the upload controls. */}
                 <div className="design-actions-row mt-3">
-                  <button type="button" className="image-choice-btn image-choice-btn-ai" onClick={openDesignChangeChat}>
-                    שינוי עיצובי בצ&apos;אט
-                  </button>
-                  <button type="button" className="image-choice-btn" onClick={() => setImageDataUrl(null)}>
+                  {/* Design-chat edits an AI-drawn image's pixels - meaningless
+                      for a coded template, which has no such image to edit. */}
+                  {!codedTemplate && (
+                    <button type="button" className="image-choice-btn image-choice-btn-ai" onClick={openDesignChangeChat}>
+                      שינוי עיצובי בצ&apos;אט
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="image-choice-btn"
+                    onClick={() => {
+                      setImageDataUrl(null);
+                      setCodedTemplate(null);
+                    }}
+                  >
                     יצירה מחדש
                   </button>
                 </div>

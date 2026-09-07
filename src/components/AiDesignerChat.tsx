@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { buildGoldNightFields } from "@/lib/categoryFields";
+import type { TemplateFields } from "@/lib/templates";
 
 interface ChatMessage {
   role: "user" | "model";
@@ -125,7 +127,11 @@ export default function AiDesignerChat({
 }: {
   eventCategory?: string;
   categoryFields?: Record<string, string>;
-  onGenerated: (imageDataUrl: string, imagePrompt: string) => void;
+  /** The third argument, when present, means "render this via the coded
+   *  template gallery's own component with these fields" instead of
+   *  treating imageDataUrl as an AI-drawn finished image - see the
+   *  gold-night branch in choosePlacement below for why. */
+  onGenerated: (imageDataUrl: string, imagePrompt: string, codedTemplate?: { templateId: string; templateFields: TemplateFields }) => void;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [turn, setTurn] = useState<ChatTurn | null>(null);
@@ -189,7 +195,21 @@ export default function AiDesignerChat({
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      setUploadedPhoto(reader.result as string);
+      const dataUrl = reader.result as string;
+      // For a wedding, the coded "gold-night" template is a proven,
+      // reference-quality match (real CSS/SVG text and icons, so - unlike
+      // the AI-generation path below - there is zero risk of the model
+      // hallucinating/misspelling a Hebrew word into the image) - skip the
+      // AI entirely and use it directly with the guest's own photo as its
+      // background, no placement question needed (gold-night only has the
+      // one full-photo-background layout).
+      const goldNightFields = eventCategory === "חתונה" ? buildGoldNightFields(categoryFields, dataUrl) : null;
+      if (goldNightFields) {
+        setPhotoPhase("none");
+        onGenerated(dataUrl, "", { templateId: "gold-night", templateFields: goldNightFields });
+        return;
+      }
+      setUploadedPhoto(dataUrl);
       setPhotoPhase("placement");
     };
     reader.readAsDataURL(file);

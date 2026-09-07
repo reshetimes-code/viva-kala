@@ -175,6 +175,34 @@ export function buildExtraDetailLines(
     });
 }
 
+/** Maps a wedding's raw categoryFields onto the coded "gold-night" template's
+ *  TemplateFields shape (see lib/templates.tsx) - real CSS/SVG text and
+ *  icons, never AI-drawn pixels, so there is zero spelling-error risk. Used
+ *  by the AI Designer chat's "want to use your own photo?" step: instead of
+ *  asking Gemini to draw the whole invitation (including the Hebrew text)
+ *  around the photo, the photo is just used as-is as gold-night's own photo
+ *  background - no AI image call needed for this path at all. Returns null
+ *  when there isn't enough data to build a real title from (mirrors
+ *  buildHeadline's own null case for the same category). */
+export function buildGoldNightFields(
+  fields: Record<string, string> | undefined,
+  imageDataUrl: string
+): { titleLine1: string; titleLine2: string; subtitle: string; dateText: string; venueText: string; ceremonyTime: string; receptionTime: string; footerNote: string; imageDataUrl: string; photoPlacement: "background" } | null {
+  if (!fields?.groomName || !fields?.brideName) return null;
+  return {
+    titleLine1: fields.groomName,
+    titleLine2: fields.brideName,
+    subtitle: "מתחתנים",
+    dateText: fields.eventDate ? formatEventDate(fields.eventDate) : "",
+    venueText: fields.venue ?? "",
+    ceremonyTime: fields.ceremonyTime ?? "",
+    receptionTime: fields.receptionTime ?? "",
+    footerNote: "",
+    imageDataUrl,
+    photoPlacement: "background",
+  };
+}
+
 /** venue/eventDate/eventStart live under different keys depending on
  *  category (see CATEGORY_FIELD_DEFS above) - this reads them uniformly so
  *  callers (InvitePhotoCard, the create-flow preview) don't need a switch
