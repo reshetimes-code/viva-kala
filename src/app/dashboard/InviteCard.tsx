@@ -9,6 +9,16 @@ interface Props {
   invite: StoredInvite & { rsvpCounts: { total: number; attending: number } };
 }
 
+// eventDate is stored as the raw ISO value from a type="date" input
+// (YYYY-MM-DD) - shown here as DD/MM/YYYY instead. Left as-is if it's
+// anything else (e.g. empty), so this never turns a real value into "—".
+function formatEventDate(value: string) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) return value;
+  const [, y, mo, d] = m;
+  return `${d}/${mo}/${y}`;
+}
+
 export default function InviteCard({ invite }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -55,7 +65,7 @@ export default function InviteCard({ invite }: Props) {
         <div className="dash-card-head">
           <div className="dash-date-badge">
             <span>תאריך האירוע</span>
-            <strong>{invite.eventDate || "—"}</strong>
+            <strong>{invite.eventDate ? formatEventDate(invite.eventDate) : "—"}</strong>
           </div>
           <h3>{title || "הזמנה ללא כותרת"}</h3>
         </div>
