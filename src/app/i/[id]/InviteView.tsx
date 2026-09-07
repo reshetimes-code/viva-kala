@@ -239,7 +239,6 @@ export default function InviteView({
   }
 
   function handleLeadDatePicked(value: string) {
-    setLeadEventDate(value);
     if (!value) return;
     setLeadPickedText(formatEventDate(value));
     setLeadStepPhase("confirm");
@@ -520,7 +519,24 @@ export default function InviteView({
                       ) : leadStep === 0 ? (
                         <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
                           <label>מה תאריך האירוע?</label>
-                          <input type="date" value={leadEventDate} onChange={(e) => handleLeadDatePicked(e.target.value)} />
+                          {/* iOS Safari fires a premature onChange with today's
+                              date the moment an empty date input opens - before
+                              the user has picked anything. Reacting to that by
+                              jumping straight to "confirm" (as this used to do)
+                              yanked the input out from under the still-open
+                              native picker, so it looked like the picker just
+                              closed itself. onChange now only tracks the value
+                              (uncontrolled, so it doesn't fight the picker's
+                              own DOM updates either - see TemplateFillForm's
+                              date field for the same fix); the actual "confirm"
+                              step only fires on blur, i.e. once the picker is
+                              genuinely done (Done/אישור tapped, or dismissed). */}
+                          <input
+                            type="date"
+                            defaultValue={leadEventDate}
+                            onChange={(e) => setLeadEventDate(e.target.value)}
+                            onBlur={(e) => handleLeadDatePicked(e.target.value)}
+                          />
                         </div>
                       ) : leadStep === 1 ? (
                         <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
