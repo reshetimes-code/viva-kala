@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { callGeminiJson, GeminiConfigError, GeminiRequestError } from "@/lib/gemini";
+import { formatEventDate } from "@/lib/categoryFields";
 
 // Replaces the old static guided-form (src/components/AiInviteGenerator.tsx)
 // with an actual back-and-forth: the model asks one simple, tap-friendly
@@ -66,10 +67,15 @@ const CATEGORY_STYLE_GUIDE: Record<string, string> = {
 };
 
 function buildSystemInstruction(eventCategory: string | undefined, categoryFields: Record<string, string> | undefined) {
+  // eventDate is the raw "YYYY-MM-DD" a type="date" input always gives back -
+  // handed to the model as-is, it got drawn straight into the generated
+  // image exactly like that (a real invite showing "2026-09-01" instead of
+  // a normal-looking date). Reformat it to DD/MM/YYYY here, same as every
+  // other place a date reaches a guest/preview (see formatEventDate).
   const knownDetails = categoryFields
     ? Object.entries(categoryFields)
         .filter(([, v]) => v?.trim())
-        .map(([k, v]) => `${k}: ${v}`)
+        .map(([k, v]) => `${k}: ${k === "eventDate" ? formatEventDate(v) : v}`)
         .join(", ")
     : "";
   const styleGuide = eventCategory ? CATEGORY_STYLE_GUIDE[eventCategory] : undefined;
@@ -85,6 +91,7 @@ function buildSystemInstruction(eventCategory: string | undefined, categoryField
       `כמעצב/ת מקצועי/ת, זו הפלטה/מוד המקובלים לסוג האירוע הזה - תשתמש בזה כברירת מחדל בשאלות ובעיצוב הסופי, אלא אם המשתמש בעצמו ביקש כיוון שונה בתשובותיו: ${styleGuide}`,
     knownDetails && `פרטים שכבר יש לך על האירוע (אל תשאל עליהם שוב): ${knownDetails}.`,
     "כשאתה מוכן (readyToGenerate=true), כתוב ב-imagePrompt פרומפט מלא באנגלית ליצירת ההזמנה השלמה כתמונה אחת מוגמרת - לא רק רקע. חובה לכלול הנחיה מפורשת שכל הטקסט הבא מעוצב ומשולב בתוך התמונה עצמה, באותיות עבריות אלגנטיות (לא תרגום לאנגלית, הטקסט חייב להיות בעברית בדיוק כמו שקיבלת אותו): שם/שמות החוגגים בגדול ובולט במרכז, תאריך האירוע, שמות ההורים אם יש, מקום האירוע וכתובת אם יש. תן לו הנחיה מפורטת על ההיררכיה הוויזואלית (מה גדול, מה קטן, סדר השורות), טיפוגרפיה מוזהבת/אלגנטית, ורקע מתאים לסגנון/צבעים שהמשתמש בחר (למשל רקע ים, פרחים, מרקם יוקרתי וכו' לפי מה שהוא ענה). ציין רק את **יחס הגובה-רוחב** כ-9:16 פורטרט אנכי - לעולם אל תזכיר 'טלפון', 'מסך', 'טיקטוק' או 'סטורי' בתור השראה ויזואלית, כי זה גורם למודל לצייר בטעות מסגרת טלפון/notch/סמלי אפליקציה כחלק מהתמונה עצמה. תוסיף במפורש: no phone frame, no device mockup, no screen bezel, no notch, no app UI elements anywhere in the image - a full-bleed flat graphic design only. קריטי לגבי איות: תוסיף גם משפט מפורש שמזהיר שכל מילה עברית חייבת להיות מאויתת באופן מדויק, אות-אות, בדיוק כמו שסופקה - למשל: 'Spell every Hebrew word with perfect, exact accuracy - copy each name/date/venue letter by letter exactly as given, do not invent, merge, drop, or add any letters.' חשוב באותה מידה: תוסיף גם הנחיה מפורשת שאסור להוסיף שום טקסט, מילה, כותרת-משנה או תווית שלא נתת לו את הנוסח המדויק שלה - כלומר אם לא ביקשת ממנו במפורש תווית 'בר/בת מצווה' או משפט פתיחה כלשהו, שלא ימציא כזה בעצמו - למשל: 'Do not add any text, label, subtitle, or greeting beyond exactly what is specified above - no invented category labels, no invented opening phrases.'",
+    "קריטי: ה-imagePrompt חייב לצטט במפורש (בתרגום לאנגלית) את המילים המדויקות שהמשתמש בחר בתשובותיו - הצבעים/הפלטה, הרקע/האווירה, האלמנטים הדקורטיביים והפונט/סגנון הטיפוגרפיה שהוא ביקש - ולא להסתפק בתיאור כללי כמו 'elegant design'. למשל אם המשתמש ענה 'זהב וכחול כהה' ו'רקע ים', ה-imagePrompt חייב לכלול משהו כמו 'a deep navy blue and gold color palette' ו'a sea/ocean-inspired background' במפורש - אחרת הבחירות שלו בשאלון פשוט לא באות לידי ביטוי בתוצאה.",
     "כל שאלה ותשובה אתה כותב בעברית בלבד.",
   ]
     .filter(Boolean)
