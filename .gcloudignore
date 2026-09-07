@@ -8,3 +8,7 @@ data/
 public/uploads/
 *.log
 npm-debug.log*
+# .dockerignore already keeps these out of the built image - this keeps them
+# from even reaching the Cloud Build source upload in the first place, so a
+# local DATABASE_URL/GEMINI_API_KEY never leaves this machine.
+.env*.local

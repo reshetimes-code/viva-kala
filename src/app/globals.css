@@ -2103,6 +2103,20 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .share-tile-whatsapp-contact { background: linear-gradient(135deg, #34e07a, #0f6b5c); }
 .share-tile-sms { background: linear-gradient(135deg, #3fa9f5, #1c5aa6); }
 .share-tile-copy { background: linear-gradient(135deg, #a084f0, #6a4cd1); }
+/* Featured "share with image" tile - full width, above the 2x2 grid, and
+   deliberately louder than the other four (gold/dark gradient matching the
+   invite's own luxury look) since this is the option meant to actually
+   convert a guest into an RSVP, not just move the link along. */
+.share-tile-image {
+  width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; aspect-ratio: auto; padding: 16px 12px; margin-bottom: 14px; border-radius: 18px;
+  border: none; cursor: pointer; color: #1c1c1e; font-weight: 900; font-size: 1.1rem;
+  background: linear-gradient(135deg, #f3d9a4, #d4af7a 55%, #a5883f);
+  box-shadow: 0 10px 24px rgba(212,175,122,0.4); transition: transform .15s ease, box-shadow .15s ease;
+}
+.share-tile-image:hover, .share-tile-image:active { transform: translateY(-2px) scale(1.01); box-shadow: 0 14px 30px rgba(212,175,122,0.5); }
+.share-tile-image:disabled { opacity: 0.7; cursor: default; transform: none; }
+.share-tile-image-badge { font-size: .75rem; font-weight: 700; letter-spacing: .02em; color: #5a4620; }
 
 .whats-number-form { text-align: right; }
 .whats-number-label { display: block; font-weight: 700; font-size: .9rem; color: #4a4a4a; margin-bottom: 10px; }

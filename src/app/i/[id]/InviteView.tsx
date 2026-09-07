@@ -54,6 +54,7 @@ export default function InviteView({
   const photoCardHeadline = buildHeadline(eventCategory, categoryFields);
   const [showRsvp, setShowRsvp] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [shareImageBusy, setShareImageBusy] = useState(false);
   const [whatsNumberOpen, setWhatsNumberOpen] = useState(false);
   const [whatsNumberValue, setWhatsNumberValue] = useState("");
   const [showWelcomeAlert, setShowWelcomeAlert] = useState(false);
@@ -308,7 +309,27 @@ export default function InviteView({
     mode === "template" && templateId ? TEMPLATE_CTA_COLORS[templateId] ?? DEFAULT_CTA_COLORS : DEFAULT_CTA_COLORS;
 
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
-  const shareText = encodeURIComponent(`להזמנה הדיגיטלית שלנו כנסו לקישור הבא ${shareUrl}`);
+  // When RSVP is on, the shared message doubles as an RSVP nudge: guests
+  // routinely ignore "please confirm attendance" but respond much better to
+  // a concrete personal payoff - here, that confirming now reserves them an
+  // actual seat/table, and skipping it risks losing that spot. Invites with
+  // RSVP off keep the plain, neutral share text (there's no seating promise
+  // to make).
+  //
+  // Kept as plain text (shareMessage) as well as URL-encoded (shareText):
+  // guests who aren't saved as a contact are reached by copying the link and
+  // pasting it into a chat typed by phone number rather than by tapping
+  // WhatsApp's own contact picker - copyLink() below must put this same
+  // persuasive wording on the clipboard, not just the bare URL, or exactly
+  // those non-contact guests would miss the seating pitch entirely.
+  // *asterisks* are WhatsApp's own markdown for bold - the one real "bigger
+  // font" lever plain WhatsApp text supports at all - so the actual
+  // call-to-action renders bold in the chat bubble instead of looking like
+  // the rest of the sentence.
+  const shareMessage = wantRsvp
+    ? `💍 הוזמנתם לאירוע שלנו!\n*מאשרים הגעה בקישור עכשיו* כדי שנשריין לכם מקום ושולחן מסודר באולם - מי שלא מאשר מראש, אנחנו לא יכולים להבטיח לו מקום ישיבה 🪑✨\n${shareUrl}\nמחכים לראות אתכם! 🥂`
+    : `להזמנה הדיגיטלית שלנו כנסו לקישור הבא ${shareUrl}`;
+  const shareText = encodeURIComponent(shareMessage);
 
   async function submitRsvp(attending: boolean) {
     if (!guestName.trim() || !familyName.trim() || !phone.trim()) {
@@ -370,8 +391,187 @@ export default function InviteView({
   }
 
   function copyLink() {
-    navigator.clipboard?.writeText(shareUrl).catch(() => {});
+    navigator.clipboard?.writeText(shareMessage).catch(() => {});
     setShareOpen(false);
+  }
+
+  // ---- "Share with image" -------------------------------------------------
+  // A plain WhatsApp text message - even a bold one - is easy for a guest to
+  // skim past. A real image with huge, bold text stops the scroll the way a
+  // wall of text never does, so this builds an actual shareable graphic
+  // (invite photo + a big "we're saving you a seat" headline) and hands it
+  // to the OS share sheet via the Web Share API, which is the only web
+  // mechanism that can attach an image to an outgoing WhatsApp message at
+  // all (a wa.me link can only ever carry text). Browsers without file
+  // sharing (most desktops) fall back to downloading the image plus opening
+  // the normal bold-text WhatsApp compose, so the guest can attach it by
+  // hand instead of losing the image entirely.
+  function wrapCanvasText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+    const words = text.split(" ");
+    const lines: string[] = [];
+    let current = "";
+    for (const word of words) {
+      const test = current ? `${current} ${word}` : word;
+      if (current && ctx.measureText(test).width > maxWidth) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = test;
+      }
+    }
+    if (current) lines.push(current);
+    return lines;
+  }
+
+  async function buildShareImageBlob(): Promise<Blob | null> {
+    const W = 1080;
+    const H = 1350;
+    const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    // Load the same bold weight used across the product's headings so the
+    // canvas text doesn't silently fall back to a thin default font.
+    try {
+      await Promise.all([
+        document.fonts.load("900 90px Heebo"),
+        document.fonts.load("800 48px Heebo"),
+        document.fonts.load("700 36px Heebo"),
+      ]);
+    } catch {
+      // Font API unsupported/failed - canvas still renders, just with
+      // whatever font the browser substitutes.
+    }
+
+    // Background: the invite's own photo when there is one (cover-fit, via
+    // the CORS-enabled GCS bucket), otherwise a dark navy/gold gradient that
+    // matches the product's own luxury-invite look.
+    let hasPhoto = false;
+    if (mode === "image" && imageUrl) {
+      try {
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.crossOrigin = "anonymous";
+          el.onload = () => resolve(el);
+          el.onerror = reject;
+          el.src = imageUrl;
+        });
+        const scale = Math.max(W / img.width, H / img.height);
+        const dw = img.width * scale;
+        const dh = img.height * scale;
+        ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        hasPhoto = true;
+      } catch {
+        hasPhoto = false;
+      }
+    }
+    if (!hasPhoto) {
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, "#0f1720");
+      bg.addColorStop(1, "#1c1c1e");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Dark gradient overlay (heavier toward the bottom, where the headline
+    // sits) so bold white/gold text stays legible over any photo.
+    const overlay = ctx.createLinearGradient(0, 0, 0, H);
+    overlay.addColorStop(0, "rgba(10,10,12,0.35)");
+    overlay.addColorStop(0.55, "rgba(10,10,12,0.55)");
+    overlay.addColorStop(1, "rgba(10,10,12,0.92)");
+    ctx.fillStyle = overlay;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.direction = "rtl";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    let y = H - 430;
+
+    ctx.font = "900 96px Heebo, Arial, sans-serif";
+    ctx.fillStyle = "#f3d9a4";
+    ctx.fillText("💍 שומרים לכם מקום!", W / 2, y);
+    y += 120;
+
+    ctx.font = "800 62px Heebo, Arial, sans-serif";
+    ctx.fillStyle = "#ffffff";
+    for (const line of wrapCanvasText(ctx, "אשרו הגעה עכשיו", W - 140)) {
+      ctx.fillText(line, W / 2, y);
+      y += 76;
+    }
+    y += 14;
+
+    ctx.font = "700 40px Heebo, Arial, sans-serif";
+    ctx.fillStyle = "#e7e2d6";
+    for (const line of wrapCanvasText(ctx, "כדי שנשריין לכם מקום ושולחן מסודר באולם", W - 160)) {
+      ctx.fillText(line, W / 2, y);
+      y += 52;
+    }
+
+    y += 46;
+    ctx.font = "700 30px Heebo, Arial, sans-serif";
+    ctx.fillStyle = "#d4af7a";
+    ctx.fillText("👇 הקישור להזמנה ולאישור הגעה מצורף בהודעה", W / 2, y);
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.92);
+    });
+  }
+
+  async function shareWithImage() {
+    setShareImageBusy(true);
+    try {
+      const blob = await buildShareImageBlob();
+      const nav = navigator as Navigator & {
+        canShare?: (data?: ShareData) => boolean;
+        share?: (data: ShareData) => Promise<void>;
+      };
+      if (blob && nav.share) {
+        const file = new File([blob], "hazmana.jpg", { type: "image/jpeg" });
+        const shareData: ShareData = { files: [file], text: shareMessage };
+        if (!nav.canShare || nav.canShare(shareData)) {
+          try {
+            await nav.share(shareData);
+            setShareOpen(false);
+            return;
+          } catch (err) {
+            // AbortError = the guest just closed the OS share sheet - not a
+            // failure, nothing else to do. Any other error falls through to
+            // the download fallback below.
+            if (err instanceof Error && err.name === "AbortError") {
+              setShareOpen(false);
+              return;
+            }
+          }
+        }
+      }
+      // Fallback for browsers with no file-sharing support (most desktops):
+      // download the image so it can be attached by hand, and still open a
+      // normal bold-text WhatsApp compose with the same message.
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "hazmana.jpg";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        await Swal.fire({
+          icon: "info",
+          title: "התמונה ירדה למחשב שלכם",
+          text: "עכשיו פותחים וואטסאפ עם ההודעה מוכנה - צרפו אליה את התמונה שהורדתם",
+          confirmButtonText: "הבנתי",
+          confirmButtonColor: "#d4af7a",
+        });
+      }
+      window.open(`https://wa.me/?text=${shareText}`, "_blank");
+      setShareOpen(false);
+    } finally {
+      setShareImageBusy(false);
+    }
   }
 
   function openWhatsNumberModal() {
@@ -826,12 +1026,23 @@ export default function InviteView({
             ×
           </button>
           <div className="blank-share-title">שתפו את ההזמנה</div>
+          {wantRsvp && (
+            <button
+              type="button"
+              className="share-tile share-tile-image"
+              onClick={shareWithImage}
+              disabled={shareImageBusy}
+            >
+              <span className="share-tile-image-badge">⭐ הכי משכנע</span>
+              <span>{shareImageBusy ? "מכינים תמונה..." : "📸 שיתוף עם תמונה גדולה"}</span>
+            </button>
+          )}
           <div className="share-tile-grid">
             <a className="share-tile share-tile-whatsapp" href={`https://wa.me/?text=${shareText}`} target="_blank" rel="noopener noreferrer">
               וואטסאפ
             </a>
             <button type="button" className="share-tile share-tile-whatsapp-contact" onClick={openWhatsNumberModal}>
-              וואטסאפ לאיש קשר
+              וואטסאפ זר
             </button>
             <a className="share-tile share-tile-sms" href={`sms:?&body=${shareText}`}>
               SMS
