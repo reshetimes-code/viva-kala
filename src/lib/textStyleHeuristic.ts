@@ -34,13 +34,6 @@ export interface TextStyle {
    *  list) - kept for reference/debugging only, never used as the base for
    *  a future correction (baseImagePrompt above always is). */
   lastImagePrompt?: string;
-  /** Set only when the photo is the guest's own upload (never alongside
-   *  imageHasText - the two are mutually exclusive: either the AI drew the
-   *  whole design, or the guest's real photo gets InvitePhotoCard's layout
-   *  treatment). Picked in AiDesignerChat's deterministic "want to use your
-   *  own photo?" step; rides the same JSONB column as everything else here
-   *  for the same reason (see imageHasText above). */
-  photoPlacement?: "round" | "half" | "quarter-top" | "quarter-bottom";
 }
 
 // Used whenever a real analysis (heuristic below, or the AI-vision call

@@ -2021,32 +2021,6 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   color: #7a7568; line-height: 1.6; margin-top: 2px;
 }
 
-/* --- InvitePhotoCard's textStyle.photoPlacement layouts - photo and text
-   each get their own real space (a normal flex column) instead of the text
-   panel floating on top of the photo like .ipc-card/.ipc-panel above. Same
-   absolute+inset:0 reasoning as .ipc-card itself (see its comment) for why
-   this fills its positioned ancestor instead of using width/height:100%. */
-.ipc-layout-card {
-  position: absolute !important; inset: 0 !important; overflow: hidden;
-  display: flex; flex-direction: column; background: #fbf8f1;
-}
-.ipc-layout-photo { flex: none; width: 100%; object-fit: cover; }
-.ipc-layout-round .ipc-layout-photo, .ipc-layout-half .ipc-layout-photo { height: 50%; }
-.ipc-layout-quarter-top .ipc-layout-photo, .ipc-layout-quarter-bottom .ipc-layout-photo { height: 27%; }
-.ipc-layout-content {
-  flex: 1 1 auto; min-height: 0; overflow: auto;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-  padding: 22px 20px; gap: 8px; direction: rtl;
-}
-/* "round": the photo isn't a banner at all, it's a small circle sitting
-   inline with the text, both centered in one flowing column. */
-.ipc-layout-round .ipc-layout-photo { display: none; }
-.ipc-round-photo {
-  width: 42%; aspect-ratio: 1; border-radius: 50%; object-fit: cover;
-  border: 3px solid rgba(201,162,75,0.55); margin-bottom: 4px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.18);
-}
-
 .pull-cta {
   /* Normal flex-flow item now (flex: none - .inv-media above takes the
      rest) instead of position:absolute over the image, so it reserves its

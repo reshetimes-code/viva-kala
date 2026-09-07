@@ -14,18 +14,43 @@ interface ChatTurn {
   imagePrompt?: string;
 }
 
-/** Where the guest's own uploaded photo sits relative to the designed text -
- *  matches the 4 layouts the user asked for. Kept separate from lib/templates
- *  PhotoPlacement (round/square/header/footer/side/background) - that set is
- *  for the coded template gallery's own chrome per-template; this one is
- *  rendered by InvitePhotoCard itself. */
-export type UploadedPhotoPlacement = "round" | "half" | "quarter-top" | "quarter-bottom";
+/** Where the guest's own uploaded photo sits within the AI-designed image -
+ *  each maps to an explicit English placement instruction folded into the
+ *  same prompt (with all the style answers already in it) that would
+ *  otherwise have generated a from-scratch design - so the photo becomes
+ *  part of ONE AI-composed image, not a separate box glued on afterward. */
+type UploadedPhotoPlacement = "round" | "half" | "quarter-top" | "quarter-bottom";
 
-const PLACEMENT_CHOICES: { value: UploadedPhotoPlacement; label: string }[] = [
-  { value: "round", label: "עיגול במרכז ההזמנה" },
-  { value: "half", label: "חצי תמונה, חצי טקסט" },
-  { value: "quarter-top", label: "רצועת תמונה למעלה" },
-  { value: "quarter-bottom", label: "רצועת תמונה למטה" },
+// The quality bar the client showed as a reference (a premium AI-made
+// wedding invitation: dark photo/background, metallic gold Hebrew title,
+// small icon+text detail rows with hairline gold dividers) - folded into
+// every photo-placement instruction below so the result reliably reaches
+// that level regardless of how the style-preference chat answers alone
+// phrased it, not just "an elegant design" left to interpretation.
+const PREMIUM_FINISH =
+  "Match a premium, professionally-designed invitation finish: a deep dark background (unless the user's own answers clearly asked for something light/pastel instead), an elegant metallic-gold Hebrew title with a subtle gradient/shine rather than flat color, thin gold hairline dividers between sections, and the event details laid out as small clean icon-plus-text rows (a small calendar icon before the date, a small location-pin icon before the venue, etc.) rather than plain paragraphs. Generous negative space, refined high-end typography throughout.";
+
+const PLACEMENT_CHOICES: { value: UploadedPhotoPlacement; label: string; instruction: string }[] = [
+  {
+    value: "round",
+    label: "עיגול במרכז ההזמנה",
+    instruction: `Use the attached photo exactly as provided, unedited. Place it as a circular framed inset near the top-center of the design, and build the rest of the design (decorative elements, all the event text) around it. ${PREMIUM_FINISH}`,
+  },
+  {
+    value: "half",
+    label: "חצי תמונה, חצי טקסט",
+    instruction: `Use the attached photo exactly as provided, unedited. Fill the top half of the image with the photo edge-to-edge, and design the bottom half with all the event text. ${PREMIUM_FINISH}`,
+  },
+  {
+    value: "quarter-top",
+    label: "רצועת תמונה למעלה",
+    instruction: `Use the attached photo exactly as provided, unedited. Fill roughly the top quarter of the image with the photo as a wide banner strip, and design the rest below it with all the event text. ${PREMIUM_FINISH}`,
+  },
+  {
+    value: "quarter-bottom",
+    label: "רצועת תמונה למטה",
+    instruction: `Use the attached photo exactly as provided, unedited. Fill roughly the bottom quarter of the image with the photo as a wide banner strip, and design the rest above it with all the event text. ${PREMIUM_FINISH}`,
+  },
 ];
 
 /** Tiny sketch of each layout - a card outline with a filled block standing
@@ -91,14 +116,7 @@ function OptionLabel({ text }: { text: string }) {
  *  and-forth "designer" - one short question at a time, answered with a
  *  tap (never required to type), because whoever fills this out might
  *  never have used an app before. A small free-text box is offered too,
- *  but it's the exception, not how this is meant to be used.
- *
- *  Once the style-preference chat itself is done (readyToGenerate), one
- *  more deterministic (not AI-authored) question is inserted before
- *  actually generating anything: whether to weave the guest's own photo
- *  into the design. "לא" falls straight through to the exact AI-generation
- *  flow this always had; "כן" skips AI generation entirely and hands the
- *  uploaded photo + chosen layout straight to onGenerated. */
+ *  but it's the exception, not how this is meant to be used. */
 export default function AiDesignerChat({
   eventCategory,
   categoryFields,
@@ -106,7 +124,7 @@ export default function AiDesignerChat({
 }: {
   eventCategory?: string;
   categoryFields?: Record<string, string>;
-  onGenerated: (imageDataUrl: string, imagePrompt: string, uploadedPhotoPlacement?: UploadedPhotoPlacement) => void;
+  onGenerated: (imageDataUrl: string, imagePrompt: string) => void;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [turn, setTurn] = useState<ChatTurn | null>(null);
@@ -122,7 +140,13 @@ export default function AiDesignerChat({
   const [resultPrompt, setResultPrompt] = useState("");
   const startedRef = useRef(false);
 
-  // The deterministic photo step, entered once the chat itself is done.
+  // The deterministic photo step, entered once the style chat itself is
+  // done (readyToGenerate) - "לא" falls straight through to the exact
+  // AI-generation call this always made; "כן" folds a placement
+  // instruction into that SAME prompt (all the questionnaire answers still
+  // in it) and sends the uploaded photo along as the base image, so the
+  // result is one AI-composed design with the real photo in it - not a
+  // separate design plus a plain box glued onto the photo afterward.
   const [photoPhase, setPhotoPhase] = useState<"none" | "ask" | "upload" | "placement">("none");
   const [pendingPrompt, setPendingPrompt] = useState("");
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
@@ -172,21 +196,19 @@ export default function AiDesignerChat({
 
   function choosePlacement(placement: UploadedPhotoPlacement) {
     if (!uploadedPhoto) return;
-    // No AI generation call at all for this path - it's the guest's real
-    // photo, shown as-is with the designed text laid over it (same idea as
-    // InvitePhotoCard everywhere else in the app), not something to hand to
-    // an image model.
-    onGenerated(uploadedPhoto, "", placement);
+    setPhotoPhase("none");
+    const instruction = PLACEMENT_CHOICES.find((c) => c.value === placement)?.instruction ?? "";
+    generateImage(`${pendingPrompt} ${instruction}`, uploadedPhoto);
   }
 
-  async function generateImage(prompt: string) {
+  async function generateImage(prompt: string, baseImage?: string) {
     setGenerating(true);
     setError("");
     try {
       const res = await fetch("/api/ai-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify(baseImage ? { prompt, baseImage } : { prompt }),
       });
       const data = await res.json();
       if (!res.ok) {

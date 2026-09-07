@@ -359,45 +359,31 @@ export default function CreateInvitePage({
             <AiDesignerChat
               eventCategory={eventCategory ?? partyType}
               categoryFields={usesCustomFields ? categoryFields : undefined}
-              onGenerated={(url, prompt, uploadedPhotoPlacement) => {
+              onGenerated={(url, prompt) => {
+                // Its own prompt asked Gemini to draw the event's text right
+                // into the image (whether or not the guest's own photo was
+                // folded into that same prompt+generation) - InvitePhotoCard's
+                // separate panel would just duplicate that, so it's marked
+                // here to be skipped.
+                setImageHasBakedText(true);
+                const fieldsNow = { ...categoryFields };
+                setTextStyle({
+                  ...DEFAULT_TEXT_STYLE,
+                  imageHasText: true,
+                  baseImagePrompt: prompt,
+                  originalFieldsSnapshot: fieldsNow,
+                  lastImagePrompt: prompt,
+                });
                 setImageDataUrl(url);
-                if (uploadedPhotoPlacement) {
-                  // The guest's own photo, chosen layout only - nothing was
-                  // drawn into it by the AI, so InvitePhotoCard's own text
-                  // panel still needs to render (imageHasBakedText stays
-                  // false), just in the layout they picked. None of the
-                  // AI-regeneration staleness tracking below applies here -
-                  // there's no prompt to diff future edits against.
-                  setImageHasBakedText(false);
-                  setTextStyle({ ...DEFAULT_TEXT_STYLE, photoPlacement: uploadedPhotoPlacement });
-                  setBaseImagePrompt(undefined);
-                  setOriginalFieldsSnapshot(undefined);
-                  setBakedFieldsSnapshot(undefined);
-                  setBakedCategorySnapshot(undefined);
-                } else {
-                  // Its own prompt asked Gemini to draw the event's text
-                  // right into the image - InvitePhotoCard's separate panel
-                  // would just duplicate that, so it's marked here to be
-                  // skipped.
-                  setImageHasBakedText(true);
-                  const fieldsNow = { ...categoryFields };
-                  setTextStyle({
-                    ...DEFAULT_TEXT_STYLE,
-                    imageHasText: true,
-                    baseImagePrompt: prompt,
-                    originalFieldsSnapshot: fieldsNow,
-                    lastImagePrompt: prompt,
-                  });
-                  // This is a brand-new base image (whether it's the very
-                  // first one, or the user picked "🔄 יצירה מחדש" to start
-                  // over) - both anchors reset to right now, same as the
-                  // "in sync" baseline the staleness check below compares
-                  // future edits against.
-                  setBaseImagePrompt(prompt);
-                  setOriginalFieldsSnapshot(fieldsNow);
-                  setBakedFieldsSnapshot(fieldsNow);
-                  setBakedCategorySnapshot(eventCategory);
-                }
+                // This is a brand-new base image (whether it's the very
+                // first one, or the user picked "🔄 יצירה מחדש" to start
+                // over) - both anchors reset to right now, same as the
+                // "in sync" baseline the staleness check below compares
+                // future edits against.
+                setBaseImagePrompt(prompt);
+                setOriginalFieldsSnapshot(fieldsNow);
+                setBakedFieldsSnapshot(fieldsNow);
+                setBakedCategorySnapshot(eventCategory);
                 refreshRegenerationsRemaining();
                 Swal.close();
               }}
