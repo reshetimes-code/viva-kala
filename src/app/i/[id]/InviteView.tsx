@@ -29,6 +29,13 @@ interface Props {
   /** True when the logged-in visitor is this invite's own owner (not a
    *  guest) - shows the extra "back to my dashboard" button below. */
   isOwner?: boolean;
+  /** The canonical https://host/i/{id} link for this invite, built
+   *  server-side from the request's own host header - see the comment at
+   *  its call site in page.tsx for why this can't just be read from
+   *  window.location.href inside this component. Empty only if the host
+   *  header was somehow missing, in which case share falls back to
+   *  window.location.href. */
+  inviteUrl?: string;
 }
 
 export default function InviteView({
@@ -47,6 +54,7 @@ export default function InviteView({
   categoryFields,
   textStyle,
   isOwner,
+  inviteUrl,
 }: Props) {
   // Only the three tailored categories (wedding/bar-bat-mitzvah/henna) have
   // enough structured data for a real headline - everything else keeps the
@@ -308,7 +316,7 @@ export default function InviteView({
   const ctaColors =
     mode === "template" && templateId ? TEMPLATE_CTA_COLORS[templateId] ?? DEFAULT_CTA_COLORS : DEFAULT_CTA_COLORS;
 
-  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+  const shareUrl = inviteUrl || (typeof window !== "undefined" ? window.location.href : "");
   // When RSVP is on, the shared message doubles as an RSVP nudge: guests
   // routinely ignore "please confirm attendance" but respond much better to
   // a concrete personal payoff - here, that confirming now reserves them an

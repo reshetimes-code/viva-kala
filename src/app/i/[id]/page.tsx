@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { findInviteById } from "@/lib/store";
 import { getCurrentUser } from "@/lib/auth";
 import type { TemplateFields } from "@/lib/templates";
@@ -24,6 +25,23 @@ export default async function InvitePage({
   // hit "back" enough times to find their way there again.
   const currentUser = await getCurrentUser();
   const isOwner = currentUser?.id === invite.userId;
+
+  // Built here, server-side, instead of InviteView reading
+  // window.location.href at render time: that read returns "" during SSR
+  // (no window on the server) and only becomes correct after the client
+  // hydrates, so the very first paint - including the share text/href a
+  // guest gets if they tap "share" before hydration finishes - carried no
+  // link at all. A guest actually hit this: the shared WhatsApp message
+  // had the whole "confirm and we'll save your seat" pitch but the actual
+  // invite link was just... missing. Host + proto here are always
+  // present and identical between server and client, so this is right
+  // from the first paint, with no hydration gap to fall into. (Also fixes
+  // a smaller pre-existing wart: window.location.href on the desktop
+  // phone-frame view included the internal "?mobile=true" iframe param.)
+  const hdrs = await headers();
+  const host = hdrs.get("host") ?? "";
+  const proto = hdrs.get("x-forwarded-proto") ?? "https";
+  const inviteUrl = host ? `${proto}://${host}/i/${invite.id}` : "";
 
   let headline = "";
   if (invite.mode === "template") {
@@ -62,6 +80,7 @@ export default async function InvitePage({
       categoryFields={invite.categoryFields}
       textStyle={invite.textStyle}
       isOwner={isOwner}
+      inviteUrl={inviteUrl}
     />
   );
 }
