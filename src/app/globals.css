@@ -2049,12 +2049,15 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   flex: none; width: 100%;
   position: relative; z-index: 5; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   border: none; border-top: 1px solid rgba(255,255,255,0.2); border-radius: 0;
-  padding: 14px 10px calc(14px + env(safe-area-inset-bottom, 0px));
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  cursor: pointer; font-weight: 700; font-size: .95rem;
+  /* Roughly half the previous height (was 14px/.95rem/3px gap) - it was
+     eating a noticeably large slice of already-tight vertical space on a
+     full-screen mobile invite. */
+  padding: 7px 10px calc(7px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  cursor: pointer; font-weight: 700; font-size: .78rem;
   box-shadow: 0 -4px 16px rgba(0,0,0,0.2);
 }
-.pull-arrows i { display: block; animation: pull-bounce 1.4s infinite; font-size: .8rem; opacity: .85; }
+.pull-arrows i { display: block; animation: pull-bounce 1.4s infinite; font-size: .6rem; opacity: .85; }
 .pull-arrows .a2 { animation-delay: .2s; }
 @keyframes pull-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 

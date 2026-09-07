@@ -94,7 +94,18 @@ export async function POST(req: Request) {
   // this comment used to warn about), so it must NOT get the "no text"
   // instruction the guided-form path below still uses.
   const promptParts = rawPrompt
-    ? [rawPrompt, "Portrait orientation, 9:16 aspect ratio, high-end professional graphic design."]
+    ? [
+        rawPrompt,
+        // A real 9:16 canvas leaves a visible top/bottom letterbox gap on
+        // most actual phones once displayed with object-fit:contain (the
+        // guest view's fix for the AI-designer path, InviteView.tsx) -
+        // modern screens run closer to 9:19.5-9:20. Requesting that taller
+        // ratio up front means the generated canvas already matches real
+        // devices far more closely, so there's much less empty bar left to
+        // fill on screen - this instruction runs LAST and wins over
+        // whatever ratio the chat step's own drafted prompt mentioned.
+        "Portrait orientation, tall smartphone-screen aspect ratio of approximately 9:19.5 (notably taller than a standard 9:16) so the design fills a modern phone screen edge-to-edge, high-end professional graphic design.",
+      ]
     : [
         `An elegant, professional digital invitation background design${eventType ? ` for a ${eventType}` : ""}.`,
         color && `Color palette: ${color}.`,
