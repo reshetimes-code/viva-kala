@@ -140,6 +140,34 @@ export function headlineToString(parts: HeadlineParts | null): string {
   return [parts.line1, parts.line2].filter(Boolean).join(" - ");
 }
 
+const CATEGORY_SHARE_PHRASE: Partial<Record<EventCategory, string>> = {
+  "חתונה": "לחתונה של",
+  "חינה": "לחינה של",
+  "בר/בת מצווה": "לבר/בת המצווה של",
+  "בר מצווה": "לבר המצווה של",
+  "בת מצווה": "לבת המצווה של",
+  "יום הולדת": "ליום ההולדת של",
+};
+
+/** "ברוכים הבאים לחתונה של דניאל ואמה!" - the opening line of the WhatsApp
+ *  share message, so a guest who taps a link forwarded to them (not the
+ *  couple/family's own message) knows immediately whose event this is,
+ *  instead of just a generic "you're invited" over a bare link. `names`
+ *  is resolved by the caller (page.tsx) since it differs by mode/category -
+ *  structured groom/bride or celebrant fields for the three tailored
+ *  categories, the coded template's own title lines for mode "template",
+ *  otherwise the legacy free-text celebrants list. Empty string (skip the
+ *  line entirely) only when none of those produced an actual name. */
+export function buildShareGreeting(category: EventCategory | undefined, names: string): string {
+  // Individual name fields sometimes carry stray leading/trailing spaces
+  // (a form field saved as-is) - collapsed here so joining two of them
+  // ("X " + " ו" + "Y") can't leave a visible double space in the greeting.
+  const cleanNames = names.replace(/\s+/g, " ").trim();
+  if (!cleanNames) return "";
+  const phrase = (category && CATEGORY_SHARE_PHRASE[category]) || "לאירוע של";
+  return `ברוכים הבאים ${phrase} ${cleanNames}!`;
+}
+
 /** A native <input type="date"> always gives back "YYYY-MM-DD" - display
  *  that as "DD/MM/YYYY" instead everywhere a date reaches a guest/preview.
  *  Anything else (already-formatted, or free text on an older invite)

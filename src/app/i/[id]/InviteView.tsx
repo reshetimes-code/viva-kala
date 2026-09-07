@@ -36,6 +36,13 @@ interface Props {
    *  header was somehow missing, in which case share falls back to
    *  window.location.href. */
   inviteUrl?: string;
+  /** "ברוכים הבאים לחתונה של דניאל ואמה!" - opening line of the WhatsApp
+   *  share message, built server-side (see page.tsx) from the couple's/
+   *  celebrant's actual name so a guest who got the link forwarded along
+   *  knows immediately whose event it is. Empty when no name could be
+   *  resolved - the share message then just skips straight to the seating
+   *  line, same as before this existed. */
+  shareGreeting?: string;
 }
 
 export default function InviteView({
@@ -55,6 +62,7 @@ export default function InviteView({
   textStyle,
   isOwner,
   inviteUrl,
+  shareGreeting,
 }: Props) {
   // Only the three tailored categories (wedding/bar-bat-mitzvah/henna) have
   // enough structured data for a real headline - everything else keeps the
@@ -331,12 +339,14 @@ export default function InviteView({
   // persuasive wording on the clipboard, not just the bare URL, or exactly
   // those non-contact guests would miss the seating pitch entirely.
   // Kept short on purpose - a wall of text is exactly what guests skim
-  // past. One bold line leading with the actual payoff (a seat is being
-  // held), a blank line, then the call to action and link. *asterisks* are
-  // WhatsApp's own markdown for bold - the one real "bigger font" lever
-  // plain WhatsApp text supports at all.
+  // past. shareGreeting (when there's a name to show - see page.tsx) leads
+  // with whose event this actually is, so a guest who got the link
+  // forwarded along isn't left guessing; then one bold line with the
+  // actual payoff (a seat is being held), a blank line, then the call to
+  // action and link. *asterisks* are WhatsApp's own markdown for bold -
+  // the one real "bigger font" lever plain WhatsApp text supports at all.
   const shareMessage = wantRsvp
-    ? `*שומרים לכם מקום בשולחן* 🪑✨\n\nאשרו הגעה בקישור 👇\n${shareUrl}`
+    ? `${shareGreeting ? shareGreeting + "\n" : ""}*שומרים לכם מקום בשולחן* 🪑✨\n\nאשרו הגעה בקישור 👇\n${shareUrl}`
     : `להזמנה הדיגיטלית שלנו כנסו לקישור הבא ${shareUrl}`;
   const shareText = encodeURIComponent(shareMessage);
 
@@ -434,12 +444,13 @@ export default function InviteView({
 
   async function buildShareImageBlob(): Promise<Blob | null> {
     const W = 1080;
-    const H = 1350;
-    const canvas = document.createElement("canvas");
-    canvas.width = W;
-    canvas.height = H;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
+    // Fixed-height caption band for the bold "save your seat" text - kept
+    // separate from the photo (not overlaid on top of it) so the actual
+    // invitation always shows in full underneath, never cropped or
+    // obscured. A guest who forwards this on needs to still recognize it
+    // as the same invitation they got, not a generic promo graphic.
+    const CAPTION_H = 460;
+    const FALLBACK_H = 1350; // when there's no photo to size the canvas by
 
     // Load the same bold weight used across the product's headings so the
     // canvas text doesn't silently fall back to a thin default font.
@@ -454,75 +465,101 @@ export default function InviteView({
       // whatever font the browser substitutes.
     }
 
-    // Background: the invite's own photo when there is one (cover-fit, via
-    // the CORS-enabled GCS bucket), otherwise a dark navy/gold gradient that
-    // matches the product's own luxury-invite look.
-    let hasPhoto = false;
+    // The invite's own photo, loaded first (before sizing the canvas) so
+    // the whole thing can be drawn at its natural aspect ratio instead of
+    // being cropped to fit a pre-guessed frame.
+    let img: HTMLImageElement | null = null;
     if (mode === "image" && imageUrl) {
       try {
-        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        img = await new Promise<HTMLImageElement>((resolve, reject) => {
           const el = new Image();
           el.crossOrigin = "anonymous";
           el.onload = () => resolve(el);
           el.onerror = reject;
           el.src = imageUrl;
         });
-        const scale = Math.max(W / img.width, H / img.height);
-        const dw = img.width * scale;
-        const dh = img.height * scale;
-        ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
-        hasPhoto = true;
       } catch {
-        hasPhoto = false;
+        img = null;
       }
     }
-    if (!hasPhoto) {
+
+    let imgDrawH = 0;
+    let canvasW = W;
+    if (img) {
+      imgDrawH = Math.round((img.height / img.width) * W);
+      // A very tall source photo (e.g. a near-full-screen 9:19.5 shot)
+      // would otherwise blow the canvas out to an unreasonable height -
+      // scale everything down together so the full photo still fits,
+      // uncropped, just narrower.
+      const MAX_IMG_H = 2200;
+      if (imgDrawH > MAX_IMG_H) {
+        canvasW = Math.round((W * MAX_IMG_H) / imgDrawH);
+        imgDrawH = MAX_IMG_H;
+      }
+    }
+    const H = img ? imgDrawH + CAPTION_H : FALLBACK_H;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = canvasW;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    if (img) {
+      // The whole photo, uncropped, at the top.
+      ctx.drawImage(img, 0, 0, canvasW, imgDrawH);
+    } else {
+      // No photo (template mode, or it failed to load) - a dark navy/gold
+      // gradient card matching the product's own luxury-invite look fills
+      // the whole canvas instead of just the caption band.
       const bg = ctx.createLinearGradient(0, 0, 0, H);
       bg.addColorStop(0, "#0f1720");
       bg.addColorStop(1, "#1c1c1e");
       ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, W, H);
+      ctx.fillRect(0, 0, canvasW, H);
     }
 
-    // Dark gradient overlay (heavier toward the bottom, where the headline
-    // sits) so bold white/gold text stays legible over any photo.
-    const overlay = ctx.createLinearGradient(0, 0, 0, H);
-    overlay.addColorStop(0, "rgba(10,10,12,0.35)");
-    overlay.addColorStop(0.55, "rgba(10,10,12,0.55)");
-    overlay.addColorStop(1, "rgba(10,10,12,0.92)");
-    ctx.fillStyle = overlay;
-    ctx.fillRect(0, 0, W, H);
+    // Caption band: solid dark panel below the photo (or the full gradient
+    // card when there's no photo) holding the bold call-to-action text -
+    // never drawn on top of the photo itself.
+    const bandY = img ? imgDrawH : 0;
+    const bandH = H - bandY;
+    const band = ctx.createLinearGradient(0, bandY, 0, H);
+    band.addColorStop(0, img ? "#14100a" : "rgba(10,10,12,0.35)");
+    band.addColorStop(1, "#0a0806");
+    ctx.fillStyle = band;
+    ctx.fillRect(0, bandY, canvasW, bandH);
 
     ctx.direction = "rtl";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    let y = H - 430;
+    let y = bandY + bandH / 2 - 90;
 
-    ctx.font = "900 96px Heebo, Arial, sans-serif";
+    ctx.font = "900 84px Heebo, Arial, sans-serif";
     ctx.fillStyle = "#f3d9a4";
-    ctx.fillText("💍 שומרים לכם מקום!", W / 2, y);
-    y += 120;
+    ctx.fillText("💍 שומרים לכם מקום!", canvasW / 2, y);
+    y += 106;
 
-    ctx.font = "800 62px Heebo, Arial, sans-serif";
+    ctx.font = "800 54px Heebo, Arial, sans-serif";
     ctx.fillStyle = "#ffffff";
-    for (const line of wrapCanvasText(ctx, "אשרו הגעה עכשיו", W - 140)) {
-      ctx.fillText(line, W / 2, y);
-      y += 76;
+    for (const line of wrapCanvasText(ctx, "אשרו הגעה עכשיו", canvasW - 140)) {
+      ctx.fillText(line, canvasW / 2, y);
+      y += 66;
     }
-    y += 14;
+    y += 12;
 
-    ctx.font = "700 40px Heebo, Arial, sans-serif";
+    ctx.font = "700 34px Heebo, Arial, sans-serif";
     ctx.fillStyle = "#e7e2d6";
-    for (const line of wrapCanvasText(ctx, "כדי שנשריין לכם מקום ושולחן מסודר באולם", W - 160)) {
-      ctx.fillText(line, W / 2, y);
-      y += 52;
+    for (const line of wrapCanvasText(ctx, "כדי שנשריין לכם מקום ושולחן מסודר באולם", canvasW - 160)) {
+      ctx.fillText(line, canvasW / 2, y);
+      y += 44;
     }
 
-    y += 46;
-    ctx.font = "700 30px Heebo, Arial, sans-serif";
+    y += 40;
+    ctx.font = "700 28px Heebo, Arial, sans-serif";
     ctx.fillStyle = "#d4af7a";
-    ctx.fillText("👇 הקישור להזמנה ולאישור הגעה מצורף בהודעה", W / 2, y);
+    ctx.fillText("👇 הקישור להזמנה ולאישור הגעה מצורף בהודעה", canvasW / 2, y);
 
     return new Promise((resolve) => {
       canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.92);

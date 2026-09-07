@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { findInviteById } from "@/lib/store";
 import { getCurrentUser } from "@/lib/auth";
 import type { TemplateFields } from "@/lib/templates";
-import { buildHeadline, headlineToString } from "@/lib/categoryFields";
+import { buildHeadline, headlineToString, buildShareGreeting } from "@/lib/categoryFields";
 import InviteView from "./InviteView";
 
 export default async function InvitePage({
@@ -43,10 +43,18 @@ export default async function InvitePage({
   const proto = hdrs.get("x-forwarded-proto") ?? "https";
   const inviteUrl = host ? `${proto}://${host}/i/${invite.id}` : "";
 
+  // The legacy free-text celebrants list - already collected on every
+  // invite regardless of category - doubles as the fallback name source
+  // for the share greeting below when there's no tailored category (יום
+  // הולדת, אחר) or the structured fields are missing on an older invite.
+  const legacyNames = invite.celebrants.map((c) => c.name).filter(Boolean).join(" ו");
+
   let headline = "";
+  let namesForGreeting = "";
   if (invite.mode === "template") {
     const f = invite.templateFields as unknown as TemplateFields | undefined;
     headline = f ? [f.titleLine1, f.titleLine2].filter(Boolean).join(" & ") : "";
+    namesForGreeting = f ? [f.titleLine1, f.titleLine2].filter(Boolean).join(" ו") : "";
   } else {
     // Categories with a tailored field set (חתונה/בר-בת-מצווה/חינה) build
     // their headline from structured data; everything else (יום הולדת,
@@ -55,13 +63,15 @@ export default async function InvitePage({
     const structured = buildHeadline(invite.eventCategory, invite.categoryFields);
     if (structured) {
       headline = headlineToString(structured);
+      namesForGreeting = structured.line1;
     } else {
-      const names = invite.celebrants.map((c) => c.name).filter(Boolean).join(" ו");
-      headline = [invite.invitedAs, "ל" + invite.partyType, "של " + names, invite.willBe]
+      headline = [invite.invitedAs, "ל" + invite.partyType, "של " + legacyNames, invite.willBe]
         .filter(Boolean)
         .join(" ");
     }
   }
+  // "who is this from" line for the share message - see buildShareGreeting.
+  const shareGreeting = buildShareGreeting(invite.eventCategory, namesForGreeting || legacyNames);
 
   return (
     <InviteView
@@ -81,6 +91,7 @@ export default async function InvitePage({
       textStyle={invite.textStyle}
       isOwner={isOwner}
       inviteUrl={inviteUrl}
+      shareGreeting={shareGreeting}
     />
   );
 }
