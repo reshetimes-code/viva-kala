@@ -22,34 +22,35 @@ interface ChatTurn {
 type UploadedPhotoPlacement = "round" | "half" | "quarter-top" | "quarter-bottom";
 
 // The quality bar the client showed as a reference (a premium AI-made
-// wedding invitation: dark photo/background, metallic gold Hebrew title,
-// small icon+text detail rows with hairline gold dividers) - folded into
-// every photo-placement instruction below so the result reliably reaches
-// that level regardless of how the style-preference chat answers alone
-// phrased it, not just "an elegant design" left to interpretation.
+// wedding invitation: a real couple photo blended into a night scene,
+// a floral/string-light garland framing the WHOLE card - photo and text
+// together as one piece, metallic gold Hebrew title, small icon+text detail
+// rows with hairline gold dividers) - folded into every photo-placement
+// instruction below so the result reliably reaches that level regardless
+// of how the style-preference chat answers alone phrased it.
 const PREMIUM_FINISH =
-  "Match a premium, professionally-designed invitation finish: a deep dark background (unless the user's own answers clearly asked for something light/pastel instead), an elegant metallic-gold Hebrew title with a subtle gradient/shine rather than flat color, thin gold hairline dividers between sections, and the event details laid out as small clean icon-plus-text rows (a small calendar icon before the date, a small location-pin icon before the venue, etc.) rather than plain paragraphs. Generous negative space, refined high-end typography throughout.";
+  "Keep the people/subject in the photo clearly recognizable and unaltered, but do subtly relight/color-grade the photo (tone, warmth, contrast) so it reads as naturally part of the same scene as the rest of the design instead of a flat pasted rectangle - the reference quality bar here is a real couple photo blended into a warm evening setting, not a raw unedited crop. Frame the photo and the text together as ONE cohesive piece with a single decorative border wrapping the whole card (e.g. a floral garland with soft string lights for a romantic wedding, or a fitting motif for the event type) - not a decorated text area sitting separately below/beside a plain photo. Also match a premium, professionally-designed finish: a deep dark background (unless the user's own answers clearly asked for something light/pastel instead), an elegant metallic-gold Hebrew title with a subtle gradient/shine rather than flat color, thin gold hairline dividers between sections, and the event details laid out as small clean icon-plus-text rows (a small calendar icon before the date, a small location-pin icon before the venue, etc.) rather than plain paragraphs. Generous negative space, refined high-end typography throughout.";
 
 const PLACEMENT_CHOICES: { value: UploadedPhotoPlacement; label: string; instruction: string }[] = [
   {
     value: "round",
     label: "עיגול במרכז ההזמנה",
-    instruction: `Use the attached photo exactly as provided, unedited. Place it as a circular framed inset near the top-center of the design, and build the rest of the design (decorative elements, all the event text) around it. ${PREMIUM_FINISH}`,
+    instruction: `Place the attached photo as a circular framed inset near the top-center of the design, and build the rest of the design (decorative elements, all the event text) around it. ${PREMIUM_FINISH}`,
   },
   {
     value: "half",
     label: "חצי תמונה, חצי טקסט",
-    instruction: `Use the attached photo exactly as provided, unedited. Fill the top half of the image with the photo edge-to-edge, and design the bottom half with all the event text. ${PREMIUM_FINISH}`,
+    instruction: `Fill the top half of the image with the attached photo edge-to-edge, and design the bottom half with all the event text. ${PREMIUM_FINISH}`,
   },
   {
     value: "quarter-top",
     label: "רצועת תמונה למעלה",
-    instruction: `Use the attached photo exactly as provided, unedited. Fill roughly the top quarter of the image with the photo as a wide banner strip, and design the rest below it with all the event text. ${PREMIUM_FINISH}`,
+    instruction: `Fill roughly the top quarter of the image with the attached photo as a wide banner strip, and design the rest below it with all the event text. ${PREMIUM_FINISH}`,
   },
   {
     value: "quarter-bottom",
     label: "רצועת תמונה למטה",
-    instruction: `Use the attached photo exactly as provided, unedited. Fill roughly the bottom quarter of the image with the photo as a wide banner strip, and design the rest above it with all the event text. ${PREMIUM_FINISH}`,
+    instruction: `Fill roughly the bottom quarter of the image with the attached photo as a wide banner strip, and design the rest above it with all the event text. ${PREMIUM_FINISH}`,
   },
 ];
 
@@ -353,7 +354,9 @@ export default function AiDesignerChat({
             ))}
           </div>
           <div className="ai-invite-field mt-3">
-            <label>או שתכתבו לי בעצמכם (לא חובה)</label>
+            <label>
+              <OptionLabel text="או שתכתבו לי בעצמכם (לא חובה)" />
+            </label>
             <input value={freeText} onChange={(e) => setFreeText(e.target.value)} placeholder="ספרו לי מה בא לכם..." />
             {freeText.trim() && (
               <button type="button" className="ai-invite-generate-btn mt-2" onClick={sendFreeText}>
