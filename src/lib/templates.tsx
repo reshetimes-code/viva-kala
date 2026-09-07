@@ -1,3 +1,4 @@
+import { Fragment, type ReactNode } from "react";
 import { EVENT_CATEGORIES, type EventCategory } from "@/lib/eventCategories";
 
 // Re-exported for back-compat - every existing import of EventCategory/
@@ -74,6 +75,7 @@ export const TEMPLATES: TemplateDef[] = [
   { id: "gold-ornate-dark", label: "זהב מהודר על כהה", swatch: "linear-gradient(135deg,#2a1240,#d4af37)", photoStyle: "square", categories: ["בר/בת מצווה", "בר מצווה", "בת מצווה", "חתונה"] },
   { id: "birthday-fun", label: "יום הולדת צבעוני", swatch: "linear-gradient(135deg,#e6379a,#ff8fc7)", photoStyle: "round", categories: ["יום הולדת"] },
   { id: "festive-balloons", label: "חגיגי עם בלונים", swatch: "linear-gradient(135deg,#f5efd8,#c9a24b)", photoStyle: "header", categories: ["יום הולדת", "בר/בת מצווה", "בר מצווה", "בת מצווה"] },
+  { id: "gold-night", label: "רקע לילה זהוב", swatch: "linear-gradient(135deg,#0c0c10,#2a2418,#d9b969)", photoStyle: "background", categories: ["חתונה"] },
 ];
 
 /** Per-template accent colors for UI chrome that sits OUTSIDE the card itself
@@ -90,6 +92,7 @@ export const TEMPLATE_CTA_COLORS: Record<string, { bg: string; color: string }> 
   "gold-ornate-dark": { bg: "rgba(212,175,55,0.94)", color: "#2a1240" },
   "birthday-fun": { bg: "rgba(139,20,80,0.92)", color: "#fff0f8" },
   "festive-balloons": { bg: "rgba(40,40,40,0.9)", color: "#ffffff" },
+  "gold-night": { bg: "rgba(217,185,105,0.94)", color: "#211a08" },
 };
 
 const CARD_CLASS: Record<string, string> = {
@@ -103,6 +106,7 @@ const CARD_CLASS: Record<string, string> = {
   "gold-ornate-dark": "tpl-gold-ornate",
   "birthday-fun": "tpl-birthday",
   "festive-balloons": "tpl-balloons",
+  "gold-night": "tpl-gold-night",
 };
 
 /** Elegant Latin-only fonts (no Hebrew glyphs) used for English names - the
@@ -118,6 +122,7 @@ const LATIN_TITLE_FONT: Record<string, string> = {
   "gold-ornate-dark": "'Playfair Display', serif",
   "birthday-fun": "'Assistant', sans-serif",
   "festive-balloons": "'Assistant', sans-serif",
+  "gold-night": "'Playfair Display', serif",
 };
 
 // Every LATIN_TITLE_FONT above is a Latin-only face with zero Hebrew glyph
@@ -138,6 +143,7 @@ const HEBREW_TITLE_FONT: Record<string, string> = {
   "botanical-green": "'Frank Ruhl Libre', serif",
   "sunset-tropical": "'Frank Ruhl Libre', serif",
   "gold-ornate-dark": "'Frank Ruhl Libre', serif",
+  "gold-night": "'Frank Ruhl Libre', serif",
 };
 
 const HEBREW_CHAR_RANGE = new RegExp("[\\u0590-\\u05FF]");
@@ -179,6 +185,17 @@ function CalendarIcon() {
     <svg className="tpl-balloons-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6">
       <rect x="3.5" y="5" width="17" height="16" rx="2" />
       <path d="M3.5 10h17M8 3v4M16 3v4" />
+    </svg>
+  );
+}
+/** Two interlocking wedding rings - the gold-night template's detail-row
+ *  icon for the חופה/ceremony line, and the larger decorative glyph above
+ *  the title. Same real-vector-shape convention as the icons above. */
+function RingsIcon() {
+  return (
+    <svg className="tpl-balloons-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <circle cx="9" cy="14" r="5.5" />
+      <circle cx="15" cy="14" r="5.5" />
     </svg>
   );
 }
@@ -383,6 +400,48 @@ function renderContent(templateId: string, fields: TemplateFields) {
           <p className="tpl-balloons-footer">{fields.footerNote}</p>
         </>
       );
+
+    case "gold-night": {
+      // Same "small icon + short text, thin gold divider between rows" shape
+      // as festive-balloons' tpl-balloons-details, but rendered as stacked
+      // rows (matching the reference: date / venue / חופה time, each on its
+      // own line) instead of a horizontal row - built from whichever of
+      // these four fields the user actually filled in, so a blank
+      // receptionTime/ceremonyTime just skips that row instead of leaving
+      // an empty one with a dangling divider.
+      const detailRows: { icon: ReactNode; text: string }[] = [];
+      if (fields.dateText) detailRows.push({ icon: <CalendarIcon />, text: fields.dateText });
+      if (fields.venueText) detailRows.push({ icon: <PinIcon />, text: fields.venueText });
+      if (fields.receptionTime) detailRows.push({ icon: <ClockIcon />, text: `קבלת פנים ${fields.receptionTime}` });
+      if (fields.ceremonyTime) detailRows.push({ icon: <RingsIcon />, text: `חופה ב-${fields.ceremonyTime}` });
+      return (
+        <div className="tpl-gn-frame">
+          <span className="tpl-gn-rings" aria-hidden="true">
+            <RingsIcon />
+          </span>
+          <h2 className="tpl-gn-title" style={titleStyle}>
+            {fields.titleLine1}
+            <span className="tpl-gn-amp">&amp;</span>
+            {fields.titleLine2}
+          </h2>
+          {fields.subtitle && <p className="tpl-gn-subtitle">{fields.subtitle}</p>}
+          {detailRows.length > 0 && (
+            <div className="tpl-gn-rows">
+              {detailRows.map((row, i) => (
+                <Fragment key={i}>
+                  {i > 0 && <div className="tpl-gn-divider" aria-hidden="true" />}
+                  <div className="tpl-gn-row">
+                    {row.icon}
+                    <span>{row.text}</span>
+                  </div>
+                </Fragment>
+              ))}
+            </div>
+          )}
+          <p className="tpl-gn-footer">{fields.footerNote}</p>
+        </div>
+      );
+    }
 
     case "cream-script":
     default:

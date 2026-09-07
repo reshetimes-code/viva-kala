@@ -1128,6 +1128,42 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .tpl-go-times { font-family: 'Assistant', sans-serif; font-size: clamp(.85rem, 3.6vw, 1rem); color: #cbb98a; margin-top: 8px; }
 .tpl-go-footer { font-family: 'Assistant', sans-serif; font-weight: 700; font-size: clamp(1.2rem, 5vw, 1.5rem); color: #d4af37; margin-top: 20px; }
 
+/* --- gold-night: full-bleed user photo (photoStyle "background") + a warm
+   dark scrim + a metallic-gold Hebrew serif title + icon/divider detail
+   rows - the "night wedding aisle" reference look. The shared .tpl-bg-
+   overlay (defined with .tpl-photo-bg/.tpl-bg-content below) is a plain
+   light wash meant for bright pastel photos like botanical-green's; this
+   template's own photo is expected to already be a dark/night shot, so it
+   overrides that overlay with a top/bottom gradient scrim instead - just
+   enough to keep the gold text readable without washing the photo out. */
+.tpl-gold-night { color: #f3e6c4; }
+.tpl-gold-night .tpl-bg-overlay {
+  background: linear-gradient(180deg, rgba(8,8,10,0.6) 0%, rgba(8,8,10,0.22) 32%, rgba(8,8,10,0.32) 68%, rgba(8,8,10,0.78) 100%);
+}
+.tpl-gn-frame { display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%; }
+.tpl-gn-rings { color: #d9b969; margin-bottom: 14px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.55)); }
+.tpl-gn-rings svg { width: 40px; height: 40px; }
+/* Metallic gold fill via a gradient clipped to the text itself, instead of a
+   flat color - the single biggest lever for the reference's "shiny gold
+   lettering" look without hand-authored art. */
+.tpl-gn-title {
+  font-weight: 900; font-size: clamp(2.3rem, 10.5vw, 3.3rem); line-height: 1.3; margin: 0;
+  background: linear-gradient(180deg, #f8e7ad 0%, #d9b969 55%, #b8933f 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+}
+.tpl-gn-amp { display: block; font-size: .45em; margin: 6px 0; }
+/* No Google-Fonts Hebrew script/handwriting face is loaded anywhere in this
+   file (Dancing Script/Petit Formal Script above are Latin-only and would
+   silently fall back to the system font on Hebrew text) - italic serif is
+   the honest way to get a softer, more "written" feel on a Hebrew subtitle
+   like "מתחתנים" without a broken font fallback. */
+.tpl-gn-subtitle { font-family: 'Frank Ruhl Libre', serif; font-style: italic; font-weight: 500; font-size: clamp(1.1rem, 4.6vw, 1.4rem); color: #fbf6ea; margin: 10px 0 26px; }
+.tpl-gn-rows { width: 100%; max-width: 280px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.tpl-gn-row { display: flex; align-items: center; gap: 10px; font-family: 'Assistant', sans-serif; font-weight: 700; font-size: clamp(1rem, 4.2vw, 1.15rem); color: #fbf6ea; }
+.tpl-gn-divider { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, rgba(217,185,105,0.75), transparent); }
+.tpl-gn-footer { font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: clamp(1.3rem, 5.5vw, 1.6rem); color: #d9b969; margin-top: 26px; }
+
 /* --- birthday-fun --- */
 .tpl-birthday {
   background:
