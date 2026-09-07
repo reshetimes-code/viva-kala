@@ -146,7 +146,18 @@ export default function TemplateFillForm({
           </div>
           <div className="tpl-fill-field">
             <label>תאריך אמיתי (ליומן/RSVP)</label>
-            <input type="date" value={eventDateIso} onChange={(e) => setEventDateIso(e.target.value)} />
+            {/* Uncontrolled (defaultValue, not value) on purpose - a controlled
+                date input forces React to re-assign .value on every render,
+                and on iOS Safari that programmatic write while the native
+                wheel picker is open makes it think the user is done and
+                auto-confirms/closes it after the very first tick (often
+                landing on "today"). Reading the final value only via
+                onChange avoids fighting the native picker mid-interaction. */}
+            <input
+              type="date"
+              defaultValue={eventDateIso}
+              onChange={(e) => setEventDateIso(e.target.value)}
+            />
           </div>
           <div className="tpl-fill-field">
             <label>מקום האירוע</label>

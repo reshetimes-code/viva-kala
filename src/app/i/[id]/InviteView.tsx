@@ -573,7 +573,7 @@ export default function InviteView({
               </>
             ) : (
               <>
-                <h3 className="welcome-alert-subtitle">רגע לפני שממשיכים...</h3>
+                <h3 className="welcome-alert-subtitle lead-benefit-title">רגע לפני שממשיכים...</h3>
                 <p className="welcome-alert-emphasis lead-benefit-prompt">
                   חוגגים אירוע בקרוב? תרצו לקבל הטבה מיוחדת מאיתנו?
                 </p>
