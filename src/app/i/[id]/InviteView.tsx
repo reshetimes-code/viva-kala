@@ -330,12 +330,13 @@ export default function InviteView({
   // WhatsApp's own contact picker - copyLink() below must put this same
   // persuasive wording on the clipboard, not just the bare URL, or exactly
   // those non-contact guests would miss the seating pitch entirely.
-  // *asterisks* are WhatsApp's own markdown for bold - the one real "bigger
-  // font" lever plain WhatsApp text supports at all - so the actual
-  // call-to-action renders bold in the chat bubble instead of looking like
-  // the rest of the sentence.
+  // Kept short on purpose - a wall of text is exactly what guests skim
+  // past. One bold line leading with the actual payoff (a seat is being
+  // held), a blank line, then the call to action and link. *asterisks* are
+  // WhatsApp's own markdown for bold - the one real "bigger font" lever
+  // plain WhatsApp text supports at all.
   const shareMessage = wantRsvp
-    ? `💍 הוזמנתם לאירוע שלנו!\n*מאשרים הגעה בקישור עכשיו* כדי שנשריין לכם מקום ושולחן מסודר באולם - מי שלא מאשר מראש, אנחנו לא יכולים להבטיח לו מקום ישיבה 🪑✨\n${shareUrl}\nמחכים לראות אתכם! 🥂`
+    ? `*שומרים לכם מקום בשולחן* 🪑✨\n\nאשרו הגעה בקישור 👇\n${shareUrl}`
     : `להזמנה הדיגיטלית שלנו כנסו לקישור הבא ${shareUrl}`;
   const shareText = encodeURIComponent(shareMessage);
 
