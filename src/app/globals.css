@@ -454,6 +454,15 @@ body {
   --fi-teal: var(--viva-teal); --fi-teal-soft: #7fe0d9; --fi-coral: #ff6b6b; }
 
 .auth-page {
+  /* .fi-ink (above) defines these vars but is never applied to any actual
+     element in the markup - .auth-page is the real root of this section,
+     so it needs to define them itself. Without this, every var(--fi-*)
+     below (background, text colors, focus border, divider...) resolves to
+     nothing, which drops the whole dark background and leaves the white
+     VIVA wordmark logo invisible on a plain white page. */
+  --fi-ink: #0a0a10; --fi-ink-soft: #14141d; --fi-text: #f4f5f7;
+  --fi-muted: rgba(255,255,255,0.66); --fi-line: rgba(255,255,255,0.13);
+  --fi-teal: var(--viva-teal); --fi-teal-soft: #7fe0d9; --fi-coral: #ff6b6b;
   min-height: 100vh;
   background: radial-gradient(circle at 30% 0%, #1c1c2b 0%, var(--fi-ink) 60%);
   display: flex;
