@@ -187,7 +187,32 @@ export async function POST(req: Request) {
           }
         }
       }
-      if (!imageContent?.data) return { error: "לא התקבלה תמונה מהשירות" };
+      if (!imageContent?.data) {
+        // No console logging existed anywhere in this route before - the
+        // very first time this happened (a real production failure on the
+        // photo-upload path) there was nothing in Cloud Run logs to explain
+        // why, just the generic message below reaching the user. Logging
+        // the raw response (no image data in it at this point, so nothing
+        // large/sensitive) is the only way to diagnose the next one - most
+        // likely cause is Gemini declining to edit a real person's photo
+        // and returning text-only instead of an image.
+        console.error("ai-invite: no image in response", JSON.stringify(data)?.slice(0, 4000));
+        // A refusal often comes back as plain text instead of an image -
+        // surface that text (as far as it can be found) instead of the
+        // generic message, so a safety-policy decline reads as an actual
+        // explanation rather than an opaque failure.
+        let refusalText: string | undefined = data?.output_text;
+        if (!refusalText) {
+          for (const step of data?.steps ?? []) {
+            const found = (step?.content ?? []).find((c: { type?: string; text?: string }) => c?.type === "text" && c?.text);
+            if (found?.text) {
+              refusalText = found.text;
+              break;
+            }
+          }
+        }
+        return { error: refusalText ? `השירות לא החזיר תמונה: ${refusalText}` : "לא התקבלה תמונה מהשירות" };
+      }
       const mimeType = imageContent.mime_type || "image/png";
       return { dataUrl: `data:${mimeType};base64,${imageContent.data}` };
     } catch {
