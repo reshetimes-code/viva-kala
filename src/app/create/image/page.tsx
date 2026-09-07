@@ -912,10 +912,17 @@ export default function CreateInvitePage({
             <h3 className="category-title">📅 תאריך ושעה</h3>
             <div className="mt-3">
               <label className="bottom-section-text">מהו תאריך הארוע?</label>
+              {/* defaultValue, not value - a controlled type="date"/type="time"
+                  input forces React to reassign .value on every keystroke
+                  elsewhere in this (large) form's re-renders, and on iOS
+                  Safari that fights the native picker while it's open,
+                  making it auto-confirm/close early. Same fix as
+                  TemplateFillForm's date field and InviteView's lead-flow
+                  date question. */}
               <input
                 className="inputs-fields"
                 type="date"
-                value={eventDate}
+                defaultValue={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
               />
             </div>
@@ -924,7 +931,7 @@ export default function CreateInvitePage({
               <input
                 className="inputs-fields"
                 type="time"
-                value={eventStart}
+                defaultValue={eventStart}
                 onChange={(e) => setEventStart(e.target.value)}
               />
             </div>

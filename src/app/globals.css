@@ -607,7 +607,7 @@ body {
 
 .category-section {
   background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   border: 2px solid rgba(255,255,255,0.2);
   border-radius: 20px;
   padding: 25px;
@@ -636,7 +636,7 @@ body {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
   max-width: 760px; margin: 0 auto; border-radius: 20px 20px 0 0;
   border-right: none; border-top: 4px solid #d4af7a;
-  background: #14232c; backdrop-filter: blur(14px);
+  background: #14232c; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
   padding: 16px 25px calc(16px + env(safe-area-inset-bottom, 0px));
   box-shadow: 0 -10px 30px rgba(0,0,0,0.4);
 }
@@ -724,12 +724,19 @@ body {
   padding: 14px;
   font-size: 1rem;
   background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   color: #fff;
   font-weight: 500;
   text-align: right;
 }
 .inputs-fields::placeholder { color: rgba(255,255,255,0.6); }
+/* Same iOS Safari native-chrome mismatch as .tpl-fill-field's date input
+   (see there) - date/time fields in this form need the native appearance
+   turned off too, so they line up with the text/select fields around them
+   instead of rendering with their own box model. */
+.inputs-fields[type="date"], .inputs-fields[type="time"] {
+  -webkit-appearance: none; appearance: none;
+}
 /* Safari renders a native date/time input's own formatted value through a
    separate internal part that plain `text-align` doesn't reach - it stays
    left-ish even on an RTL page unless this WebKit-only pseudo is targeted
@@ -742,7 +749,7 @@ select.inputs-fields option { color: #111; }
 
 .celebrate-box {
   background: rgba(0,0,0,0);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   border: 2px solid rgba(255,255,255,0.2);
   border-radius: 15px;
   padding: 20px;
@@ -1293,7 +1300,12 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .tpl-fill-field label { display: block; font-weight: 700; font-size: .85rem; color: #4a5568; margin-bottom: 6px; }
 .tpl-fill-field input, .tpl-fill-field textarea {
   width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #d6d9de;
-  font-size: .95rem; text-align: right; font-family: 'Heebo', sans-serif;
+  /* 16px, not the .95rem/15.2px this used to be - anything smaller makes
+     iOS Safari auto-zoom the whole page in the instant this field gets
+     focus (its long-standing rule: it zooms to whatever it thinks makes a
+     sub-16px input legible), which then has to be manually zoomed back
+     out after every single tap through this multi-field form. */
+  font-size: 1rem; text-align: right; font-family: 'Heebo', sans-serif;
   box-sizing: border-box;
 }
 /* Safari (iOS in particular) gives type="date" its own native chrome with a
@@ -1595,7 +1607,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .admin-edit-form { background: #fff; border-radius: 14px; padding: 22px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); max-width: 420px; margin-bottom: 20px; }
 .admin-edit-field { margin-bottom: 14px; }
 .admin-edit-field label { display: block; font-weight: 700; font-size: .88rem; color: #4a5568; margin-bottom: 6px; }
-.admin-edit-field input { width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #d6d9de; font-size: .95rem; }
+.admin-edit-field input { width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #d6d9de; font-size: 1rem; }
 .admin-save-btn { background: #232a36; color: #fff; border: none; border-radius: 10px; padding: 11px 24px; font-weight: 700; cursor: pointer; }
 .admin-save-btn:disabled { opacity: .6; }
 .admin-edit-msg { margin-top: 10px; font-size: .88rem; font-weight: 600; }
@@ -1681,7 +1693,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   display: flex; align-items: center; justify-content: center;
   background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.35);
   color: #fdf6ea; cursor: pointer;
-  backdrop-filter: blur(4px); transition: background .2s ease;
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); transition: background .2s ease;
 }
 .dash-logout-btn:hover { background: rgba(255,255,255,0.22); }
 .dash-logout-btn:disabled { opacity: .6; cursor: default; }
@@ -1961,7 +1973,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
      own real space at the bottom of the screen rather than floating on top
      of - and covering - the bottom of the photo/frame. */
   flex: none; width: 100%;
-  position: relative; z-index: 5; backdrop-filter: blur(6px);
+  position: relative; z-index: 5; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   border: none; border-top: 1px solid rgba(255,255,255,0.2); border-radius: 0;
   padding: 14px 10px calc(14px + env(safe-area-inset-bottom, 0px));
   display: flex; flex-direction: column; align-items: center; gap: 3px;
