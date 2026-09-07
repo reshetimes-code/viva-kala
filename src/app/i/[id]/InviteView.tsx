@@ -898,23 +898,29 @@ export default function InviteView({
             ) : textStyle?.imageHasText ? (
               // The AI Designer bakes the couple's/celebrant's name, date,
               // parents, venue etc. directly into the image pixels (see
-              // imageHasText in create/image/page.tsx) - object-fit:cover
-              // (used below for a plain photo, where losing some edge is
-              // harmless) was cropping that real content off the top and/or
-              // bottom on any phone whose actual visible viewport isn't
-              // exactly the 9:16 the image was generated at - WhatsApp's
-              // in-app browser chrome is the worst offender, but any device
-              // aspect ratio can trigger it. contain guarantees the whole
-              // image (every baked-in detail) is always fully visible; the
-              // blurred cover copy behind it fills the resulting letterbox
-              // bars so there's never a flat/empty gap on the sides.
+              // imageHasText in create/image/page.tsx). object-fit:contain
+              // (this branch's previous approach) guaranteed nothing was
+              // ever cropped, but on a device whose aspect ratio doesn't
+              // match the generated canvas closely, it left a visible empty
+              // bar on two edges - not "dynamic/full-width" like a plain
+              // photo. The generation prompt now asks for a tall ~9:19.5
+              // canvas that closely matches real phone screens, with an
+              // explicit instruction to keep all text safely inset from the
+              // edges (see ai-invite/route.ts + ai-designer/chat/route.ts) -
+              // so a plain edge-to-edge cover-fit, same as a regular photo
+              // below, always fills the screen completely with zero gaps,
+              // and only ever trims a thin sliver of decorative background
+              // on an unusually-shaped device, never the real text. No
+              // .blank-fade darkening overlay here (unlike the plain-photo
+              // branch) - it would dim baked-in text like the venue/parents
+              // line near the bottom edge.
               <>
                 <div
-                  className="blank-bg blank-bg-photo"
-                  style={{ backgroundImage: `url(${JSON.stringify(imageUrl)})` }}
+                  className="blank-bg"
+                  style={{ background: "linear-gradient(to bottom, #4c6b85 0%, #4c6b85 34%, #323a3c 66%, #323a3c 100%)" }}
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="blank-image blank-image-contain" src={imageUrl} alt="הזמנה" />
+                <img className="blank-image" src={imageUrl} alt="הזמנה" />
               </>
             ) : (
               <>

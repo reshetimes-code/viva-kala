@@ -96,15 +96,21 @@ export async function POST(req: Request) {
   const promptParts = rawPrompt
     ? [
         rawPrompt,
-        // A real 9:16 canvas leaves a visible top/bottom letterbox gap on
-        // most actual phones once displayed with object-fit:contain (the
-        // guest view's fix for the AI-designer path, InviteView.tsx) -
-        // modern screens run closer to 9:19.5-9:20. Requesting that taller
-        // ratio up front means the generated canvas already matches real
-        // devices far more closely, so there's much less empty bar left to
-        // fill on screen - this instruction runs LAST and wins over
-        // whatever ratio the chat step's own drafted prompt mentioned.
+        // A real 9:16 canvas leaves a visible letterbox gap on most actual
+        // phones - modern screens run closer to 9:19.5-9:20. Requesting
+        // that taller ratio up front means the generated canvas already
+        // matches real devices far more closely - this instruction runs
+        // LAST and wins over whatever ratio the chat step's own drafted
+        // prompt mentioned.
         "Portrait orientation, tall smartphone-screen aspect ratio of approximately 9:19.5 (notably taller than a standard 9:16) so the design fills a modern phone screen edge-to-edge, high-end professional graphic design.",
+        // The guest view (InviteView.tsx) displays this image with
+        // object-fit:cover so it always fills the screen completely with
+        // zero empty gaps on any device, the same as a plain photo invite -
+        // that only works safely because the canvas ratio above already
+        // closely matches real phones AND every baked-in detail stays well
+        // clear of the edges, so a device whose exact ratio differs only
+        // ever trims a thin sliver of decorative background, never text.
+        "Critical: keep every piece of text (names, date, time, venue, parents' names, any other detail) and the decorative border/frame safely inset from all four edges, with generous margin - at least 8% of the canvas width/height as empty padding on every side - so nothing important is ever right at the edge.",
       ]
     : [
         `An elegant, professional digital invitation background design${eventType ? ` for a ${eventType}` : ""}.`,
