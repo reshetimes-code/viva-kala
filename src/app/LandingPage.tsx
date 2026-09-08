@@ -7,7 +7,7 @@ import VivaIntro from "@/components/VivaIntro";
 // to showcase actual output quality on the homepage.
 const SHOWCASE_EXAMPLES = [
   { src: "/examples/wedding-night-gold.webp", alt: "הזמנה לחתונה - עיצוב לילי בזהב" },
-  { src: "/examples/bar-mitzvah-navy.webp", alt: "הזמנה לבר מצווה - עיצוב כחול-זהב" },
+  { src: "/examples/bar-mitzvah-photo.webp", alt: "הזמנה לבר מצווה - עיצוב כחול-זהב" },
   { src: "/examples/bat-mitzvah-glam.webp", alt: "הזמנה לבת מצווה - עיצוב עם תמונה" },
   { src: "/examples/brit-baby-blue.webp", alt: "הזמנה לברית - עיצוב בכחול ולבן" },
 ];
