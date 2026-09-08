@@ -898,31 +898,25 @@ export default function InviteView({
             ) : textStyle?.imageHasText ? (
               // The AI Designer bakes the couple's/celebrant's name, date,
               // parents, venue etc. directly into the image pixels (see
-              // imageHasText in create/image/page.tsx). Always cover (100%
-              // width AND height, like the plain photo below - "plasticine
-              // that molds to whatever height is left after the bottom bar,
-              // stretched to full width" is exactly what cover already does,
-              // since .inv-media is a flex sibling that already shrinks to
-              // leave the bar its own real space rather than overlapping
-              // it). What cover doesn't decide on its own is WHICH edge
-              // absorbs the crop when the container's ratio doesn't exactly
-              // match the image's - center (the default) trims a bit off
-              // BOTH top and bottom, cutting into the photo/name up top too.
-              // object-position:top anchors the top edge exactly to the
-              // container's top edge instead, so any necessary crop comes
-              // only from the bottom - matched by the generation prompt's
-              // ~9:19.5 canvas + 8%-edge-margin instruction (ai-invite/
-              // route.ts + ai-designer/chat/route.ts), so on most devices
-              // there's nothing to crop at all, and on an outlier device
-              // it's only ever the lowest-priority line (e.g. parents'
-              // names) that gives way, never the photo or the headline.
+              // imageHasText in create/image/page.tsx). object-fit:fill
+              // (not cover/contain) - the client confirmed via a real test
+              // page (plain img{width:100vw;height:100vh;object-fit:fill})
+              // that a non-uniform stretch to exactly match the available
+              // box is what's wanted here: zero cropping AND zero empty
+              // gaps, on any screen shape, full stop - unlike cover (has to
+              // crop something) or contain (has to leave a gap somewhere).
+              // .inv-media (this image's positioned parent) is already
+              // sized to the real available space - screen height minus
+              // the reserved .pull-cta bar below, a proper flex sibling,
+              // not an overlay - so that bar reads as a clean boundary
+              // between the invitation and the RSVP action, never a cut.
               <>
                 <div
                   className="blank-bg"
                   style={{ background: "linear-gradient(to bottom, #4c6b85 0%, #4c6b85 34%, #323a3c 66%, #323a3c 100%)" }}
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="blank-image blank-image-anchor-top" src={imageUrl} alt="הזמנה" />
+                <img className="blank-image blank-image-fill" src={imageUrl} alt="הזמנה" />
               </>
             ) : (
               <>

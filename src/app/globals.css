@@ -1939,11 +1939,19 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   position: absolute !important; inset: 0 !important;
   width: 100% !important; height: 100% !important; object-fit: cover; z-index: 2;
 }
-/* AI-designed image (baked-in text) only - anchors the crop to the top edge
-   instead of cover's default center, so any necessary vertical crop always
-   comes off the bottom (the least-critical line, e.g. parents' names) and
-   never off the photo/headline near the top. See InviteView.tsx. */
-.inv-panel img.blank-image-anchor-top { object-position: center top; }
+/* AI-designed image (baked-in text) only - object-fit:fill instead of
+   cover. cover/contain both have to pick a side to lose (crop something,
+   or leave an empty gap) whenever the container's ratio doesn't exactly
+   match the image's; fill stretches non-uniformly instead so the image
+   matches the container's exact width AND height with zero cropping and
+   zero gaps - .inv-media (this element's positioned parent) is already
+   sized to the real available space (screen height minus the reserved
+   .pull-cta bar below - a proper flex sibling, not an overlay - see
+   InviteView.tsx), so the bar is a clean boundary, never a cut. The
+   trade-off is a slight non-uniform stretch/squeeze on a device whose
+   ratio doesn't match the generation ratio - confirmed acceptable (over
+   any cropping) against a real test case. */
+.inv-panel img.blank-image-fill { object-fit: fill; }
 .blank-bg { position: absolute; inset: 0; z-index: 1; }
 .tpl-full-wrap { width: 100%; height: 100%; }
 .tpl-full-wrap .tpl-card { height: 100%; min-height: 100%; }
