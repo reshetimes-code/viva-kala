@@ -237,7 +237,7 @@ export default function TemplateFillForm({
           {error && <div className="alert alert-error">{error}</div>}
 
           <button type="submit" className="submit-btn" disabled={submitting}>
-            <span>{submitting ? "שומר..." : editInviteId ? "שמירת שינויים" : "מתחילים ליצור קסם!"}</span>
+            <span>{submitting ? "שומר..." : editInviteId ? "שמירת שינויים" : "סיימתי לעצב, בו נמשיך"}</span>
             <span className="submit-btn-arrow">›</span>
           </button>
         </form>

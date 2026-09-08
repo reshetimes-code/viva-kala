@@ -283,8 +283,20 @@ export default function CreateInvitePage({
   // "לבד עם העלאת תמונה ברקע" - picks a file, then always crops it to the
   // TikTok/Story ratio before it becomes the invite's background (see
   // BACKGROUND_ASPECT_RATIO above) instead of using the raw photo as-is.
+  // A one-time heads-up before the file picker even opens: this photo IS
+  // the finished design (no text/details get added on top of it anywhere),
+  // unlike "עם מעצב ה-AI" - worth saying explicitly since nothing else on
+  // this screen makes that distinction obvious before the fact.
   function openUploadFlow() {
-    fileInputRef.current?.click();
+    Swal.fire({
+      icon: "info",
+      title: "שימו לב",
+      text: "אתם מעלים תמונה בלבד - התמונה הזו תהיה כל העיצוב שיופיע בהזמנה, בלי טקסט נוסף מעליה.",
+      confirmButtonText: "הבנתי, בחירת תמונה",
+      confirmButtonColor: "#d4af7a",
+      background: "#1f2a33",
+      color: "#fff",
+    }).then(() => fileInputRef.current?.click());
   }
 
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -297,7 +309,17 @@ export default function CreateInvitePage({
   }
 
   function handleCropConfirm(dataUrl: string) {
-    setImageHasBakedText(false); // an uploaded photo never has the event text drawn into it
+    // This is the "לבד עם העלאת תמונה ברקע" path (see openUploadFlow's own
+    // SweetAlert) - the user's photo IS the finished design, not a plain
+    // photo that still needs InvitePhotoCard's text overlay laid over it.
+    // imageHasBakedText (and the matching textStyle.imageHasText, which is
+    // what actually persists on save/what the guest-facing view checks)
+    // skip that overlay for exactly this reason elsewhere too - reused here
+    // rather than inventing a second flag for the same "show the image
+    // as-is, no automatic text" behavior.
+    setImageHasBakedText(true);
+    setTextStyle({ ...DEFAULT_TEXT_STYLE, imageHasText: true });
+    setCodedTemplate(null);
     setImageDataUrl(dataUrl);
     setRawUploadImage(null);
   }
@@ -1137,7 +1159,7 @@ export default function CreateInvitePage({
             {error && <div className="alert alert-error">{error}</div>}
 
             <button type="submit" className="submit-btn" disabled={submitting}>
-              <span>{submitting ? "יוצר הזמנה..." : "מתחילים ליצור קסם!"}</span>
+              <span>{submitting ? "יוצר הזמנה..." : "סיימתי לעצב, בו נמשיך"}</span>
               <span className="submit-btn-arrow">›</span>
             </button>
           </div>
