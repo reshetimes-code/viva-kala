@@ -1,10 +1,16 @@
 import Link from "next/link";
-import { TemplateCard, DEFAULT_TEMPLATE_FIELDS } from "@/lib/templates";
 import RevealOnScroll from "@/components/RevealOnScroll";
 import HeroSlider from "@/components/HeroSlider";
 import VivaIntro from "@/components/VivaIntro";
 
-const SHOWCASE_IDS = ["cream-script", "floral-blush", "gold-ornate-dark", "botanical-green"];
+// Real, fully-designed invitations (not code-rendered template previews) used
+// to showcase actual output quality on the homepage.
+const SHOWCASE_EXAMPLES = [
+  { src: "/examples/wedding-night-gold.webp", alt: "הזמנה לחתונה - עיצוב לילי בזהב" },
+  { src: "/examples/bar-mitzvah-navy.webp", alt: "הזמנה לבר מצווה - עיצוב כחול-זהב" },
+  { src: "/examples/bat-mitzvah-glam.webp", alt: "הזמנה לבת מצווה - עיצוב עם תמונה" },
+  { src: "/examples/brit-baby-blue.webp", alt: "הזמנה לברית - עיצוב בכחול ולבן" },
+];
 
 // Free-license stock photos (Pexels) used only as tasteful gallery previews for
 // each event category - never persisted into a real user invite.
@@ -258,9 +264,10 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
 
       <section className="landing-showcase">
         <RevealOnScroll className="landing-showcase-grid">
-          {SHOWCASE_IDS.map((id, i) => (
-            <div key={id} className="landing-showcase-item" style={{ transitionDelay: `${i * 90}ms` }}>
-              <TemplateCard templateId={id} fields={DEFAULT_TEMPLATE_FIELDS} useSampleImage />
+          {SHOWCASE_EXAMPLES.map((ex, i) => (
+            <div key={ex.src} className="landing-showcase-item" style={{ transitionDelay: `${i * 90}ms` }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={ex.src} alt={ex.alt} className="landing-showcase-img" loading="lazy" />
             </div>
           ))}
         </RevealOnScroll>
@@ -317,7 +324,8 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
           <div className="landing-band-mockup">
             <div className="mobile-frame landing-mockup-frame">
               <div className="mobile-screen">
-                <TemplateCard templateId="floral-blush" fields={DEFAULT_TEMPLATE_FIELDS} useSampleImage />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/examples/bat-mitzvah-cream.webp" alt="הזמנה לבת מצווה בנייד" className="landing-mockup-img" />
               </div>
             </div>
           </div>

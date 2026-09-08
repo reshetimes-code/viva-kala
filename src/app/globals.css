@@ -170,6 +170,7 @@ body {
   box-shadow: 0 20px 44px -14px rgba(30,20,10,0.3);
 }
 .landing-showcase-item:nth-child(odd) { margin-top: -14px; }
+.landing-showcase-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 /* --- category tiles ("אז מה חוגגים?") --- */
 .landing-categories {
@@ -234,6 +235,7 @@ body {
   box-shadow: 0 30px 60px -14px rgba(0,0,0,0.5), 0 0 0 3px #2c2c2e, 0 0 0 6px #1c1c1e;
 }
 .landing-mockup-frame .mobile-screen { border-radius: 26px; }
+.landing-mockup-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .landing-mockup-frame::before, .landing-mockup-frame::after { display: none; }
 @media (max-width: 800px) {
   .landing-band-inner { grid-template-columns: 1fr; text-align: center; }
