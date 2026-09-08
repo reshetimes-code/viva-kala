@@ -2,6 +2,7 @@ import Link from "next/link";
 import RevealOnScroll from "@/components/RevealOnScroll";
 import HeroSlider from "@/components/HeroSlider";
 import VivaIntro from "@/components/VivaIntro";
+import ShowcaseGallery from "@/components/ShowcaseGallery";
 
 // Real, fully-designed invitations (not code-rendered template previews) used
 // to showcase actual output quality on the homepage.
@@ -263,14 +264,11 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
       </HeroSlider>
 
       <section className="landing-showcase">
-        <RevealOnScroll className="landing-showcase-grid">
-          {SHOWCASE_EXAMPLES.map((ex, i) => (
-            <div key={ex.src} className="landing-showcase-item" style={{ transitionDelay: `${i * 90}ms` }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={ex.src} alt={ex.alt} className="landing-showcase-img" loading="lazy" />
-            </div>
-          ))}
+        <RevealOnScroll className="landing-showcase-heading">
+          <h2>דוגמאות של מעצב ה-AI שלנו..!</h2>
+          <p className="landing-showcase-tagline">השמיים הם הגבול</p>
         </RevealOnScroll>
+        <ShowcaseGallery examples={SHOWCASE_EXAMPLES} />
       </section>
 
       {/* "אז מה חוגגים?" - category tiles, each a full-bleed themed photo as the preview */}
