@@ -148,9 +148,10 @@ export default function InviteView({
   const [leadEventType, setLeadEventType] = useState("");
   const [leadVenue, setLeadVenue] = useState("");
   const [leadFinished, setLeadFinished] = useState(false);
-  // "לסיור הוירטואלי" opens the 360 tour inside an in-page iframe modal
-  // instead of navigating away (target="_blank") - guests stay on the
-  // invite; "חזור להזמנה" below just closes this modal.
+  // "למעבר לאתר האולם" opens the hall's site/promo link (leadTourUrl,
+  // configured per-hall in dashboard/hall settings) inside an in-page
+  // iframe modal instead of navigating away (target="_blank") - guests
+  // stay on the invite; "חזור להזמנה" below just closes this modal.
   const [tourOpen, setTourOpen] = useState(false);
   // Once they've actually looked at the tour, "לא תודה" no longer makes
   // sense as a label (they already said yes to it) - becomes a plain
@@ -751,9 +752,9 @@ export default function InviteView({
                 <div className="lead-alert-icon">✨</div>
                 <p className="lead-alert-thanks">בהצלחה באירוע הבא שלכם!</p>
                 <p className="welcome-alert-emphasis lead-tour-prompt" style={{ marginTop: 6 }}>
-                  רוצים לראות איך זה נראה בשטח?
+                  רוצים להכיר אותנו קצת יותר?
                   <br />
-                  סיור 360° באולם:
+                  מוזמנים לבקר באתר האולם:
                 </p>
                 <button
                   type="button"
@@ -764,7 +765,7 @@ export default function InviteView({
                     setTourOpen(true);
                   }}
                 >
-                  לסיור הוירטואלי 🎥
+                  למעבר לאתר האולם 🌐
                 </button>
                 <button type="button" className="lead-alert-no" style={{ width: "100%", marginTop: 10 }} onClick={declineLead}>
                   {tourVisited ? "תודה" : "לא תודה"}
@@ -808,17 +809,31 @@ export default function InviteView({
                               jumping straight to "confirm" (as this used to do)
                               yanked the input out from under the still-open
                               native picker, so it looked like the picker just
-                              closed itself. onChange now only tracks the value
-                              (uncontrolled, so it doesn't fight the picker's
-                              own DOM updates either - see TemplateFillForm's
-                              date field for the same fix); the actual "confirm"
-                              step only fires on blur, i.e. once the picker is
-                              genuinely done (Done/אישור tapped, or dismissed). */}
+                              closed itself. React's onChange (bound to the
+                              native "input" event) still only tracks the value
+                              here (uncontrolled, so it doesn't fight the
+                              picker's own DOM updates either - see
+                              TemplateFillForm's date field for the same fix).
+                              The "confirm" step used to wait for onBlur instead,
+                              but on desktop, clicking a day in Chrome's calendar
+                              dropdown commits the value *without* moving focus
+                              away from the field - so confirm never showed up
+                              until something else happened to blur it later,
+                              looking stuck. The native "change" event (wired
+                              directly via ref, since that's a different event
+                              than React's onChange here) is the right signal
+                              instead: browsers only fire it once a value is
+                              genuinely committed - picker closed with a pick,
+                              or a typed edit - which covers blur too, so a
+                              separate onBlur isn't needed on top of it. */}
                           <input
                             type="date"
                             defaultValue={leadEventDate}
                             onChange={(e) => setLeadEventDate(e.target.value)}
-                            onBlur={(e) => handleLeadDatePicked(e.target.value)}
+                            ref={(el) => {
+                              if (!el) return;
+                              el.onchange = (e) => handleLeadDatePicked((e.target as HTMLInputElement).value);
+                            }}
                           />
                         </div>
                       ) : leadStep === 1 ? (
@@ -902,7 +917,7 @@ export default function InviteView({
           <iframe
             className="tour-modal-iframe"
             src={leadTourUrl}
-            title="סיור וירטואלי 360°"
+            title="אתר האולם"
             allow="accelerometer; gyroscope; fullscreen"
             allowFullScreen
           />

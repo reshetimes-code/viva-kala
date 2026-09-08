@@ -17,6 +17,11 @@ export default function SignupPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  // Hall-only, both optional - can also be set/changed later from
+  // דashboard/hall's own settings section, this just saves a hall the trip
+  // back there right after signing up if they already have the links handy.
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [tourUrl, setTourUrl] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +39,12 @@ export default function SignupPage() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, accountType }),
+        body: JSON.stringify({
+          username,
+          password,
+          accountType,
+          ...(accountType === "hall" ? { youtubeUrl, tourUrl } : {}),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -122,6 +132,37 @@ export default function SignupPage() {
             />
             <i className="input-icon">🔒</i>
           </div>
+
+          {accountType === "hall" && (
+            <>
+              <div className="form-group">
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="קישור לסרטון YouTube (לא חובה)"
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  dir="ltr"
+                />
+                <i className="input-icon">🎥</i>
+              </div>
+              <div className="form-group">
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="קישור לאתר האולם / דף פרסום (לא חובה)"
+                  value={tourUrl}
+                  onChange={(e) => setTourUrl(e.target.value)}
+                  dir="ltr"
+                />
+                <i className="input-icon">🔗</i>
+              </div>
+              {/* Both are also editable any time from ⚙️ הגדרות אולם in the
+                  hall panel - saying so here so leaving them blank now
+                  doesn't feel like a missed one-time chance. */}
+              <p className="account-type-hint">אפשר גם להוסיף/לשנות את אלה מאוחר יותר בפאנל האולם.</p>
+            </>
+          )}
 
           {error && <div className="alert alert-error">{error}</div>}
 

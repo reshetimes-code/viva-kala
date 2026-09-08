@@ -60,7 +60,7 @@ export default async function HallDashboardPage() {
         <section className="hall-section">
           <h2 className="hall-section-title">⚙️ הגדרות אולם</h2>
           <p className="hall-section-hint">
-            סרטון ואתר סיור אלה מה שיוצג ללקוחות שלך בחלון ה&quot;הטבה&quot; שאורח רואה אחרי אישור הגעה - שדה ריק פשוט מדלג על אותו חלק.
+            הסרטון והאתר אלה מה שיוצג ללקוחות שלך בחלון ה&quot;הטבה&quot; שאורח רואה אחרי אישור הגעה - שדה ריק פשוט מדלג על אותו חלק.
           </p>
           <HallSettingsForm initialYoutubeUrl={hall?.youtubeUrl ?? ""} initialTourUrl={hall?.tourUrl ?? ""} />
         </section>

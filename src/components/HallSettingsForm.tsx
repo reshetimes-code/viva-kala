@@ -44,7 +44,7 @@ export default function HallSettingsForm({
         />
       </div>
       <div className="admin-edit-field">
-        <label>קישור לאתר סיור וירטואלי (לא חובה)</label>
+        <label>קישור לאתר האולם / דף פרסום (לא חובה)</label>
         <input
           value={tourUrl}
           onChange={(e) => {
