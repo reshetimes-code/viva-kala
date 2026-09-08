@@ -90,7 +90,7 @@ export default function SignupPage() {
         ) : (
         <form onSubmit={handleSubmit}>
           <button type="button" className="account-type-back" onClick={() => setAccountType(null)}>
-            ← {accountType === "hall" ? "אולם אירועים" : "לקוח פרטי"}, לא נכון?
+            נרשמים כ{accountType === "hall" ? "אולם אירועים" : "לקוח פרטי"} - ← לשינוי
           </button>
           <div className="form-group">
             <input
