@@ -1,10 +1,26 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
-import { findInviteById } from "@/lib/store";
+import { findInviteById, findUserById, getHallForUser } from "@/lib/store";
 import { getCurrentUser } from "@/lib/auth";
 import type { TemplateFields } from "@/lib/templates";
 import { buildHeadline, headlineToString, buildShareGreeting } from "@/lib/categoryFields";
 import InviteView from "./InviteView";
+
+/** Pulls the 11-char video id out of whatever form a hall pastes in
+ *  (youtu.be/ID, youtube.com/watch?v=ID, youtube.com/embed/ID, or a bare
+ *  id) - the YouTube IFrame Player API (InviteView's lead-video slot) needs
+ *  just the id, not a full URL. Returns undefined for anything that isn't
+ *  recognizably one of those, so a malformed/empty setting cleanly falls
+ *  back to "no video" instead of erroring. */
+function extractYouTubeId(url: string): string | undefined {
+  const trimmed = url.trim();
+  const patterns = [/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/, /^([\w-]{11})$/];
+  for (const re of patterns) {
+    const m = re.exec(trimmed);
+    if (m) return m[1];
+  }
+  return undefined;
+}
 
 export default async function InvitePage({
   params,
@@ -73,6 +89,17 @@ export default async function InvitePage({
   // "who is this from" line for the share message - see buildShareGreeting.
   const shareGreeting = buildShareGreeting(invite.eventCategory, namesForGreeting || legacyNames);
 
+  // The whole lead-generation popup (the "רגע לפני שממשיכים..." offer, the
+  // video+questions, and the post-questions "בהצלחה..."/360-tour card) only
+  // makes sense for a hall's own client - a private individual's guests
+  // have no reason to be upsold on "your next event" or shown someone
+  // else's virtual tour. See getHallForUser for how a client's invite is
+  // traced back to "its" hall (accountType==="hall" directly, or via
+  // hallId for an account the hall created through its own panel).
+  const owner = await findUserById(invite.userId);
+  const hall = owner ? await getHallForUser(owner) : undefined;
+  const leadVideoId = hall?.youtubeUrl ? extractYouTubeId(hall.youtubeUrl) : undefined;
+
   return (
     <InviteView
       id={invite.id}
@@ -92,6 +119,9 @@ export default async function InvitePage({
       isOwner={isOwner}
       inviteUrl={inviteUrl}
       shareGreeting={shareGreeting}
+      hallAffiliated={!!hall}
+      leadVideoId={leadVideoId}
+      leadTourUrl={hall?.tourUrl || undefined}
     />
   );
 }

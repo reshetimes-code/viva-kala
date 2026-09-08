@@ -41,3 +41,31 @@ export function ensureUserQuotaColumn(): Promise<void> {
   }
   return userQuotaColumnReady;
 }
+
+// Same lazy/idempotent self-heal as ensureUserQuotaColumn above, for the
+// hall-account feature: account_type distinguishes a self-signed-up private
+// client from an event hall; hall_id (set only on a client account a hall
+// created through its own panel) is how a client's invite is traced back to
+// "its" hall for the lead-popup gating and the hall's own client list;
+// youtube_url/tour_url are the hall's own two optional settings (promo
+// video, virtual-tour link) - meaningful only on a hall's own row, read via
+// the client's hall_id.
+let hallColumnsReady: Promise<void> | undefined;
+
+export function ensureHallColumns(): Promise<void> {
+  if (!hallColumnsReady) {
+    hallColumnsReady = getPool()
+      .query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS account_type TEXT NOT NULL DEFAULT 'individual';
+         ALTER TABLE users ADD COLUMN IF NOT EXISTS hall_id INTEGER REFERENCES users(id);
+         ALTER TABLE users ADD COLUMN IF NOT EXISTS youtube_url TEXT;
+         ALTER TABLE users ADD COLUMN IF NOT EXISTS tour_url TEXT;`
+      )
+      .then(() => undefined)
+      .catch((err) => {
+        hallColumnsReady = undefined;
+        throw err;
+      });
+  }
+  return hallColumnsReady;
+}

@@ -3,7 +3,7 @@ import { createUser, createSessionToken, setSessionCookie } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const { username, password } = await req.json();
+    const { username, password, accountType } = await req.json();
 
     if (!username || !password) {
       return NextResponse.json({ error: "נא למלא שם משתמש וסיסמה" }, { status: 400 });
@@ -12,7 +12,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "הסיסמה חייבת להכיל לפחות 4 תווים" }, { status: 400 });
     }
 
-    const user = await createUser(String(username).trim(), String(password));
+    const user = await createUser(String(username).trim(), String(password), {
+      accountType: accountType === "hall" ? "hall" : "individual",
+    });
     const token = await createSessionToken(user.id);
     await setSessionCookie(token);
 

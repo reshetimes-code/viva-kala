@@ -12,6 +12,12 @@ export default async function DashboardPage() {
   if (!user) {
     redirect("/login");
   }
+  // A hall account manages its clients' invites, not "one invite of its
+  // own" the way every other account here does - the empty-state/single-
+  // invite dashboard below makes no sense for it.
+  if (user.accountType === "hall") {
+    redirect("/dashboard/hall");
+  }
 
   // Each account owns exactly one invite, so the dashboard is built around
   // that single invite's progress rather than a list of many.

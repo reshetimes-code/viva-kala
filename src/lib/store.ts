@@ -1,5 +1,5 @@
 import type { EventCategory } from "@/lib/eventCategories";
-import { getPool, ensureUserQuotaColumn } from "@/lib/db";
+import { getPool, ensureUserQuotaColumn, ensureHallColumns } from "@/lib/db";
 import { deleteStoredImage } from "@/lib/imageStorage";
 
 // How long a past event's invite (and its RSVPs/tables/uploaded photo) is
@@ -11,6 +11,21 @@ export interface StoredUser {
   username: string;
   passwordHash: string;
   createdAt: string;
+  /** "individual" (the ordinary self-signup client, unrelated to any hall)
+   *  or "hall" (an event hall's own account - gets the hall management
+   *  panel and its two lead-flow settings below). */
+  accountType: "individual" | "hall";
+  /** Set only on a client account created BY a hall through its own panel -
+   *  points at that hall's own user id. Undefined for every self-signup
+   *  account (both "individual" and "hall" ones) - a hall's OWN invites (if
+   *  it ever makes one directly) use its own id via accountType==="hall"
+   *  instead of this. */
+  hallId?: number;
+  /** Hall-only settings (undefined/empty for an "individual" account) - the
+   *  lead-popup's optional promo video and virtual-tour link, read via a
+   *  client invite's owner's hallId. */
+  youtubeUrl?: string;
+  tourUrl?: string;
 }
 
 export interface StoredSession {
@@ -114,7 +129,16 @@ export interface StoredLead {
 // ---------------------------------------------------------------------
 
 function rowToUser(row: any): StoredUser {
-  return { id: row.id, username: row.username, passwordHash: row.password_hash, createdAt: row.created_at.toISOString() };
+  return {
+    id: row.id,
+    username: row.username,
+    passwordHash: row.password_hash,
+    createdAt: row.created_at.toISOString(),
+    accountType: row.account_type === "hall" ? "hall" : "individual",
+    hallId: row.hall_id ?? undefined,
+    youtubeUrl: row.youtube_url ?? undefined,
+    tourUrl: row.tour_url ?? undefined,
+  };
 }
 
 function rowToInvite(row: any): StoredInvite {
@@ -224,12 +248,92 @@ export async function findUserById(id: number): Promise<StoredUser | undefined> 
   return res.rows[0] ? rowToUser(res.rows[0]) : undefined;
 }
 
-export async function insertUser(username: string, passwordHash: string): Promise<StoredUser> {
+export async function insertUser(
+  username: string,
+  passwordHash: string,
+  options?: { accountType?: "individual" | "hall"; hallId?: number }
+): Promise<StoredUser> {
+  await ensureHallColumns();
   const res = await getPool().query(
-    "INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING *",
-    [username, passwordHash]
+    "INSERT INTO users (username, password_hash, account_type, hall_id) VALUES ($1, $2, $3, $4) RETURNING *",
+    [username, passwordHash, options?.accountType ?? "individual", options?.hallId ?? null]
   );
   return rowToUser(res.rows[0]);
+}
+
+// ---- Hall accounts ----
+
+/** The hall a given invite's guest-facing lead popups should behave as -
+ *  the invite owner's own row if they're a hall themselves (accountType
+ *  "hall", making an invite directly), or the hall that created their
+ *  account (hallId) if they're one of that hall's clients. undefined for a
+ *  plain self-signup "individual" account with no hall at all - the caller
+ *  (the invite page) takes that as "no lead popups for this invite". */
+export async function getHallForUser(user: StoredUser): Promise<StoredUser | undefined> {
+  if (user.accountType === "hall") return user;
+  if (!user.hallId) return undefined;
+  return findUserById(user.hallId);
+}
+
+export async function updateHallSettings(
+  hallUserId: number,
+  updates: { youtubeUrl?: string; tourUrl?: string }
+): Promise<void> {
+  await ensureHallColumns();
+  await getPool().query("UPDATE users SET youtube_url = $1, tour_url = $2 WHERE id = $3 AND account_type = 'hall'", [
+    updates.youtubeUrl?.trim() || null,
+    updates.tourUrl?.trim() || null,
+    hallUserId,
+  ]);
+}
+
+/** One row per client account a hall created through its own panel, each
+ *  paired with that client's own invite (a client account only ever has the
+ *  one invite the hall set them up to build - same "one invite per account"
+ *  assumption the rest of the dashboard already makes) and RSVP/table
+ *  counts, so the hall panel's table can render entirely from one call. */
+export interface HallClientRow {
+  userId: number;
+  username: string;
+  createdAt: string;
+  invite?: StoredInvite;
+  rsvpCounts: { total: number; attending: number };
+  tableCount: number;
+}
+
+export async function listClientsForHall(hallUserId: number): Promise<HallClientRow[]> {
+  await ensureHallColumns();
+  const usersRes = await getPool().query(
+    "SELECT * FROM users WHERE hall_id = $1 ORDER BY created_at DESC",
+    [hallUserId]
+  );
+  const clients = usersRes.rows.map(rowToUser);
+  return Promise.all(
+    clients.map(async (c) => {
+      const invites = await listInvitesByUser(c.id);
+      const invite = invites[0];
+      const rsvpCounts = invite ? await countRsvpsForInvite(invite.id) : { total: 0, attending: 0 };
+      const tableCount = invite ? (await listTablesByInvite(invite.id)).length : 0;
+      return { userId: c.id, username: c.username, createdAt: c.createdAt, invite, rsvpCounts, tableCount };
+    })
+  );
+}
+
+/** Every lead generated by any of this hall's clients' invites - same shape
+ *  as the leads a hall would see for its own direct invite, just widened to
+ *  "any invite belonging to one of my clients" via a join instead of one
+ *  fixed sourceInviteId. */
+export async function listLeadsForHall(hallUserId: number): Promise<StoredLead[]> {
+  await ensureHallColumns();
+  const res = await getPool().query(
+    `SELECT leads.* FROM leads
+     JOIN invites ON invites.id = leads.source_invite_id
+     JOIN users ON users.id = invites.user_id
+     WHERE users.hall_id = $1
+     ORDER BY leads.created_at DESC`,
+    [hallUserId]
+  );
+  return res.rows.map(rowToLead);
 }
 
 // AI design-generation quota - counts only genuinely new designs (the

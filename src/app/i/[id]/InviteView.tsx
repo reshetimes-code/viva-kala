@@ -43,6 +43,20 @@ interface Props {
    *  resolved - the share message then just skips straight to the seating
    *  line, same as before this existed. */
   shareGreeting?: string;
+  /** Whether this invite's owner traces back to an event hall (either a
+   *  hall's own direct invite, or one of that hall's clients - see
+   *  getHallForUser in page.tsx) - the entire lead-generation popup below
+   *  ("רגע לפני שממשיכים...", the video+questions, "בהצלחה...") is gated on
+   *  this: a private individual client's guests never see it at all. */
+  hallAffiliated?: boolean;
+  /** The hall's own promo-video YouTube id (see extractYouTubeId in
+   *  page.tsx) - undefined skips the video player but still shows the
+   *  date/type/venue questions below where it would have been. */
+  leadVideoId?: string;
+  /** The hall's own virtual-tour link - undefined/empty skips the whole
+   *  "בהצלחה באירוע הבא שלכם!" + tour-button card entirely, closing the
+   *  popup right after "סיים" instead. */
+  leadTourUrl?: string;
 }
 
 export default function InviteView({
@@ -63,6 +77,9 @@ export default function InviteView({
   isOwner,
   inviteUrl,
   shareGreeting,
+  hallAffiliated,
+  leadVideoId,
+  leadTourUrl,
 }: Props) {
   // Only the three tailored categories (wedding/bar-bat-mitzvah/henna) have
   // enough structured data for a real headline - everything else keeps the
@@ -162,6 +179,10 @@ export default function InviteView({
   } | null>(null);
 
   useEffect(() => {
+    // No hall video configured - nothing to preload, and the "כן, רוצה!"
+    // branch below skips rendering .lead-video-wrap entirely for the same
+    // reason.
+    if (!leadVideoId) return;
     let cancelled = false;
 
     function createPlayer() {
@@ -173,10 +194,10 @@ export default function InviteView({
       // needs playlist set to that same video's own ID, otherwise it just
       // stops at the end like normal.
       ytPlayerRef.current = new YT.Player("lead-yt-player-target", {
-        videoId: "XRxZVb2xZDs",
+        videoId: leadVideoId,
         width: "100%",
         height: "100%",
-        playerVars: { autoplay: 0, mute: 1, playsinline: 1, controls: 1, rel: 0, loop: 1, playlist: "XRxZVb2xZDs" },
+        playerVars: { autoplay: 0, mute: 1, playsinline: 1, controls: 1, rel: 0, loop: 1, playlist: leadVideoId },
       }) as typeof ytPlayerRef.current;
     }
 
@@ -200,7 +221,7 @@ export default function InviteView({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [leadVideoId]);
 
   // "כן, רוצה!" - the click itself is what's allowed to start playback.
   function handleWantsEventClick() {
@@ -220,13 +241,20 @@ export default function InviteView({
   // visually collapses the video wrap, but the player itself keeps
   // playing (audio and all) unless explicitly told to stop - it's the
   // same persistent player instance the whole time, never unmounted.
+  // Without a tour link there's nothing for the leadFinished screen itself
+  // to offer (it's just the "בהצלחה..." + tour button) - straight back to
+  // the underlying thank-you screen instead of a card with no real action.
   function finishLeadFlow() {
     try {
       ytPlayerRef.current?.pauseVideo();
     } catch {
       // Nothing to pause - fine.
     }
-    setLeadFinished(true);
+    if (leadTourUrl) {
+      setLeadFinished(true);
+    } else {
+      setShowLeadPopup(false);
+    }
   }
 
   // The 3-question sequence (date -> event type -> venue) shown crossfading
@@ -403,7 +431,10 @@ export default function InviteView({
         });
       }
       setSubmitted(attending ? "yes" : "no");
-      setShowLeadPopup(true);
+      // A private individual's guests have no reason to be shown a
+      // "planning your own event?" upsell or someone else's virtual tour -
+      // see hallAffiliated's own doc comment in the Props interface.
+      if (hallAffiliated) setShowLeadPopup(true);
     } finally {
       setSending(false);
     }
@@ -702,12 +733,18 @@ export default function InviteView({
                 sliver until the video stage. player.playVideo() is called
                 synchronously inside the "כן, רוצה!" click handler - that
                 only works reliably because the player already exists (and
-                had plenty of time to finish loading) by then. */}
-            <div
-              className={`lead-video-wrap${leadWantsEvent === true && !leadFinished ? "" : " lead-video-wrap-collapsed"}`}
-            >
-              <div id="lead-yt-player-target" className="lead-video-iframe" />
-            </div>
+                had plenty of time to finish loading) by then. No hall
+                video configured at all (leadVideoId) - skip this slot
+                entirely rather than collapsing it to zero height, so the
+                questions below start right where the card opens instead of
+                leaving a gap. */}
+            {leadVideoId && (
+              <div
+                className={`lead-video-wrap${leadWantsEvent === true && !leadFinished ? "" : " lead-video-wrap-collapsed"}`}
+              >
+                <div id="lead-yt-player-target" className="lead-video-iframe" />
+              </div>
+            )}
 
             {leadFinished ? (
               <>
@@ -859,12 +896,12 @@ export default function InviteView({
           </div>
         </div>
 
-      {tourOpen && (
+      {tourOpen && leadTourUrl && (
 
         <div className="tour-modal-overlay">
           <iframe
             className="tour-modal-iframe"
-            src="https://go3d.co.il/360/yama/"
+            src={leadTourUrl}
             title="סיור וירטואלי 360°"
             allow="accelerometer; gyroscope; fullscreen"
             allowFullScreen

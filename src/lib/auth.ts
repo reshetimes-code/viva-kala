@@ -8,16 +8,22 @@ const SESSION_COOKIE = "session_token";
 export interface User {
   id: number;
   username: string;
+  accountType: "individual" | "hall";
+  hallId?: number;
 }
 
-export async function createUser(username: string, password: string): Promise<User> {
+export async function createUser(
+  username: string,
+  password: string,
+  options?: { accountType?: "individual" | "hall"; hallId?: number }
+): Promise<User> {
   const existing = await findUserByUsername(username);
   if (existing) {
     throw new Error("שם המשתמש כבר תפוס");
   }
   const passwordHash = bcrypt.hashSync(password, 10);
-  const user = await insertUser(username, passwordHash);
-  return { id: user.id, username: user.username };
+  const user = await insertUser(username, passwordHash, options);
+  return { id: user.id, username: user.username, accountType: user.accountType, hallId: user.hallId };
 }
 
 export async function verifyUser(username: string, password: string): Promise<User | null> {
@@ -25,7 +31,7 @@ export async function verifyUser(username: string, password: string): Promise<Us
   if (!user) return null;
   const ok = bcrypt.compareSync(password, user.passwordHash);
   if (!ok) return null;
-  return { id: user.id, username: user.username };
+  return { id: user.id, username: user.username, accountType: user.accountType, hallId: user.hallId };
 }
 
 export async function createSessionToken(userId: number): Promise<string> {
@@ -40,7 +46,7 @@ export async function deleteSessionToken(token: string) {
 
 export async function getUserByToken(token: string): Promise<User | null> {
   const user = await findUserByToken(token);
-  return user ? { id: user.id, username: user.username } : null;
+  return user ? { id: user.id, username: user.username, accountType: user.accountType, hallId: user.hallId } : null;
 }
 
 export async function getCurrentUser(): Promise<User | null> {

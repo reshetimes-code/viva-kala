@@ -511,6 +511,23 @@ body {
   color: #6fc7c0; font-size: 1.25rem; pointer-events: none;
 }
 
+/* --- signup's account-type step, shown before the form itself --- */
+.account-type-picker { display: flex; flex-direction: column; gap: 14px; margin-bottom: 6px; }
+.account-type-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 22px 20px; border-radius: 16px; border: 1.5px solid rgba(212,175,55,0.4);
+  background: rgba(255,255,255,0.06); color: var(--fi-text); cursor: pointer;
+  transition: background .2s ease, transform .2s ease;
+}
+.account-type-btn:hover { background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+.account-type-icon { font-size: 1.8rem; }
+.account-type-label { font-size: 1.1rem; font-weight: 700; }
+.account-type-sub { font-size: .85rem; color: var(--fi-muted); }
+.account-type-back {
+  display: block; margin: 0 0 16px; background: none; border: none; cursor: pointer;
+  color: var(--fi-muted); font-size: .85rem; font-family: inherit; padding: 0;
+}
+
 .login-button {
   width: 100%; padding: 19px;
   background: linear-gradient(135deg, #1c1c1e, #2f2f32);
@@ -1666,6 +1683,34 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .admin-edit-field input { width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #d6d9de; font-size: 1rem; }
 .admin-save-btn { background: #232a36; color: #fff; border: none; border-radius: 10px; padding: 11px 24px; font-weight: 700; cursor: pointer; }
 .admin-save-btn:disabled { opacity: .6; }
+
+/* --- hall panel (/dashboard/hall) --- */
+.hall-section { background: #fff; border-radius: 16px; padding: 22px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); margin-bottom: 20px; }
+.hall-section-title { font-size: 1.1rem; font-weight: 800; color: #232a36; margin-bottom: 6px; }
+.hall-section-hint { font-size: .85rem; color: #9a9488; margin-bottom: 16px; line-height: 1.5; }
+.hall-settings-form { max-width: 420px; }
+.hall-save-btn { background: #232a36; color: #fff; border: none; border-radius: 10px; padding: 11px 24px; font-weight: 700; cursor: pointer; }
+.hall-save-btn:disabled { opacity: .6; }
+.hall-cancel-btn { background: none; border: 1px solid #d6d9de; color: #6b6660; border-radius: 10px; padding: 11px 24px; font-weight: 600; cursor: pointer; }
+.hall-add-client-btn {
+  display: block; width: 100%; margin-bottom: 16px; padding: 13px; border-radius: 10px;
+  border: 1.5px dashed var(--viva-teal-deep); background: #eaf7f6; color: var(--viva-teal-deep);
+  font-weight: 700; cursor: pointer;
+}
+.hall-add-client-form { max-width: 420px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f0ede3; }
+.hall-add-client-actions { display: flex; gap: 10px; }
+.hall-qr-toggle-btn {
+  margin-top: 6px; background: none; border: 1px solid #d6d9de; border-radius: 999px;
+  padding: 8px 16px; font-weight: 700; font-size: .85rem; color: #232a36; cursor: pointer;
+}
+.hall-qr-panel { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-top: 12px; }
+.hall-qr-actions { display: flex; gap: 10px; }
+.hall-qr-action {
+  display: inline-flex; align-items: center; gap: 6px; text-decoration: none !important;
+  background: #f4f1ea; color: #232a36 !important; border-radius: 999px; padding: 8px 16px;
+  font-weight: 700; font-size: .85rem;
+}
+.hall-qr-action:hover { filter: brightness(0.97); }
 .admin-edit-msg { margin-top: 10px; font-size: .88rem; font-weight: 600; }
 .admin-edit-msg-ok { color: #1e7d3a; }
 .admin-edit-msg-error { color: #b03434; }

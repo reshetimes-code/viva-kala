@@ -4,8 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+type AccountType = "individual" | "hall";
+
 export default function SignupPage() {
   const router = useRouter();
+  // Asked before the form itself, not a field inside it - the two account
+  // types are different enough (a hall gets a client-management panel and
+  // its guests see the lead-generation popups; a private client's guests
+  // never see them - see InviteView's hallAffiliated gating) that picking
+  // wrong isn't something to bury in a dropdown.
+  const [accountType, setAccountType] = useState<AccountType | null>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -26,7 +34,7 @@ export default function SignupPage() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, accountType }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -56,7 +64,24 @@ export default function SignupPage() {
           <p className="login-subtitle">הרשמו כדי להתחיל ליצור הזמנות</p>
         </div>
 
+        {!accountType ? (
+          <div className="account-type-picker">
+            <button type="button" className="account-type-btn" onClick={() => setAccountType("individual")}>
+              <span className="account-type-icon">💌</span>
+              <span className="account-type-label">לקוח פרטי</span>
+              <span className="account-type-sub">יוצר/ת הזמנה לאירוע שלי</span>
+            </button>
+            <button type="button" className="account-type-btn" onClick={() => setAccountType("hall")}>
+              <span className="account-type-icon">🏛️</span>
+              <span className="account-type-label">אולם אירועים</span>
+              <span className="account-type-sub">פותח/ת חשבונות ללקוחות שלי</span>
+            </button>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit}>
+          <button type="button" className="account-type-back" onClick={() => setAccountType(null)}>
+            ← {accountType === "hall" ? "אולם אירועים" : "לקוח פרטי"}, לא נכון?
+          </button>
           <div className="form-group">
             <input
               type="text"
@@ -104,6 +129,7 @@ export default function SignupPage() {
             {loading ? "יוצר חשבון..." : "הרשמה"}
           </button>
         </form>
+        )}
 
         <div className="divider">
           <span>או</span>
