@@ -135,6 +135,9 @@ export default function SignupPage() {
 
           {accountType === "hall" && (
             <>
+              <p className="account-type-hint account-type-hint-lead">
+                מומלץ להוסיף את הקישורים הללו שיעזרו לכם ליצור לידים חדשים
+              </p>
               <div className="form-group">
                 <input
                   type="text"

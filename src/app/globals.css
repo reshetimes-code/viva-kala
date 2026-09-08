@@ -528,6 +528,7 @@ body {
   color: var(--fi-muted); font-size: .85rem; font-family: inherit; padding: 0;
 }
 .account-type-hint { font-size: .8rem; color: var(--fi-muted); margin: -8px 0 16px; }
+.account-type-hint-lead { font-size: .9rem; color: var(--fi-teal-soft); font-weight: 600; text-align: center; margin: 0 0 16px; }
 
 .login-button {
   width: 100%; padding: 19px;
