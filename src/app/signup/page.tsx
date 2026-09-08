@@ -142,7 +142,7 @@ export default function SignupPage() {
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="קישור לסרטון YouTube (לא חובה)"
+                  placeholder="הוסיפו כאן סרטון פרסום של האולם בקישור מיוטיוב (לא חובה)"
                   value={youtubeUrl}
                   onChange={(e) => setYoutubeUrl(e.target.value)}
                   dir="ltr"
