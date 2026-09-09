@@ -451,24 +451,65 @@ export async function countRsvpsForInvite(inviteId: string): Promise<{ total: nu
 }
 
 // ---- RSVPs ----
+
+// Thrown by insertRsvp when a phone number already on file for this invite
+// is being resubmitted under a different name - see the doc comment on
+// insertRsvp for why this has to be a hard stop rather than a silent
+// overwrite. The route layer turns this into the "that phone number is
+// already registered" message.
+export class RsvpPhoneConflictError extends Error {
+  constructor() {
+    super("Phone number already registered under a different name for this invite");
+    this.name = "RsvpPhoneConflictError";
+  }
+}
+
+function sameGuestIdentity(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
 // Resubmitting (someone changes their answer, or the page gets refreshed and
 // re-sent) updates their existing response instead of adding a duplicate
-// row - matched by phone when given, otherwise by full name, within the
-// same invite.
+// row - but ONLY when it's genuinely the same guest doing it. Name+phone
+// together are that guest's identity for the rest of the event (the door
+// scanner matches on both - see findRsvpByIdentity below), so once a phone
+// number is on file here it can only ever be resubmitted under the exact
+// same name; a different name with that phone is refused outright rather
+// than quietly overwriting the original guest's row (and, worse, whatever
+// table they'd already been assigned). The only sanctioned way to correct a
+// guest's own name/phone/table after the fact is the event owner editing it
+// directly in their dashboard (PATCH /api/rsvp/[rsvpId]), never this
+// guest-facing endpoint.
 export async function insertRsvp(rsvp: Omit<StoredRsvp, "id" | "createdAt" | "tableId">): Promise<StoredRsvp> {
   const phone = rsvp.phone?.trim();
-  const existing = phone
-    ? await getPool().query("SELECT id FROM rsvps WHERE invite_id = $1 AND trim(phone) = $2", [rsvp.inviteId, phone])
-    : await getPool().query(
-        "SELECT id FROM rsvps WHERE invite_id = $1 AND guest_name = $2 AND family_name = $3",
-        [rsvp.inviteId, rsvp.guestName, rsvp.familyName]
-      );
+
+  // The route layer requires a phone number before ever calling this - an
+  // empty one here would make every blank-phone row (legacy data from
+  // before phone was mandatory) match every other one via trim(phone)=''
+  // below, so treat it as "no identity to match against" and just insert.
+  if (!phone) {
+    const res = await getPool().query(
+      `INSERT INTO rsvps (invite_id, guest_name, family_name, phone, allergies, attending, guest_count)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [rsvp.inviteId, rsvp.guestName, rsvp.familyName, rsvp.phone, rsvp.allergies, rsvp.attending, rsvp.guestCount]
+    );
+    return rowToRsvp(res.rows[0]);
+  }
+
+  const existing = await getPool().query(
+    "SELECT id, guest_name, family_name FROM rsvps WHERE invite_id = $1 AND trim(phone) = $2",
+    [rsvp.inviteId, phone]
+  );
 
   if (existing.rows[0]) {
+    const row = existing.rows[0];
+    if (!sameGuestIdentity(row.guest_name, rsvp.guestName) || !sameGuestIdentity(row.family_name, rsvp.familyName)) {
+      throw new RsvpPhoneConflictError();
+    }
     const res = await getPool().query(
       `UPDATE rsvps SET guest_name=$1, family_name=$2, phone=$3, allergies=$4, attending=$5, guest_count=$6
        WHERE id = $7 RETURNING *`,
-      [rsvp.guestName, rsvp.familyName, rsvp.phone, rsvp.allergies, rsvp.attending, rsvp.guestCount, existing.rows[0].id]
+      [rsvp.guestName, rsvp.familyName, rsvp.phone, rsvp.allergies, rsvp.attending, rsvp.guestCount, row.id]
     );
     return rowToRsvp(res.rows[0]);
   }
@@ -492,21 +533,72 @@ export async function findRsvpById(rsvpId: number): Promise<StoredRsvp | undefin
 }
 
 // Used by the at-the-door table lookup: one QR code per event, and each
-// guest identifies themselves by name to find their own seat - so this
-// matches by name within a single invite only, never across events.
-export async function findRsvpsByName(inviteId: string, guestName: string, familyName: string): Promise<StoredRsvp[]> {
+// guest identifies themselves by name AND phone together to find their own
+// seat - the same name+phone pair insertRsvp() locked in as their identity
+// when they RSVP'd. Requiring all three to match (not name alone) is
+// deliberate: it's the only thing stopping someone from typing in another
+// guest's name with a different phone (or vice versa) and landing on that
+// guest's table. A mismatch on any one field returns no rows, same as a
+// mismatch on all three - the caller shows one generic "check what you
+// typed" message either way, never which field was wrong.
+export async function findRsvpByIdentity(
+  inviteId: string,
+  guestName: string,
+  familyName: string,
+  phone: string
+): Promise<StoredRsvp[]> {
   const res = await getPool().query(
     `SELECT * FROM rsvps
      WHERE invite_id = $1 AND attending
        AND lower(trim(guest_name)) = lower(trim($2))
-       AND lower(trim(family_name)) = lower(trim($3))`,
-    [inviteId, guestName, familyName]
+       AND lower(trim(family_name)) = lower(trim($3))
+       AND trim(phone) = trim($4)`,
+    [inviteId, guestName, familyName, phone]
   );
   return res.rows.map(rowToRsvp);
 }
 
 export async function assignRsvpTable(rsvpId: number, tableId: string | null): Promise<boolean> {
   const res = await getPool().query("UPDATE rsvps SET table_id = $1 WHERE id = $2", [tableId, rsvpId]);
+  return (res.rowCount ?? 0) > 0;
+}
+
+// Admin-only raw edit/delete of a guest's own RSVP row - deliberately NOT
+// routed through insertRsvp's name+phone identity lock (see its doc comment):
+// that lock exists to stop a *guest* from silently overriding another
+// guest's registration through the public RSVP form, not to stop the site
+// operator's own support tool from fixing a typo or removing a duplicate on
+// the event owner's behalf.
+export async function updateRsvpDetails(
+  rsvpId: number,
+  updates: Partial<Pick<StoredRsvp, "guestName" | "familyName" | "phone" | "attending" | "guestCount">>
+): Promise<StoredRsvp | undefined> {
+  const fieldMap: Record<string, string> = {
+    guestName: "guest_name",
+    familyName: "family_name",
+    phone: "phone",
+    attending: "attending",
+    guestCount: "guest_count",
+  };
+  const entries = Object.entries(updates).filter(([k]) => k in fieldMap);
+  if (entries.length === 0) return findRsvpById(rsvpId);
+
+  const setClauses: string[] = [];
+  const values: unknown[] = [];
+  for (const [key, value] of entries) {
+    values.push(value);
+    setClauses.push(`${fieldMap[key]} = $${values.length}`);
+  }
+  values.push(rsvpId);
+  const res = await getPool().query(
+    `UPDATE rsvps SET ${setClauses.join(", ")} WHERE id = $${values.length} RETURNING *`,
+    values
+  );
+  return res.rows[0] ? rowToRsvp(res.rows[0]) : undefined;
+}
+
+export async function deleteRsvp(rsvpId: number): Promise<boolean> {
+  const res = await getPool().query("DELETE FROM rsvps WHERE id = $1", [rsvpId]);
   return (res.rowCount ?? 0) > 0;
 }
 
@@ -593,10 +685,12 @@ export async function listAllUsersWithStats(): Promise<Array<{
   inviteCount: number;
   totalAttending: number;
   totalTables: number;
+  aiAttempts: number;
 }>> {
+  await ensureUserQuotaColumn();
   const res = await getPool().query(`
     SELECT
-      u.id, u.username, u.created_at,
+      u.id, u.username, u.created_at, u.image_regenerations_used,
       count(DISTINCT i.id)::int AS invite_count,
       count(DISTINCT r.id) FILTER (WHERE r.attending)::int AS total_attending,
       count(DISTINCT t.id)::int AS total_tables
@@ -614,37 +708,71 @@ export async function listAllUsersWithStats(): Promise<Array<{
     inviteCount: row.invite_count,
     totalAttending: row.total_attending,
     totalTables: row.total_tables,
+    aiAttempts: row.image_regenerations_used,
   }));
 }
 
-export async function getUserDetail(userId: number) {
-  const userRes = await getPool().query("SELECT * FROM users WHERE id = $1", [userId]);
-  if (!userRes.rows[0]) return null;
-  const user = rowToUser(userRes.rows[0]);
-
-  const invitesRes = await getPool().query("SELECT * FROM invites WHERE user_id = $1 ORDER BY created_at DESC", [userId]);
-  const invitesWithStats = await Promise.all(
+// Shared by getUserDetail (one account) and listAllUsersFullDetail (every
+// account, for the main admin listing) so both surfaces show exactly the
+// same shape of data - full RSVP rows and tables per invite (not just
+// counts), plus every lead generated by any of this account's invites.
+async function buildUserFullDetail(user: StoredUser, aiAttempts: number) {
+  const invitesRes = await getPool().query("SELECT * FROM invites WHERE user_id = $1 ORDER BY created_at DESC", [
+    user.id,
+  ]);
+  const invites = await Promise.all(
     invitesRes.rows.map(async (row) => {
       const inv = rowToInvite(row);
-      const statsRes = await getPool().query(
-        `SELECT
-           count(*)::int AS total_rsvps,
-           count(*) FILTER (WHERE attending)::int AS total_attending,
-           coalesce(sum(guest_count) FILTER (WHERE attending), 0)::int AS total_guests
-         FROM rsvps WHERE invite_id = $1`,
-        [inv.id]
-      );
-      const tablesRes = await getPool().query("SELECT count(*)::int AS n FROM tables WHERE invite_id = $1", [inv.id]);
+      const [rsvps, tables] = await Promise.all([listRsvpsByInvite(inv.id), listTablesByInvite(inv.id)]);
+      const totalAttending = rsvps.filter((r) => r.attending).length;
+      const totalGuests = rsvps.filter((r) => r.attending).reduce((sum, r) => sum + (r.guestCount ?? 1), 0);
       return {
         invite: inv,
-        totalRsvps: statsRes.rows[0].total_rsvps,
-        totalAttending: statsRes.rows[0].total_attending,
-        totalGuests: statsRes.rows[0].total_guests,
-        totalTables: tablesRes.rows[0].n,
+        rsvps,
+        tables,
+        totalRsvps: rsvps.length,
+        totalAttending,
+        totalGuests,
+        totalTables: tables.length,
       };
     })
   );
-  return { user: { id: user.id, username: user.username, createdAt: user.createdAt }, invites: invitesWithStats };
+
+  const leadsRes = await getPool().query(
+    `SELECT leads.* FROM leads
+     JOIN invites ON invites.id = leads.source_invite_id
+     WHERE invites.user_id = $1
+     ORDER BY leads.created_at DESC`,
+    [user.id]
+  );
+  const leads = leadsRes.rows.map(rowToLead);
+
+  return {
+    user: { id: user.id, username: user.username, createdAt: user.createdAt, aiAttempts },
+    invites,
+    leads,
+  };
+}
+
+export type AdminUserFullDetail = Awaited<ReturnType<typeof buildUserFullDetail>>;
+
+export async function getUserDetail(userId: number): Promise<AdminUserFullDetail | null> {
+  await ensureUserQuotaColumn();
+  const userRes = await getPool().query("SELECT * FROM users WHERE id = $1", [userId]);
+  if (!userRes.rows[0]) return null;
+  return buildUserFullDetail(rowToUser(userRes.rows[0]), userRes.rows[0].image_regenerations_used ?? 0);
+}
+
+// Powers the main admin listing - every account, each already carrying its
+// full guest list/tables/leads so opening an accordion row needs no extra
+// round trip. Fine to fetch eagerly for every account at once here: this is
+// an internal operator tool, not guest-facing traffic.
+export async function listAllUsersFullDetail(): Promise<AdminUserFullDetail[]> {
+  await ensureUserQuotaColumn();
+  const usersRes = await getPool().query("SELECT * FROM users ORDER BY created_at DESC");
+  return Promise.all(
+    usersRes.rows.map((row) => buildUserFullDetail(rowToUser(row), row.image_regenerations_used ?? 0))
+  );
 }
 
 export async function adminUpdateUser(
@@ -669,6 +797,21 @@ export async function adminUpdateUser(
   values.push(userId);
   const res = await getPool().query(`UPDATE users SET ${setClauses.join(", ")} WHERE id = $${values.length}`, values);
   return (res.rowCount ?? 0) > 0;
+}
+
+// Deletes the account itself and, via ON DELETE CASCADE, every invite it
+// owns along with those invites' rsvps/tables/sessions - only the uploaded
+// photo files (not represented by a DB row) need cleaning up explicitly
+// here, same as the lazy 14-day sweep's purgeInvite() does per-invite.
+export async function adminDeleteUser(userId: number): Promise<boolean> {
+  const imagesRes = await getPool().query(
+    "SELECT image_url FROM invites WHERE user_id = $1 AND image_url <> ''",
+    [userId]
+  );
+  const res = await getPool().query("DELETE FROM users WHERE id = $1", [userId]);
+  if ((res.rowCount ?? 0) === 0) return false;
+  await Promise.all(imagesRes.rows.map((row) => deleteStoredImage(row.image_url)));
+  return true;
 }
 
 // ---------------------------------------------------------------------

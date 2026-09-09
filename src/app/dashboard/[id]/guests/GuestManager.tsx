@@ -343,6 +343,7 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
             <div className="gm-hall-qr-code">
               <QrCode
                 value={`${typeof window !== "undefined" ? window.location.origin : ""}/table-lookup/event/${inviteId}`}
+                downloadFileName={`QR-${inviteTitle.replace(/[\\/:*?"<>|]+/g, "").trim() || inviteId}`}
               />
             </div>
             <ol className="gm-hall-qr-steps">

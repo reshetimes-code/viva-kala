@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { getCurrentUser } from "@/lib/auth";
-import { isAdminUser, getUserDetail, adminUpdateUser } from "@/lib/store";
+import { isAdminUser, getUserDetail, adminUpdateUser, adminDeleteUser, findUserById } from "@/lib/store";
+import { hasAdminAccess } from "@/lib/superadmin";
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ userId: string }> }
 ) {
   const admin = await getCurrentUser();
-  if (!isAdminUser(admin)) {
+  if (!(await hasAdminAccess(admin))) {
     return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
   }
   const { userId } = await params;
@@ -24,7 +25,7 @@ export async function PATCH(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   const admin = await getCurrentUser();
-  if (!isAdminUser(admin)) {
+  if (!(await hasAdminAccess(admin))) {
     return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
   }
   const { userId } = await params;
@@ -48,4 +49,29 @@ export async function PATCH(
     const message = err instanceof Error ? err.message : "שגיאה בעדכון";
     return NextResponse.json({ error: message }, { status: 400 });
   }
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ userId: string }> }
+) {
+  const admin = await getCurrentUser();
+  if (!(await hasAdminAccess(admin))) {
+    return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
+  }
+  const { userId } = await params;
+  const id = Number(userId);
+
+  // Never let even the real admin delete the admin account itself (e.g. by
+  // mistakenly opening its own row) - would lock the panel with no way back in.
+  const target = await findUserById(id);
+  if (target && isAdminUser(target)) {
+    return NextResponse.json({ error: "לא ניתן למחוק את חשבון המנהל" }, { status: 400 });
+  }
+
+  const ok = await adminDeleteUser(id);
+  if (!ok) {
+    return NextResponse.json({ error: "משתמש לא נמצא" }, { status: 404 });
+  }
+  return NextResponse.json({ success: true });
 }

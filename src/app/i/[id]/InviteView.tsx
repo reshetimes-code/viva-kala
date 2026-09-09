@@ -375,7 +375,7 @@ export default function InviteView({
   // action and link. *asterisks* are WhatsApp's own markdown for bold -
   // the one real "bigger font" lever plain WhatsApp text supports at all.
   const shareMessage = wantRsvp
-    ? `${shareGreeting ? shareGreeting + "\n" : ""}*שומרים לכם מקום בשולחן* 🪑✨\n\nאשרו הגעה בקישור 👇\n${shareUrl}`
+    ? `${shareGreeting ? shareGreeting + "\n" : ""}*כדי לשריין לכם מקום מסודר בשולחן באולם... חשוב לנו שתכנסו ותרשמו באישור ההגעה* 🪑✨\n\nמוזמנים להכנס לקישור 👇\n${shareUrl}`
     : `להזמנה הדיגיטלית שלנו כנסו לקישור הבא ${shareUrl}`;
   const shareText = encodeURIComponent(shareMessage);
 
@@ -419,6 +419,22 @@ export default function InviteView({
         }),
       });
       const data = await res.json().catch(() => null);
+      // Never silently show "success" for a request the server actually
+      // rejected (the previous version of this code did exactly that,
+      // reading only data?.rsvpId and ignoring res.ok) - a phone number
+      // already on file under a different name is refused, not overwritten
+      // (see RsvpPhoneConflictError in store.ts), and the guest needs to
+      // actually see that rather than a false "we saved your table!".
+      if (!res.ok) {
+        await Swal.fire({
+          icon: "warning",
+          title: data?.error || "לא הצלחנו לשמור את אישור ההגעה",
+          text: data?.detail || "בדקו את הפרטים ונסו שוב, או פנו לצוות האירוע",
+          confirmButtonText: "הבנתי",
+          confirmButtonColor: "#d4af7a",
+        });
+        return;
+      }
       if (data?.rsvpId) setRsvpId(data.rsvpId);
       if (attending) {
         await Swal.fire({

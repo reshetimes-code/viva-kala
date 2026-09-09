@@ -161,11 +161,18 @@ body {
 }
 
 .landing-showcase { padding: 20px 24px 80px; background: #f4f1ea; }
-.landing-showcase-heading { max-width: 700px; margin: 0 auto 30px; text-align: center; }
+.landing-showcase-heading { max-width: 700px; margin: 0 auto 34px; text-align: center; }
 .landing-showcase-heading h2 {
-  font-family: 'Heebo', sans-serif; font-weight: 900; font-size: clamp(1.5rem, 3.2vw, 2.1rem); margin-bottom: 8px;
+  font-family: 'Heebo', sans-serif; font-weight: 900; letter-spacing: -0.01em;
+  font-size: clamp(1.6rem, 3.4vw, 2.3rem); margin-bottom: 14px; color: #1c3d4a;
 }
-.landing-showcase-tagline { color: #4fb8e8; font-weight: 700; font-size: 1.05rem; }
+.landing-showcase-tagline {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: linear-gradient(135deg, #4fb8e8, #1c3d4a);
+  color: #fff; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.02em;
+  padding: 7px 18px; border-radius: 999px;
+  box-shadow: 0 8px 20px -8px rgba(28,61,74,0.45);
+}
 .landing-showcase-grid {
   max-width: 1100px; margin: 0 auto; display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 28px;
@@ -208,6 +215,12 @@ body {
 .landing-categories-grid {
   max-width: 1100px; margin: 0 auto; display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 26px;
+}
+@media (max-width: 600px) {
+  /* same fix as .landing-showcase-grid below: auto-fit's minmax(180px,1fr)
+     only leaves room for one column on a phone - force the two-per-row
+     layout this section is designed around. */
+  .landing-categories-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
 }
 .landing-category-tile {
   display: block; text-decoration: none; color: inherit; border-radius: 10px; overflow: hidden;
@@ -1517,7 +1530,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .gm-assign-row label { font-weight: 700; font-size: .95rem; color: #2b2b2b; flex-shrink: 0; }
 .gm-select {
   flex: 1; min-height: 48px; border-radius: 12px; border: 1.5px solid #ddd8cb;
-  padding: 10px 14px; font-size: 1rem; font-family: 'Assistant', sans-serif; background: #fdfcf9;
+  padding: 10px 14px; font-size: 1rem; font-family: 'Assistant', sans-serif; background: #fdfcf9; color: #4a4a4a;
 }
 @keyframes gm-saved-fade {
   0% { opacity: 0; transform: translateY(-4px); }
@@ -1549,6 +1562,11 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 }
 .gm-hall-qr-title { font-weight: 900; font-size: 1.5rem; color: #232a36; margin-bottom: 20px; }
 .gm-hall-qr-code { display: flex; justify-content: center; margin-bottom: 24px; }
+.qr-download-link {
+  display: inline-flex; align-items: center; gap: 6px; font-size: .88rem; font-weight: 700;
+  color: var(--viva-teal-deep); text-decoration: none;
+}
+.qr-download-link:hover { text-decoration: underline; }
 .gm-hall-qr-steps {
   list-style: none; counter-reset: qr-step; padding: 0; margin: 0; text-align: right;
   display: flex; flex-direction: column; gap: 14px;
@@ -1570,7 +1588,9 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .gm-add-table-input {
   flex: 1 1 160px; min-width: 0; min-height: 52px; border-radius: 14px; border: 1.5px solid #ddd8cb;
   padding: 0 16px; font-size: 1.05rem; font-family: 'Assistant', sans-serif; background: #fff; box-sizing: border-box;
+  color: #4a4a4a;
 }
+.gm-add-table-input::placeholder { color: #9a9488; }
 .gm-add-table-btn-full { width: 100%; margin-bottom: 16px; }
 .gm-add-table-btn {
   flex: 1 1 140px; min-width: 0; min-height: 52px; padding: 0 16px; border-radius: 14px;
@@ -1650,7 +1670,12 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 /* =========================================================================
    ADMIN — super-admin panel (user management + leads)
    ========================================================================= */
-.admin-page { min-height: 100vh; width: 100%; background: #f4f1ea; padding: 32px 24px 60px; direction: rtl; font-family: 'Assistant', sans-serif; max-width: 1000px; margin: 0 auto; box-sizing: border-box; }
+/* Admin pages render as a plain full-width page (no phone-frame mockup,
+   unlike the rest of the app) - this is the operator's own tool, normally
+   opened on a desktop, so it should read like a real desktop admin screen
+   there; on an actual phone the same max-width/padding still collapses down
+   comfortably since nothing here is fixed-width. */
+.admin-page { min-height: 100vh; width: 100%; background: #f4f1ea; padding: 32px 24px 60px; direction: rtl; font-family: 'Assistant', sans-serif; max-width: 1320px; margin: 0 auto; box-sizing: border-box; }
 .admin-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
 .admin-header h1 { font-size: 1.6rem; font-weight: 800; color: #2b2b2b; }
 .admin-nav-link { color: var(--viva-teal-deep); font-weight: 700; text-decoration: none; }
@@ -1681,6 +1706,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   font-weight: 600; font-size: .92rem; text-align: right;
 }
 .admin-menu-link:hover { background: #f4f1ea; }
+.admin-menu-logout { background: none; border: none; font: inherit; cursor: pointer; width: 100%; border-top: 1px solid #f0ede3; margin-top: 4px; padding-top: 12px; color: #c0392b; }
 .admin-impersonate-btn {
   border: none; border-radius: 999px; padding: 8px 16px; font-weight: 700; font-size: .85rem;
   color: #fff; background: #232a36; cursor: pointer; white-space: nowrap;
@@ -1721,6 +1747,20 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .admin-save-btn { background: #232a36; color: #fff; border: none; border-radius: 10px; padding: 11px 24px; font-weight: 700; cursor: pointer; }
 .admin-save-btn:disabled { opacity: .6; }
 
+.admin-delete-btn {
+  border: none; border-radius: 999px; padding: 8px 16px; font-weight: 700; font-size: .85rem;
+  color: #fff; background: #c0392b; cursor: pointer; white-space: nowrap;
+}
+.admin-delete-btn:disabled { opacity: .6; }
+.admin-cancel-btn {
+  border: 1px solid #d6d9de; border-radius: 999px; padding: 8px 16px; font-weight: 700; font-size: .85rem;
+  color: #4a5568; background: #fff; cursor: pointer; white-space: nowrap;
+}
+.admin-cancel-btn:disabled { opacity: .6; }
+.admin-delete-confirm { display: flex; flex-direction: column; gap: 10px; font-size: .88rem; color: #4a5568; }
+.admin-delete-confirm-actions { display: flex; gap: 10px; }
+.admin-qr-block { display: flex; justify-content: center; padding-top: 6px; }
+
 /* --- hall panel (/dashboard/hall) --- */
 .hall-section { background: #fff; border-radius: 16px; padding: 22px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); margin-bottom: 20px; }
 .hall-section-title { font-size: 1.1rem; font-weight: 800; color: #232a36; margin-bottom: 6px; }
@@ -1751,6 +1791,39 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .admin-edit-msg { margin-top: 10px; font-size: .88rem; font-weight: 600; }
 .admin-edit-msg-ok { color: #1e7d3a; }
 .admin-edit-msg-error { color: #b03434; }
+
+/* --- per-user accordion body on /admin: guest list, leads, password reset --- */
+.admin-user-panel { border-top: 1px solid #f0ede3; margin-top: 4px; padding-top: 14px; display: flex; flex-direction: column; gap: 18px; }
+.admin-guest-section { display: flex; flex-direction: column; gap: 8px; }
+.admin-guest-section-title { font-weight: 800; font-size: .95rem; color: #232a36; }
+.admin-empty-inline { padding: 0; text-align: right; font-size: .88rem; }
+.admin-guest-list { display: flex; flex-direction: column; gap: 8px; }
+.admin-guest-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  background: #fbfaf6; border: 1px solid #f0ede3; border-radius: 12px; padding: 10px 14px;
+}
+.admin-guest-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.admin-guest-name { font-weight: 700; font-size: .95rem; color: #232a36; }
+.admin-guest-meta { font-size: .82rem; color: #9a9488; }
+.admin-guest-yes { color: #1e7d3a; font-weight: 700; }
+.admin-guest-no { color: #b03434; font-weight: 700; }
+.admin-guest-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.admin-table-edit, .admin-table-delete { background: none; border: none; font-size: 1.05rem; cursor: pointer; padding: 6px; }
+.admin-table-delete:disabled, .admin-table-edit:disabled { opacity: .5; cursor: default; }
+.admin-guest-row-editing { flex-direction: column; align-items: stretch; }
+.admin-guest-edit-fields { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.admin-guest-edit-fields input[type="text"], .admin-guest-edit-fields input:not([type]) { flex: 1 1 140px; min-width: 0; }
+.admin-guest-edit-fields input { padding: 8px 10px; border-radius: 8px; border: 1.5px solid #ddd8cb; font-size: .9rem; color: #4a4a4a; background: #fff; }
+.admin-guest-edit-fields input[type="number"] { flex: 0 1 80px; }
+.admin-guest-attending-toggle { display: flex; align-items: center; gap: 6px; font-size: .88rem; color: #4a4a4a; flex: 0 0 auto; }
+.admin-guest-save {
+  border: none; border-radius: 999px; padding: 8px 16px; font-weight: 700; font-size: .85rem;
+  color: #fff; background: #1e7d3a; cursor: pointer; white-space: nowrap;
+}
+.admin-pw-reset-form { background: #fff; border: 1px solid #f0ede3; border-radius: 12px; padding: 14px; }
+.admin-pw-reset-form label { display: block; font-weight: 700; font-size: .88rem; color: #4a5568; margin-bottom: 8px; }
+.admin-pw-reset-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.admin-pw-reset-row input { flex: 1 1 160px; padding: 10px 12px; border-radius: 10px; border: 1px solid #d6d9de; font-size: .95rem; }
 
 /* =========================================================================
    DASHBOARD — list of the user's invites (myInvs panel)

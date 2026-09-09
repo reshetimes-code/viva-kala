@@ -10,7 +10,7 @@ const SHOWCASE_EXAMPLES = [
   { src: "/examples/wedding-night-gold.webp", alt: "הזמנה לחתונה - עיצוב לילי בזהב" },
   { src: "/examples/bar-mitzvah-photo.webp", alt: "הזמנה לבר מצווה - עיצוב כחול-זהב" },
   { src: "/examples/bat-mitzvah-glam.webp", alt: "הזמנה לבת מצווה - עיצוב עם תמונה" },
-  { src: "/examples/bat-mitzvah-cream.webp", alt: "הזמנה לבת מצווה - עיצוב פרחוני בקרם וזהב" },
+  { src: "/examples/bat-mitzvah-cream.webp", alt: "הזמנה לחתונה - עיצוב כהה בזהב עם ורדים" },
   { src: "/examples/brit-baby-blue.webp", alt: "הזמנה לברית - עיצוב בכחול ולבן" },
 ];
 
@@ -266,7 +266,7 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
 
       <section className="landing-showcase">
         <RevealOnScroll className="landing-showcase-heading">
-          <h2>דוגמאות של מעצב ה-AI שלנו..!</h2>
+          <h2>דוגמאות של מעצב ה-AI שלנו!</h2>
           <p className="landing-showcase-tagline">השמיים הם הגבול</p>
         </RevealOnScroll>
         <ShowcaseGallery examples={SHOWCASE_EXAMPLES} />
@@ -324,7 +324,7 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
             <div className="mobile-frame landing-mockup-frame">
               <div className="mobile-screen">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/examples/bat-mitzvah-cream.webp" alt="הזמנה לבת מצווה בנייד" className="landing-mockup-img" />
+                <img src="/examples/bat-mitzvah-cream-mockup.webp" alt="הזמנה לבת מצווה בנייד" className="landing-mockup-img" />
               </div>
             </div>
           </div>

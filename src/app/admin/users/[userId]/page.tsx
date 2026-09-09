@@ -1,12 +1,15 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { getCurrentUser } from "@/lib/auth";
-import { isAdminUser, getUserDetail } from "@/lib/store";
+import { getUserDetail } from "@/lib/store";
+import { hasAdminAccess } from "@/lib/superadmin";
 import EditUserForm from "./EditUserForm";
-import DesktopPhoneWrapper from "@/components/DesktopPhoneWrapper";
 import { AdminCard, AdminCardRow } from "@/components/AdminCard";
 import AdminMenu from "@/components/AdminMenu";
 import ImpersonateButton from "@/components/ImpersonateButton";
+import DeleteUserButton from "@/components/DeleteUserButton";
+import QrCode from "@/components/QrCode";
 
 export default async function AdminUserDetailPage({
   params,
@@ -14,26 +17,37 @@ export default async function AdminUserDetailPage({
   params: Promise<{ userId: string }>;
 }) {
   const admin = await getCurrentUser();
-  if (!admin) redirect("/login");
-  if (!isAdminUser(admin)) redirect("/dashboard");
+  if (!(await hasAdminAccess(admin))) redirect(admin ? "/dashboard" : "/login");
 
   const { userId } = await params;
   const detail = await getUserDetail(Number(userId));
   if (!detail) notFound();
 
+  const hdrs = await headers();
+  const host = hdrs.get("host") ?? "";
+  const proto = hdrs.get("x-forwarded-proto") ?? "https";
+  const origin = host ? `${proto}://${host}` : "";
+
   return (
-    <DesktopPhoneWrapper title={detail.user.username}>
-      <div className="admin-page">
-        <div className="admin-header">
-          <h1>{detail.user.username}</h1>
-          <AdminMenu />
-        </div>
+    <div className="admin-page">
+      <div className="admin-header">
+        <h1>{detail.user.username}</h1>
+        <AdminMenu />
+      </div>
 
         <div className="admin-card-actions" style={{ marginBottom: 20 }}>
           <ImpersonateButton userId={detail.user.id} />
+          <DeleteUserButton userId={detail.user.id} username={detail.user.username} redirectTo="/admin" />
         </div>
 
         <EditUserForm userId={detail.user.id} currentUsername={detail.user.username} />
+
+        <div className="admin-card-group" style={{ marginBottom: 20 }}>
+          <AdminCard title="פרטים כלליים" subtitle={`נרשם ב-${new Date(detail.user.createdAt).toLocaleDateString("he-IL")}`}>
+            <AdminCardRow label="עיצובים שיצר" value={detail.invites.length} />
+            <AdminCardRow label="נסיונות עיצוב ב-AI" value={detail.user.aiAttempts} />
+          </AdminCard>
+        </div>
 
         <h2 className="admin-subheading">הזמנות ({detail.invites.length})</h2>
 
@@ -51,12 +65,16 @@ export default async function AdminUserDetailPage({
               <Link href={`/i/${invite.id}`} className="admin-row-link">
                 צפייה ←
               </Link>
+              {origin && (
+                <div className="admin-qr-block">
+                  <QrCode value={`${origin}/i/${invite.id}`} size={140} downloadFileName={`QR-${invite.id}`} />
+                </div>
+              )}
             </AdminCard>
           ))}
         </div>
 
-        {detail.invites.length === 0 && <p className="admin-empty">המשתמש הזה עדיין לא יצר הזמנות.</p>}
-      </div>
-    </DesktopPhoneWrapper>
+      {detail.invites.length === 0 && <p className="admin-empty">המשתמש הזה עדיין לא יצר הזמנות.</p>}
+    </div>
   );
 }
