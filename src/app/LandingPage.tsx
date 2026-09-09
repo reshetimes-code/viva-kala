@@ -374,10 +374,10 @@ export default async function LandingPage({ isLoggedIn = false }: { isLoggedIn?:
     <div className="landing-page">
       <VivaIntro />
       <HeroSlider>
+        <LanguageSwitcher className="hero-lang-switch landing-fade-in" />
         <header className="landing-nav hero-nav landing-fade-in">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logoViva-white.png" alt="VIVA" className="landing-logo-img" />
-          <LanguageSwitcher className="hero-nav-lang" />
         </header>
 
         <section className="landing-hero hero-slide-hero">

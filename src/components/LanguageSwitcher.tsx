@@ -20,7 +20,6 @@ export default function LanguageSwitcher({ className }: { className?: string }) 
       >
         עברית
       </button>
-      <span className="lang-switch-sep" aria-hidden="true">|</span>
       <button
         type="button"
         className={`lang-switch-btn ${locale === "en" ? "is-active" : ""}`}

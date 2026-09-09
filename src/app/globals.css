@@ -77,11 +77,6 @@ body {
   text-decoration: none; font-weight: 600; font-size: .9rem; transition: opacity .2s ease;
 }
 .landing-nav-cta:hover { opacity: .82; }
-/* Pinned to the trailing edge of the header via a logical inset, so it sits
-   on the left in Hebrew (RTL) and flips to the right in English (LTR) -
-   the conventional spot for a language switcher in each direction. */
-.hero-nav-lang { position: absolute; inset-inline-end: 24px; top: 50%; transform: translateY(-50%); }
-.hero-nav .lang-switch-btn { color: #fff; }
 
 .landing-hero {
   max-width: 760px; margin: 0 auto; text-align: center;
@@ -2642,15 +2637,44 @@ html[dir="ltr"] .lead-alert-card {
 }
 
 /* =========================================================================
-   LANGUAGE SWITCHER — Hebrew/English toggle, shown on the home page header
+   LANGUAGE SWITCHER — Hebrew/English toggle, shown on the home page header.
+   A segmented-control pill (glass background over the hero video) rather
+   than plain text links, so it reads as a real app control, not a footer
+   link. Sized down at narrow widths instead of hidden - it needs to stay
+   reachable on mobile, where most first visits actually happen.
    ========================================================================= */
-.lang-switch { display: inline-flex; align-items: center; gap: 8px; }
-.lang-switch-btn {
-  background: none; border: none; cursor: pointer; padding: 4px 2px;
-  font: inherit; font-weight: 600; font-size: .9rem; color: inherit; opacity: .6;
-  transition: opacity .15s ease;
+.lang-switch {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 4px; border-radius: 999px;
+  background: rgba(24, 22, 28, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 6px 20px rgba(10, 8, 14, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
 }
-.lang-switch-btn:hover { opacity: .85; }
-.lang-switch-btn.is-active { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
-.lang-switch-sep { opacity: .4; font-size: .85rem; }
+.lang-switch-btn {
+  appearance: none; border: none; cursor: pointer;
+  padding: 8px 18px; border-radius: 999px;
+  font-family: 'Heebo', sans-serif; font-weight: 600; font-size: .82rem; letter-spacing: .01em;
+  color: rgba(255, 255, 255, 0.7); background: transparent;
+  transition: color .2s ease, background .25s ease, box-shadow .25s ease, transform .12s ease;
+}
+.lang-switch-btn:hover { color: #fff; }
+.lang-switch-btn:active { transform: scale(.95); }
+.lang-switch-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.lang-switch-btn.is-active {
+  color: #201b28;
+  background: linear-gradient(135deg, #ffffff, #f0ecf6);
+  box-shadow: 0 3px 10px rgba(10, 8, 14, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* Pinned to the true top corner of the full-bleed hero (not the 1200px nav
+   column) so it lands where a native app would put a settings control -
+   the right corner in Hebrew (RTL start), flipping to the left once the
+   visitor actually switches to English. */
+.hero-lang-switch { position: absolute; top: 20px; inset-inline-start: 20px; z-index: 3; }
+@media (max-width: 640px) {
+  .hero-lang-switch { top: 14px; inset-inline-start: 14px; }
+  .hero-lang-switch .lang-switch-btn { padding: 7px 13px; font-size: .76rem; }
+}
 
