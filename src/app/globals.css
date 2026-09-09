@@ -95,6 +95,24 @@ body {
   max-width: 560px; margin-left: auto; margin-right: auto;
 }
 
+/* Kicker above the H1 - the one feature (seating charts) worth naming
+   before anyone reads a word of the headline, since it's the thing that
+   most separates VIVA from a plain digital invitation. Frosted glass to
+   match the language switcher in the same corner of the hero. */
+.hero-kicker {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-bottom: 20px; padding: 7px 16px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  color: #f7dba8; font-weight: 700; font-size: .82rem; letter-spacing: .01em;
+}
+.hero-kicker svg { width: 15px; height: 15px; color: #f2c879; flex: none; }
+@media (max-width: 480px) {
+  .hero-kicker { font-size: .74rem; padding: 6px 13px; }
+}
+
 /* --- hero video/gradient slider (Envato-style cinematic hero) --- */
 .hero-slider {
   position: relative; min-height: 88vh; overflow: hidden;
