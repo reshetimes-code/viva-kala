@@ -153,7 +153,6 @@ const FOOTER_COLUMNS: Record<Locale, { title: string; links: { label: string; hr
 const COPY: Record<
   Locale,
   {
-    heroKicker: string;
     heroTitle: string;
     heroText: string;
     ctaDashboard: string;
@@ -176,8 +175,7 @@ const COPY: Record<
   }
 > = {
   he: {
-    heroKicker: "כולל סידורי הושבה חכמים",
-    heroTitle: "הזמנות דיגיטליות מרשימות, תוך דקות",
+    heroTitle: "הזמנות דיגיטליות מרשימות, עם סידורי הושבה חכמים",
     heroText:
       "בחרו עיצוב מוכן או העלו הזמנה משלכם, מלאו פרטים, ושתפו קישור אחד - עם אישורי הגעה, סידורי הושבה וקוד QR לאולם לכל האורחים שלכם.",
     ctaDashboard: "לוח הבקרה שלי",
@@ -209,8 +207,7 @@ const COPY: Record<
     footerCopyright: "VIVA © 2026 - כל הזכויות שמורות",
   },
   en: {
-    heroKicker: "Smart seating charts included",
-    heroTitle: "Stunning digital invitations, in minutes",
+    heroTitle: "Stunning digital invitations, with smart seating built in",
     heroText:
       "Pick a ready-made design or upload your own, fill in the details, and share one link - with RSVPs, seating arrangements and a hall QR code for all your guests.",
     ctaDashboard: "My dashboard",
@@ -384,10 +381,6 @@ export default async function LandingPage({ isLoggedIn = false }: { isLoggedIn?:
         </header>
 
         <section className="landing-hero hero-slide-hero">
-          <div className="hero-kicker landing-fade-in">
-            <FeatureIcon type="seating" />
-            <span>{t.heroKicker}</span>
-          </div>
           <h1 className="landing-fade-in landing-fade-in-delay-1">{t.heroTitle}</h1>
           <p className="landing-fade-in landing-fade-in-delay-2">{t.heroText}</p>
           <div className="landing-fade-in landing-fade-in-delay-3">
