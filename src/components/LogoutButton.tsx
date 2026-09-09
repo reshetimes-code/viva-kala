@@ -2,11 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
+
+const COPY = {
+  he: { logout: "התנתקות" },
+  en: { logout: "Log out" },
+};
 
 /** Small icon button for the dashboard header - clears the session cookie
  *  via the (already existing but previously unused-in-UI) /api/auth/logout
  *  route, then sends the user back to /login. */
 export default function LogoutButton() {
+  const { locale } = useLocale();
+  const t = COPY[locale];
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -27,8 +35,8 @@ export default function LogoutButton() {
       className="dash-logout-btn"
       onClick={handleLogout}
       disabled={loading}
-      title="התנתקות"
-      aria-label="התנתקות"
+      title={t.logout}
+      aria-label={t.logout}
     >
       {/* Emoji door icon rendered as a blank/garbled glyph on some devices -
           a plain SVG (door-frame + exit arrow) is legible everywhere. */}

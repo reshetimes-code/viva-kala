@@ -6,8 +6,36 @@ import { hasAdminAccess } from "@/lib/superadmin";
 import { leadWhatsappHref } from "@/lib/waContact";
 import { AdminCard, AdminCardRow } from "@/components/AdminCard";
 import AdminMenu from "@/components/AdminMenu";
+import { getServerLocale } from "@/lib/i18n/server";
+
+const COPY = {
+  he: {
+    title: "לידים",
+    phone: "טלפון",
+    eventType: "סוג האירוע",
+    eventDate: "תאריך הארוע המבוקש",
+    venue: "אולם",
+    fromInvite: "מהזמנה",
+    contact: "💬 צור קשר",
+    noLeads: "אין עדיין לידים.",
+    dateLocale: "he-IL",
+  },
+  en: {
+    title: "Leads",
+    phone: "Phone",
+    eventType: "Event type",
+    eventDate: "Requested event date",
+    venue: "Venue",
+    fromInvite: "From invite",
+    contact: "💬 Contact",
+    noLeads: "No leads yet.",
+    dateLocale: "en-US",
+  },
+};
 
 export default async function AdminLeadsPage() {
+  const locale = await getServerLocale();
+  const t = COPY[locale];
   const user = await getCurrentUser();
   if (!(await hasAdminAccess(user))) redirect(user ? "/dashboard" : "/login");
 
@@ -23,7 +51,7 @@ export default async function AdminLeadsPage() {
   return (
     <div className="admin-page">
       <div className="admin-header">
-        <h1>לידים</h1>
+        <h1>{t.title}</h1>
         <AdminMenu />
       </div>
 
@@ -34,19 +62,19 @@ export default async function AdminLeadsPage() {
             <AdminCard
               key={l.id}
               title={l.name || "—"}
-              subtitle={new Date(l.createdAt).toLocaleString("he-IL")}
+              subtitle={new Date(l.createdAt).toLocaleString(t.dateLocale)}
             >
-              <AdminCardRow label="טלפון" value={<span dir="ltr">{l.phone}</span>} />
-              {l.eventType && <AdminCardRow label="סוג האירוע" value={l.eventType} />}
+              <AdminCardRow label={t.phone} value={<span dir="ltr">{l.phone}</span>} />
+              {l.eventType && <AdminCardRow label={t.eventType} value={l.eventType} />}
               {l.eventDate && (
                 <AdminCardRow
-                  label="תאריך הארוע המבוקש"
-                  value={new Date(l.eventDate).toLocaleDateString("he-IL")}
+                  label={t.eventDate}
+                  value={new Date(l.eventDate).toLocaleDateString(t.dateLocale)}
                 />
               )}
-              {l.eventVenue && <AdminCardRow label="אולם" value={l.eventVenue} />}
+              {l.eventVenue && <AdminCardRow label={t.venue} value={l.eventVenue} />}
               <AdminCardRow
-                label="מהזמנה"
+                label={t.fromInvite}
                 value={l.sourceInviteId ? <Link href={`/i/${l.sourceInviteId}`}>{l.sourceInviteId}</Link> : "—"}
               />
               <a
@@ -55,14 +83,14 @@ export default async function AdminLeadsPage() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                💬 צור קשר
+                {t.contact}
               </a>
             </AdminCard>
           );
         })}
       </div>
 
-      {leads.length === 0 && <p className="admin-empty">אין עדיין לידים.</p>}
+      {leads.length === 0 && <p className="admin-empty">{t.noLeads}</p>}
     </div>
   );
 }

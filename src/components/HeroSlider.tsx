@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
 
 // TEMPORARY placeholders (animated gradients) until real video clips are
 // dropped in. Swap a slide to { type: "video", src: "/videos/xxx.mp4" }
@@ -16,6 +17,7 @@ const INTERVAL_MS = 6000;
 
 export default function HeroSlider({ children }: { children: React.ReactNode }) {
   const [active, setActive] = useState(0);
+  const { locale } = useLocale();
 
   // Only auto-rotate once there's more than one real video to rotate
   // between - with a single real clip (the rest still gradient
@@ -50,7 +52,7 @@ export default function HeroSlider({ children }: { children: React.ReactNode }) 
             key={i}
             type="button"
             className={`hero-slide-dot${i === active ? " is-active" : ""}`}
-            aria-label={`שקופית ${i + 1}`}
+            aria-label={locale === "he" ? `שקופית ${i + 1}` : `Slide ${i + 1}`}
             onClick={() => setActive(i)}
           />
         ))}

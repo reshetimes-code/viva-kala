@@ -11,9 +11,171 @@ import CategoryFieldsForm from "@/components/CategoryFieldsForm";
 import InvitePhotoCard from "@/components/InvitePhotoCard";
 import ImageCropModal from "@/components/ImageCropModal";
 import { TemplateCard, type TemplateFields } from "@/lib/templates";
-import { EVENT_CATEGORIES, isEventCategory, type EventCategory } from "@/lib/eventCategories";
+import { EVENT_CATEGORIES, isEventCategory, eventCategoryLabel, type EventCategory } from "@/lib/eventCategories";
 import { CATEGORY_FIELD_DEFS, hasCustomFields, findMissingRequiredField, readCommonFields, buildHeadline, buildExtraDetailLines, formatEventDate } from "@/lib/categoryFields";
 import { computeTextStyleFromCanvas, DEFAULT_TEXT_STYLE, type TextStyle } from "@/lib/textStyleHeuristic";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
+
+// UI copy only - see the file-level note at the call site (openDesignChangeChat)
+// for why some strings below (PARTY_TYPES, the connector words "ל"/"של", the
+// gender/grammar select OPTIONS, the "אחר" example placeholder, and anything
+// sent to the AI backend as prompt/eventDetails content) are deliberately
+// left Hebrew-only in both locales - they're either EventCategory-like data
+// that ends up in the generated Hebrew invitation, or literal example text
+// sent to demonstrate what to type, not UI chrome.
+const COPY = {
+  he: {
+    pickCategoryTitle: "מה חוגגים?",
+    pickCategoryPlaceholder: "בחרו סוג אירוע",
+    pickCategoryConfirm: "המשך",
+    pickCategoryValidation: "יש לבחור סוג אירוע",
+    uploadNoticeTitle: "שימו לב",
+    uploadNoticeText: "אתם מעלים תמונה בלבד - התמונה הזו תהיה כל העיצוב שיופיע בהזמנה, בלי טקסט נוסף מעליה.",
+    uploadNoticeConfirm: "הבנתי, בחירת תמונה",
+    missingForAi: (field: string) => `נא למלא "${field}" כדי שלמעצב ה-AI יהיה עם מה לעבוד`,
+    missingForAiGeneric: "נא למלא את פרטי האירוע (שם, תאריך ושעה) כדי שלמעצב ה-AI יהיה עם מה לעבוד",
+    aiDesignerIntroTitle: "מעצב/ת ה-AI",
+    aiDesignerIntroText: "המעצב/ת הדיגיטלי/ת שלנו שואל/ת כמה שאלות קצרות - פשוט לוחצים על התשובה שהכי מתאימה לכם.",
+    aiDesignerIntroConfirm: "בואו נתחיל",
+    close: "סגירה",
+    designChangeNoticeTitle: "שימו לב - חשוב לקרוא",
+    designChangeNoticeHtml:
+      'כתבו כל בקשת שינוי עיצובי - למשל "הוסיפו משפט מעל השם" או "שנו את הרקע לגוון כחול".<br><br>' +
+      "<b>כל בקשה כאן נספרת</b> במסגרת 10 שינויי העיצוב לחשבון (בשונה מתיקון שם/תאריך/כתובת/שעה, שתמיד חינם וללא הגבלה).",
+    designChangeNoticeConfirm: "הבנתי, בואו נתחיל",
+    updateErrorTitle: "שגיאה בעדכון התמונה",
+    tryAgain: "נסו שוב",
+    gotIt: "הבנתי",
+    networkErrorTitle: "שגיאת רשת",
+    missingDetailsTitle: "חסרים פרטים",
+    missingRequiredForSubmit: (field: string) => `חובה למלא "${field}" כדי ליצור את ההזמנה`,
+    missingCelebrantName: "חובה להזין שם מלא לפחות לחוגג אחד כדי ליצור את ההזמנה",
+    missingDateTime: "חובה למלא תאריך ושעת התחלה כדי ליצור את ההזמנה",
+    missingImage: "חובה להעלות או ליצור תמונת הזמנה כדי ליצור את ההזמנה",
+    imageStaleTitle: "התמונה לא מעודכנת",
+    imageStaleText: "שיניתם פרטים אחרי שהתמונה נוצרה - השינוי לא יופיע בהזמנה עד שתעדכנו את התמונה.",
+    imageStaleConfirm: "🪄 עדכון התמונה עכשיו",
+    cancel: "ביטול",
+    saveErrorFallback: "שגיאה בשמירת ההזמנה",
+    submitNetworkError: "שגיאת רשת - נסה שוב",
+    pageTitleEdit: "עריכת ההזמנה",
+    pageTitleCreate: "יצירת הזמנה",
+    quickUpdatingLoader: "מעדכן את התמונה עם הפרטים החדשים...",
+    regenBubble: (n: number) => `נשאר עוד ${n} שינוי${n === 1 ? "" : "ים"} עיצוב לחשבון`,
+    back: "→ חזרה",
+    heading: "יצירת הזמנה לארוע",
+    whatCelebrating: "מה חוגגים?",
+    chooseEventType: "בחרו סוג אירוע",
+    change: "שנה",
+    basicDetails: "📋 פרטים בסיסיים",
+    eventTypeLabel: "סוג ארוע",
+    fullNameLabel: "שם מלא",
+    fullNamePlaceholder: "שם מלא",
+    boyOrGirl: "בן או בת? (אופציונלי)",
+    chooseOptionOptional: "בחר אפשרות (אופציונלי)",
+    ageLabel: "גיל (אופציונלי)",
+    agePlaceholder: "גיל",
+    removeCelebrant: "🗑 מחיקת חוגג/ת",
+    addCelebrant: "➕ הוספת חוגג/ת",
+    willBeLabel: "שיתקיים או שתתקיים",
+    dateTimeHeading: "📅 תאריך ושעה",
+    eventDateLabel: "מהו תאריך הארוע?",
+    eventStartLabel: "שעת התחלה",
+    locationHeading: "📍 מיקום ופרטי מפגש",
+    meetAtLabel: "נפגשים או נפגשות",
+    addressLabel: "כתובת מדוייקת של הארוע",
+    addressHint: "(חשוב: לניווט ה-Waze)",
+    addressPlaceholder: "התחל להקליד כתובת...",
+    imgOrBeLabel: "עם או ב-",
+    gladSeeLabel: "לראותך או לראותכם",
+    notesLabel: "הערה לארוע (לא חובה)",
+    notesPlaceholder: "הערה לארוע",
+    aiDesignerBtn: "✨ עם מעצב ה-AI",
+    uploadBtn: "📤 לבד עם העלאת תמונה ברקע",
+    previewHeading: "ככה ההזמנה תראה אצל האורחים",
+    previewAlt: "תצוגה מקדימה",
+    designChatBtn: "שינוי עיצובי בצ'אט",
+    regenerateBtn: "יצירה מחדש",
+    submitting: "יוצר הזמנה...",
+    submit: "סיימתי לעצב, בו נמשיך",
+  },
+  en: {
+    pickCategoryTitle: "What are you celebrating?",
+    pickCategoryPlaceholder: "Choose an event type",
+    pickCategoryConfirm: "Continue",
+    pickCategoryValidation: "Please choose an event type",
+    uploadNoticeTitle: "Please note",
+    uploadNoticeText:
+      "You're uploading a photo only - this photo will be the entire design shown on the invitation, with no extra text added over it.",
+    uploadNoticeConfirm: "Got it, choose a photo",
+    missingForAi: (field: string) => `Please fill in "${field}" so the AI designer has something to work with`,
+    missingForAiGeneric: "Please fill in the event details (name, date and time) so the AI designer has something to work with",
+    aiDesignerIntroTitle: "The AI designer",
+    aiDesignerIntroText: "Our digital designer asks a few short questions - just tap whichever answer fits best.",
+    aiDesignerIntroConfirm: "Let's start",
+    close: "Close",
+    designChangeNoticeTitle: "Please note - important",
+    designChangeNoticeHtml:
+      'Write any design change request - for example "הוסיפו משפט מעל השם" or "שנו את הרקע לגוון כחול".<br><br>' +
+      "<b>Every request here counts</b> toward the account's 10 design changes (unlike a name/date/address/time fix, which is always free and unlimited).",
+    designChangeNoticeConfirm: "Got it, let's start",
+    updateErrorTitle: "Error updating the image",
+    tryAgain: "Try again",
+    gotIt: "Got it",
+    networkErrorTitle: "Network error",
+    missingDetailsTitle: "Missing details",
+    missingRequiredForSubmit: (field: string) => `"${field}" is required to create the invitation`,
+    missingCelebrantName: "A full name for at least one celebrant is required to create the invitation",
+    missingDateTime: "A date and start time are required to create the invitation",
+    missingImage: "An invitation image is required to create the invitation - upload or generate one",
+    imageStaleTitle: "The image is out of date",
+    imageStaleText: "You changed details after the image was created - the change won't appear on the invitation until you update the image.",
+    imageStaleConfirm: "🪄 Update the image now",
+    cancel: "Cancel",
+    saveErrorFallback: "Error saving the invitation",
+    submitNetworkError: "Network error - try again",
+    pageTitleEdit: "Edit invitation",
+    pageTitleCreate: "Create invitation",
+    quickUpdatingLoader: "Updating the image with the new details...",
+    regenBubble: (n: number) => `${n} design change${n === 1 ? "" : "s"} left for your account`,
+    back: "→ Back",
+    heading: "Create an event invitation",
+    whatCelebrating: "What are you celebrating?",
+    chooseEventType: "Choose an event type",
+    change: "Change",
+    basicDetails: "📋 Basic details",
+    eventTypeLabel: "Event type",
+    fullNameLabel: "Full name",
+    fullNamePlaceholder: "Full name",
+    boyOrGirl: "Boy or girl? (optional)",
+    chooseOptionOptional: "Choose an option (optional)",
+    ageLabel: "Age (optional)",
+    agePlaceholder: "Age",
+    removeCelebrant: "🗑 Remove celebrant",
+    addCelebrant: "➕ Add celebrant",
+    willBeLabel: "Hebrew grammar: “will take place”",
+    dateTimeHeading: "📅 Date & time",
+    eventDateLabel: "What's the event date?",
+    eventStartLabel: "Start time",
+    locationHeading: "📍 Location & meeting details",
+    meetAtLabel: "Hebrew grammar: “meeting point”",
+    addressLabel: "Exact event address",
+    addressHint: "(important: for Waze navigation)",
+    addressPlaceholder: "Start typing an address...",
+    imgOrBeLabel: "Hebrew grammar: “with” / “at”",
+    gladSeeLabel: "Hebrew grammar: “glad to see you”",
+    notesLabel: "Note for the event (optional)",
+    notesPlaceholder: "Note for the event",
+    aiDesignerBtn: "✨ With the AI designer",
+    uploadBtn: "📤 On my own - upload a background photo",
+    previewHeading: "This is how the invitation will look to your guests",
+    previewAlt: "Preview",
+    designChatBtn: "Design change via chat",
+    regenerateBtn: "Start over",
+    submitting: "Creating invitation...",
+    submit: "Done designing, let's continue",
+  },
+};
 
 // Background photos are shown full-bleed behind the invitation text, at the
 // same tall aspect ratio as a TikTok/Reels/Story frame - cropping to it here
@@ -62,6 +224,8 @@ export default function CreateInvitePage({
   initialData?: ImageInviteInitialData;
 }) {
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = COPY[locale];
 
   // The landing page's category tiles link here with ?category=..., so the
   // system already knows what's being celebrated - the user shouldn't have
@@ -83,19 +247,20 @@ export default function CreateInvitePage({
     // front in a popup instead of silently falling back to the generic
     // form, so every invite still starts from a real category.
     Swal.fire({
-      title: "מה חוגגים?",
+      title: t.pickCategoryTitle,
       input: "select",
-      inputOptions: Object.fromEntries(EVENT_CATEGORIES.map((c) => [c, c])),
-      inputPlaceholder: "בחרו סוג אירוע",
-      confirmButtonText: "המשך",
+      inputOptions: Object.fromEntries(EVENT_CATEGORIES.map((c) => [c, eventCategoryLabel(c, locale)])),
+      inputPlaceholder: t.pickCategoryPlaceholder,
+      confirmButtonText: t.pickCategoryConfirm,
       confirmButtonColor: "#d4af7a",
       background: "#1f2a33",
       color: "#fff",
       allowOutsideClick: false,
-      inputValidator: (value) => (value ? undefined : "יש לבחור סוג אירוע"),
+      inputValidator: (value) => (value ? undefined : t.pickCategoryValidation),
     }).then((result) => {
       if (isEventCategory(result.value)) setEventCategory(result.value);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialData?.eventCategory]);
 
   const usesCustomFields = hasCustomFields(eventCategory);
@@ -290,9 +455,9 @@ export default function CreateInvitePage({
   function openUploadFlow() {
     Swal.fire({
       icon: "info",
-      title: "שימו לב",
-      text: "אתם מעלים תמונה בלבד - התמונה הזו תהיה כל העיצוב שיופיע בהזמנה, בלי טקסט נוסף מעליה.",
-      confirmButtonText: "הבנתי, בחירת תמונה",
+      title: t.uploadNoticeTitle,
+      text: t.uploadNoticeText,
+      confirmButtonText: t.uploadNoticeConfirm,
       confirmButtonColor: "#d4af7a",
       background: "#1f2a33",
       color: "#fff",
@@ -333,13 +498,13 @@ export default function CreateInvitePage({
     // filled in means it has nothing to work with, so send the user back to
     // fill them in first instead of starting an empty chat.
     if (usesCustomFields && eventCategory) {
-      const missing = findMissingRequiredField(eventCategory, categoryFields);
+      const missing = findMissingRequiredField(eventCategory, categoryFields, locale);
       if (missing) {
-        alertMissingField(`נא למלא "${missing}" כדי שלמעצב ה-AI יהיה עם מה לעבוד`);
+        alertMissingField(t.missingForAi(missing));
         return;
       }
     } else if (!celebrants.some((c) => c.name.trim()) || !eventDate || !eventStart) {
-      alertMissingField("נא למלא את פרטי האירוע (שם, תאריך ושעה) כדי שלמעצב ה-AI יהיה עם מה לעבוד");
+      alertMissingField(t.missingForAiGeneric);
       return;
     }
 
@@ -349,9 +514,9 @@ export default function CreateInvitePage({
     // conversation).
     Swal.fire({
       icon: "info",
-      title: "מעצב/ת ה-AI",
-      text: "המעצב/ת הדיגיטלי/ת שלנו שואל/ת כמה שאלות קצרות - פשוט לוחצים על התשובה שהכי מתאימה לכם.",
-      confirmButtonText: "בואו נתחיל",
+      title: t.aiDesignerIntroTitle,
+      text: t.aiDesignerIntroText,
+      confirmButtonText: t.aiDesignerIntroConfirm,
       confirmButtonColor: "#d4af7a",
       background: "#1f2a33",
       color: "#fff",
@@ -378,7 +543,7 @@ export default function CreateInvitePage({
             <button
               type="button"
               onClick={() => Swal.close()}
-              aria-label="סגירה"
+              aria-label={t.close}
               style={{
                 position: "absolute", top: 10, right: 14, zIndex: 10,
                 background: "none", border: "none", fontSize: "1.6rem", lineHeight: 1,
@@ -478,11 +643,9 @@ export default function CreateInvitePage({
     // print. Kept short on purpose (the quota rule alone, not a full essay).
     Swal.fire({
       icon: "warning",
-      title: "שימו לב - חשוב לקרוא",
-      html:
-        'כתבו כל בקשת שינוי עיצובי - למשל "הוסיפו משפט מעל השם" או "שנו את הרקע לגוון כחול".<br><br>' +
-        "<b>כל בקשה כאן נספרת</b> במסגרת 10 שינויי העיצוב לחשבון (בשונה מתיקון שם/תאריך/כתובת/שעה, שתמיד חינם וללא הגבלה).",
-      confirmButtonText: "הבנתי, בואו נתחיל",
+      title: t.designChangeNoticeTitle,
+      html: t.designChangeNoticeHtml,
+      confirmButtonText: t.designChangeNoticeConfirm,
       confirmButtonColor: "#d4af7a",
       background: "#1f2a33",
       color: "#fff",
@@ -508,7 +671,7 @@ export default function CreateInvitePage({
             <button
               type="button"
               onClick={() => Swal.close()}
-              aria-label="סגירה"
+              aria-label={t.close}
               style={{
                 position: "absolute", top: 10, right: 14, zIndex: 10,
                 background: "none", border: "none", fontSize: "1.6rem", lineHeight: 1,
@@ -628,9 +791,9 @@ export default function CreateInvitePage({
       if (!res.ok) {
         Swal.fire({
           icon: "error",
-          title: "שגיאה בעדכון התמונה",
-          text: data.error || "נסו שוב",
-          confirmButtonText: "הבנתי",
+          title: t.updateErrorTitle,
+          text: data.error || t.tryAgain,
+          confirmButtonText: t.gotIt,
           confirmButtonColor: "#d4af7a",
           background: "#1f2a33",
           color: "#fff",
@@ -653,9 +816,9 @@ export default function CreateInvitePage({
     } catch {
       Swal.fire({
         icon: "error",
-        title: "שגיאת רשת",
-        text: "נסו שוב",
-        confirmButtonText: "הבנתי",
+        title: t.networkErrorTitle,
+        text: t.tryAgain,
+        confirmButtonText: t.gotIt,
         confirmButtonColor: "#d4af7a",
         background: "#1f2a33",
         color: "#fff",
@@ -668,9 +831,9 @@ export default function CreateInvitePage({
   function alertMissingField(text: string) {
     Swal.fire({
       icon: "warning",
-      title: "חסרים פרטים",
+      title: t.missingDetailsTitle,
       text,
-      confirmButtonText: "הבנתי",
+      confirmButtonText: t.gotIt,
       confirmButtonColor: "#d4af7a",
       background: "#1f2a33",
       color: "#fff",
@@ -682,33 +845,33 @@ export default function CreateInvitePage({
     setError("");
 
     if (usesCustomFields && eventCategory) {
-      const missing = findMissingRequiredField(eventCategory, categoryFields);
+      const missing = findMissingRequiredField(eventCategory, categoryFields, locale);
       if (missing) {
-        alertMissingField(`חובה למלא "${missing}" כדי ליצור את ההזמנה`);
+        alertMissingField(t.missingRequiredForSubmit(missing));
         return;
       }
     } else {
       if (!celebrants.some((c) => c.name.trim())) {
-        alertMissingField("חובה להזין שם מלא לפחות לחוגג אחד כדי ליצור את ההזמנה");
+        alertMissingField(t.missingCelebrantName);
         return;
       }
       if (!eventDate || !eventStart) {
-        alertMissingField("חובה למלא תאריך ושעת התחלה כדי ליצור את ההזמנה");
+        alertMissingField(t.missingDateTime);
         return;
       }
     }
     if (!imageDataUrl) {
-      alertMissingField("חובה להעלות או ליצור תמונת הזמנה כדי ליצור את ההזמנה");
+      alertMissingField(t.missingImage);
       return;
     }
     if (imageIsStale) {
       const { isConfirmed } = await Swal.fire({
         icon: "warning",
-        title: "התמונה לא מעודכנת",
-        text: "שיניתם פרטים אחרי שהתמונה נוצרה - השינוי לא יופיע בהזמנה עד שתעדכנו את התמונה.",
-        confirmButtonText: "🪄 עדכון התמונה עכשיו",
+        title: t.imageStaleTitle,
+        text: t.imageStaleText,
+        confirmButtonText: t.imageStaleConfirm,
         showCancelButton: true,
-        cancelButtonText: "ביטול",
+        cancelButtonText: t.cancel,
         confirmButtonColor: "#d4af7a",
         background: "#1f2a33",
         color: "#fff",
@@ -755,24 +918,24 @@ export default function CreateInvitePage({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "שגיאה בשמירת ההזמנה");
+        setError(data.error || t.saveErrorFallback);
         setSubmitting(false);
         return;
       }
       router.push(isEdit ? "/dashboard" : `/i/${data.id}`);
     } catch {
-      setError("שגיאת רשת - נסה שוב");
+      setError(t.submitNetworkError);
       setSubmitting(false);
     }
   }
 
   return (
-    <DesktopPhoneWrapper title={editInviteId ? "עריכת ההזמנה" : "יצירת הזמנה"}>
+    <DesktopPhoneWrapper title={editInviteId ? t.pageTitleEdit : t.pageTitleCreate}>
     <div className="create-page">
       {quickUpdating && (
         <div className="ai-fullscreen-loader" role="status" aria-live="polite">
           <span className="ai-fullscreen-loader-spinner" aria-hidden="true" />
-          <p>מעדכן את התמונה עם הפרטים החדשים...</p>
+          <p>{t.quickUpdatingLoader}</p>
         </div>
       )}
       {/* A sibling of .create-wrapper, not nested inside any
@@ -783,17 +946,17 @@ export default function CreateInvitePage({
           .create-page (no filter/transform of its own) needs no portal. */}
       {regenerationsRemaining !== null && eventCategory && (
         <div className="regen-bubble">
-          נשאר עוד {regenerationsRemaining} שינויי{regenerationsRemaining === 1 ? " " : "ים "}עיצוב לחשבון
+          {t.regenBubble(regenerationsRemaining)}
         </div>
       )}
       <div className="create-wrapper">
         <div className="mb-4">
           <a href="/dashboard" className="create-back-link">
-            → חזרה
+            {t.back}
           </a>
         </div>
 
-        <h2 className="create-title">יצירת הזמנה לארוע</h2>
+        <h2 className="create-title">{t.heading}</h2>
 
         <form onSubmit={handleSubmit}>
           {/* Event category - already known from the landing page tile in
@@ -804,7 +967,7 @@ export default function CreateInvitePage({
           <div className="category-section" style={{ textAlign: "center", position: "relative" }}>
             {editingCategory || !eventCategory ? (
               <>
-                <label className="upper-section-text">מה חוגגים?</label>
+                <label className="upper-section-text">{t.whatCelebrating}</label>
                 <select
                   className="inputs-fields"
                   value={eventCategory ?? ""}
@@ -814,18 +977,18 @@ export default function CreateInvitePage({
                   }}
                 >
                   <option value="" disabled>
-                    בחרו סוג אירוע
+                    {t.chooseEventType}
                   </option>
                   {EVENT_CATEGORIES.map((c) => (
                     <option key={c} value={c}>
-                      {c}
+                      {eventCategoryLabel(c, locale)}
                     </option>
                   ))}
                 </select>
               </>
             ) : (
               <p style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700 }}>
-                🎉 {eventCategory}
+                🎉 {eventCategoryLabel(eventCategory, locale)}
                 <button
                   type="button"
                   onClick={() => setEditingCategory(true)}
@@ -844,7 +1007,7 @@ export default function CreateInvitePage({
                     cursor: "pointer",
                   }}
                 >
-                  שנה
+                  {t.change}
                 </button>
               </p>
             )}
@@ -869,7 +1032,7 @@ export default function CreateInvitePage({
           <>
           {/* Basic info */}
           <div className="category-section basic-info-section">
-            <h3 className="category-title">📋 פרטים בסיסיים</h3>
+            <h3 className="category-title">{t.basicDetails}</h3>
 
             {/* eventCategory already answers "what kind of event" (chosen on
                 the landing page or the chip above) for יום הולדת - asking
@@ -878,14 +1041,22 @@ export default function CreateInvitePage({
                 ("יום ההולדת"). "אחר" and the no-category case still need it. */}
             {eventCategory !== "יום הולדת" && (
               <>
+                {/* "ל" - a bare Hebrew connector ("to/for"), read together with
+                    the dynamic values below as "ל[occasion] של[name]" (the
+                    actual Hebrew invitation sentence shape) - not UI copy with
+                    an English equivalent, so it's deliberately left as-is in
+                    both locales rather than guessed at (see file-level note). */}
                 <p className="my-3 text-center text-lg" style={{ opacity: 0.7 }}>ל</p>
 
                 <div>
-                  <label className="upper-section-text">סוג ארוע</label>
+                  <label className="upper-section-text">{t.eventTypeLabel}</label>
                   {eventCategory === "אחר" ? (
                     // "אחר" means none of the fixed options fit - a free-text
                     // field is simpler than making someone scan a long list for
-                    // something that isn't there.
+                    // something that isn't there. The placeholder examples are
+                    // themselves party-type text that becomes guest-facing
+                    // invitation content (like PARTY_TYPES below) - left
+                    // Hebrew-only in both locales, not translated.
                     <input
                       className="inputs-fields"
                       type="text"
@@ -899,8 +1070,11 @@ export default function CreateInvitePage({
                       value={partyType}
                       onChange={(e) => setPartyType(e.target.value)}
                     >
-                      {PARTY_TYPES.map((t) => (
-                        <option key={t}>{t}</option>
+                      {/* PARTY_TYPES values become actual guest-facing
+                          invitation text - deliberately left Hebrew-only, see
+                          file-level note above. */}
+                      {PARTY_TYPES.map((pt) => (
+                        <option key={pt}>{pt}</option>
                       ))}
                     </select>
                   )}
@@ -908,29 +1082,34 @@ export default function CreateInvitePage({
               </>
             )}
 
+            {/* "של" - see the "ל" note above; same reasoning. */}
             <p className="mt-4 mb-3 text-center text-lg" style={{ opacity: 0.7 }}>של</p>
 
             <div>
               {celebrants.map((c, i) => (
                 <div key={i} className="celebrate-box">
                   <div>
-                    <label className="bottom-section-text">שם מלא</label>
+                    <label className="bottom-section-text">{t.fullNameLabel}</label>
                     <input
                       className="inputs-fields"
                       type="text"
-                      placeholder="שם מלא"
+                      placeholder={t.fullNamePlaceholder}
                       value={c.name}
                       onChange={(e) => updateCelebrant(i, "name", e.target.value)}
                     />
                   </div>
                   <div className="mt-3">
-                    <label className="bottom-section-text">בן או בת? (אופציונלי)</label>
+                    <label className="bottom-section-text">{t.boyOrGirl}</label>
+                    {/* Option VALUES (בן/בת/בני/בנות) are Hebrew grammatical-
+                        gender agreement words folded into the actual guest-
+                        facing invitation sentence - left untranslated, see
+                        file-level note above. */}
                     <select
                       className="inputs-fields"
                       value={c.gender}
                       onChange={(e) => updateCelebrant(i, "gender", e.target.value)}
                     >
-                      <option value="">בחר אפשרות (אופציונלי)</option>
+                      <option value="">{t.chooseOptionOptional}</option>
                       <option value="בן">בן</option>
                       <option value="בת">בת</option>
                       <option value="בני">בני</option>
@@ -938,11 +1117,11 @@ export default function CreateInvitePage({
                     </select>
                   </div>
                   <div className="mt-3">
-                    <label className="bottom-section-text">גיל (אופציונלי)</label>
+                    <label className="bottom-section-text">{t.ageLabel}</label>
                     <input
                       className="inputs-fields"
                       type="text"
-                      placeholder="גיל"
+                      placeholder={t.agePlaceholder}
                       value={c.age}
                       onChange={(e) => updateCelebrant(i, "age", e.target.value)}
                     />
@@ -950,7 +1129,7 @@ export default function CreateInvitePage({
                   {celebrants.length > 1 && (
                     <div className="mt-3 text-center">
                       <button type="button" className="del-celebrate-row" onClick={() => removeCelebrant(i)}>
-                        🗑 מחיקת חוגג/ת
+                        {t.removeCelebrant}
                       </button>
                     </div>
                   )}
@@ -959,11 +1138,14 @@ export default function CreateInvitePage({
             </div>
 
             <button type="button" className="btn-gradient-success" onClick={addCelebrant}>
-              ➕ הוספת חוגג/ת
+              {t.addCelebrant}
             </button>
 
             <div className="mt-3">
-              <label className="bottom-section-text">שיתקיים או שתתקיים</label>
+              <label className="bottom-section-text">{t.willBeLabel}</label>
+              {/* Option VALUES (שיתקיים/שתתקיים) are the actual verb-form text
+                  used in the Hebrew guest-facing invitation sentence - left
+                  untranslated, see file-level note above. */}
               <select className="inputs-fields" value={willBe} onChange={(e) => setWillBe(e.target.value)}>
                 <option>שיתקיים</option>
                 <option>שתתקיים</option>
@@ -973,9 +1155,9 @@ export default function CreateInvitePage({
 
           {/* Date & time */}
           <div className="category-section datetime-section">
-            <h3 className="category-title">📅 תאריך ושעה</h3>
+            <h3 className="category-title">{t.dateTimeHeading}</h3>
             <div className="mt-3">
-              <label className="bottom-section-text">מהו תאריך הארוע?</label>
+              <label className="bottom-section-text">{t.eventDateLabel}</label>
               {/* defaultValue, not value - a controlled type="date"/type="time"
                   input forces React to reassign .value on every keystroke
                   elsewhere in this (large) form's re-renders, and on iOS
@@ -991,7 +1173,7 @@ export default function CreateInvitePage({
               />
             </div>
             <div className="mt-3">
-              <label className="bottom-section-text">שעת התחלה</label>
+              <label className="bottom-section-text">{t.eventStartLabel}</label>
               <input
                 className="inputs-fields"
                 type="time"
@@ -1003,9 +1185,12 @@ export default function CreateInvitePage({
 
           {/* Location */}
           <div className="category-section location-section">
-            <h3 className="category-title">📍 מיקום ופרטי מפגש</h3>
+            <h3 className="category-title">{t.locationHeading}</h3>
             <div className="mt-3">
-              <label className="bottom-section-text">נפגשים או נפגשות</label>
+              <label className="bottom-section-text">{t.meetAtLabel}</label>
+              {/* Option VALUES (נפגשים/נפגשות) are Hebrew grammatical-number
+                  agreement words folded into the guest-facing sentence - left
+                  untranslated, see file-level note above. */}
               <select className="inputs-fields" value={meetAt} onChange={(e) => setMeetAt(e.target.value)}>
                 <option>נפגשים</option>
                 <option>נפגשות</option>
@@ -1013,25 +1198,32 @@ export default function CreateInvitePage({
             </div>
             <div className="mt-3">
               <label className="bottom-section-text">
-                כתובת מדוייקת של הארוע <span className="attention-text-color">(חשוב: לניווט ה-Waze)</span>
+                {t.addressLabel} <span className="attention-text-color">{t.addressHint}</span>
               </label>
               <input
                 className="inputs-fields"
                 type="text"
-                placeholder="התחל להקליד כתובת..."
+                placeholder={t.addressPlaceholder}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
               />
             </div>
             <div className="mt-3">
-              <label className="bottom-section-text">עם או ב-</label>
+              <label className="bottom-section-text">{t.imgOrBeLabel}</label>
+              {/* Option VALUES (עם/ב-) are the actual Hebrew connector text
+                  folded into the guest-facing sentence - left untranslated,
+                  see file-level note above. */}
               <select className="inputs-fields" value={imgOrBe} onChange={(e) => setImgOrBe(e.target.value)}>
                 <option>עם</option>
                 <option>ב-</option>
               </select>
             </div>
             <div className="mt-3">
-              <label className="bottom-section-text">לראותך או לראותכם</label>
+              <label className="bottom-section-text">{t.gladSeeLabel}</label>
+              {/* Option VALUES (נשמח לראותך/לראותכם/לראותכן) are the actual
+                  Hebrew closing-phrase text used in the guest-facing
+                  invitation sentence - left untranslated, see file-level note
+                  above. */}
               <select className="inputs-fields" value={gladSee} onChange={(e) => setGladSee(e.target.value)}>
                 <option>נשמח לראותך</option>
                 <option>נשמח לראותכם</option>
@@ -1039,11 +1231,11 @@ export default function CreateInvitePage({
               </select>
             </div>
             <div className="mt-3">
-              <label className="bottom-section-text">הערה לארוע (לא חובה)</label>
+              <label className="bottom-section-text">{t.notesLabel}</label>
               <textarea
                 className="inputs-fields"
                 rows={3}
-                placeholder="הערה לארוע"
+                placeholder={t.notesPlaceholder}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
@@ -1068,10 +1260,10 @@ export default function CreateInvitePage({
             {!imageDataUrl && (
               <div className="image-choice-buttons">
                 <button type="button" className="image-choice-btn image-choice-btn-ai" onClick={openAiDesigner}>
-                  ✨ עם מעצב ה-AI
+                  {t.aiDesignerBtn}
                 </button>
                 <button type="button" className="image-choice-btn" onClick={openUploadFlow}>
-                  📤 לבד עם העלאת תמונה ברקע
+                  {t.uploadBtn}
                 </button>
               </div>
             )}
@@ -1091,7 +1283,7 @@ export default function CreateInvitePage({
                   className="upper-section-text"
                   style={{ fontSize: 17, fontWeight: 800, opacity: 0.95, textAlign: "center", fontFamily: "'Assistant', sans-serif" }}
                 >
-                  ככה ההזמנה תראה אצל האורחים
+                  {t.previewHeading}
                 </p>
                 {/* The "⚠️ עדכון התמונה" banner itself now lives inside
                     CategoryFieldsForm (right by the fields that go stale) -
@@ -1110,7 +1302,7 @@ export default function CreateInvitePage({
                     // itself - showing it straight, no overlay panel on top
                     // that would just repeat the same details a second time.
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={imageDataUrl} alt="תצוגה מקדימה" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={imageDataUrl} alt={t.previewAlt} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <InvitePhotoCard
                       imageUrl={imageDataUrl}
@@ -1136,7 +1328,7 @@ export default function CreateInvitePage({
                       for a coded template, which has no such image to edit. */}
                   {!codedTemplate && (
                     <button type="button" className="image-choice-btn image-choice-btn-ai" onClick={openDesignChangeChat}>
-                      שינוי עיצובי בצ&apos;אט
+                      {t.designChatBtn}
                     </button>
                   )}
                   <button
@@ -1147,7 +1339,7 @@ export default function CreateInvitePage({
                       setCodedTemplate(null);
                     }}
                   >
-                    יצירה מחדש
+                    {t.regenerateBtn}
                   </button>
                 </div>
               </div>
@@ -1159,7 +1351,7 @@ export default function CreateInvitePage({
             {error && <div className="alert alert-error">{error}</div>}
 
             <button type="submit" className="submit-btn" disabled={submitting}>
-              <span>{submitting ? "יוצר הזמנה..." : "סיימתי לעצב, בו נמשיך"}</span>
+              <span>{submitting ? t.submitting : t.submit}</span>
               <span className="submit-btn-arrow">›</span>
             </button>
           </div>

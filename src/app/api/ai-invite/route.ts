@@ -1,6 +1,34 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getUserImageRegenerationsUsed, incrementUserImageRegenerations } from "@/lib/store";
+import { getServerLocale } from "@/lib/i18n/server";
+
+const MESSAGES = {
+  he: {
+    loginRequired: "יש להתחבר",
+    notConfigured: "יצירת תמונות ב-AI לא הוגדרה עדיין במערכת (חסר מפתח API)",
+    needAtLeastOne: "יש למלא לפחות פרט אחד",
+    quotaReached: (max: number) =>
+      `הגעתם למגבלה של ${max} שינויי עיצוב לחשבון. תיקון טקסט בלבד (שמות, תאריך, כתובת, שעה) בהזמנה קיימת אינו כלול במגבלה ותמיד זמין.`,
+    loadImageFailed: "לא ניתן היה לטעון את התמונה הקיימת",
+    generateFailed: "שגיאה ביצירת התמונה",
+    noImageWithText: (text: string) => `השירות לא החזיר תמונה: ${text}`,
+    noImageReceived: "לא התקבלה תמונה מהשירות",
+    networkError: "שגיאת רשת מול שירות ה-AI",
+  },
+  en: {
+    loginRequired: "Please log in",
+    notConfigured: "AI image generation is not configured yet (missing API key)",
+    needAtLeastOne: "Please fill in at least one detail",
+    quotaReached: (max: number) =>
+      `You've reached the limit of ${max} design changes for this account. Text-only fixes (names, date, address, time) on an existing invitation don't count toward the limit and are always available.`,
+    loadImageFailed: "Could not load the existing image",
+    generateFailed: "Error generating the image",
+    noImageWithText: (text: string) => `The service did not return an image: ${text}`,
+    noImageReceived: "No image was received from the service",
+    networkError: "Network error contacting the AI service",
+  },
+};
 
 // Each call here is a real Gemini image-generation cost - capped per
 // account so one user can't run up an unbounded bill. Free/uncapped ONLY
@@ -26,15 +54,17 @@ const MAX_IMAGE_REGENERATIONS = 10;
 // still asks for a text-free background, since it was never given the
 // user's actual event details in a shape meant for rendering into an image.
 export async function POST(req: Request) {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "יש להתחבר" }, { status: 401 });
+    return NextResponse.json({ error: t.loginRequired }, { status: 401 });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: "יצירת תמונות ב-AI לא הוגדרה עדיין במערכת (חסר מפתח API)" },
+      { error: t.notConfigured },
       { status: 503 }
     );
   }
@@ -54,7 +84,7 @@ export async function POST(req: Request) {
   const freeText = typeof body?.freeText === "string" ? body.freeText.trim() : "";
 
   if (!rawPrompt && !eventType && !color && !background && !elements && !style && !freeText) {
-    return NextResponse.json({ error: "יש למלא לפחות פרט אחד" }, { status: 400 });
+    return NextResponse.json({ error: t.needAtLeastOne }, { status: 400 });
   }
 
   // A `baseImage` means "edit this exact existing image" rather than a
@@ -75,7 +105,7 @@ export async function POST(req: Request) {
     if (used >= MAX_IMAGE_REGENERATIONS) {
       return NextResponse.json(
         {
-          error: `הגעתם למגבלה של ${MAX_IMAGE_REGENERATIONS} שינויי עיצוב לחשבון. תיקון טקסט בלבד (שמות, תאריך, כתובת, שעה) בהזמנה קיימת אינו כלול במגבלה ותמיד זמין.`,
+          error: t.quotaReached(MAX_IMAGE_REGENERATIONS),
         },
         { status: 403 }
       );
@@ -145,7 +175,7 @@ export async function POST(req: Request) {
         const buf = Buffer.from(await imgRes.arrayBuffer());
         baseImagePart = { mimeType: imgRes.headers.get("content-type") || "image/webp", data: buf.toString("base64") };
       } catch {
-        return NextResponse.json({ error: "לא ניתן היה לטעון את התמונה הקיימת" }, { status: 502 });
+        return NextResponse.json({ error: t.loadImageFailed }, { status: 502 });
       }
     }
   }
@@ -189,7 +219,7 @@ export async function POST(req: Request) {
         body: JSON.stringify({ model, input: buildInput(text) }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) return { error: data?.error?.message || "שגיאה ביצירת התמונה" };
+      if (!res.ok) return { error: data?.error?.message || t.generateFailed };
 
       // `output_image` is the documented convenience field for the last
       // generated image; fall back to scanning the steps timeline for an
@@ -228,12 +258,12 @@ export async function POST(req: Request) {
             }
           }
         }
-        return { error: refusalText ? `השירות לא החזיר תמונה: ${refusalText}` : "לא התקבלה תמונה מהשירות" };
+        return { error: refusalText ? t.noImageWithText(refusalText) : t.noImageReceived };
       }
       const mimeType = imageContent.mime_type || "image/png";
       return { dataUrl: `data:${mimeType};base64,${imageContent.data}` };
     } catch {
-      return { error: "שגיאת רשת מול שירות ה-AI" };
+      return { error: t.networkError };
     }
   }
 
@@ -244,7 +274,7 @@ export async function POST(req: Request) {
 
   if (dataUrls.length === 0) {
     const firstError = results.find((r): r is { error: string } => "error" in r);
-    return NextResponse.json({ error: firstError?.error || "שגיאה ביצירת התמונה" }, { status: 502 });
+    return NextResponse.json({ error: firstError?.error || t.generateFailed }, { status: 502 });
   }
 
   // Counts against the quota unless it's the one free-correction path, and
@@ -276,9 +306,11 @@ export async function POST(req: Request) {
 // page load - before the user has made any AI call at all this session -
 // instead of only after their first generation/design-chat response.
 export async function GET() {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "יש להתחבר" }, { status: 401 });
+    return NextResponse.json({ error: t.loginRequired }, { status: 401 });
   }
   const used = await getUserImageRegenerationsUsed(user.id);
   return NextResponse.json({ regenerationsUsed: used, regenerationsRemaining: Math.max(0, MAX_IMAGE_REGENERATIONS - used) });

@@ -1,10 +1,38 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { findInviteById, findUserById, getHallForUser } from "@/lib/store";
 import { getCurrentUser } from "@/lib/auth";
+import { getServerLocale } from "@/lib/i18n/server";
 import type { TemplateFields } from "@/lib/templates";
 import { buildHeadline, headlineToString, buildShareGreeting } from "@/lib/categoryFields";
+import { TITLE, siteOpenGraph, siteTwitter } from "../../layout";
 import InviteView from "./InviteView";
+
+// The root layout's generic description ("יצירת הזמנות דיגיטליות מעוצבות
+// לאירועים") makes sense on the marketing homepage, but on a shared invite
+// link it competes with the actual WhatsApp message for the recipient's
+// attention right above it in the same preview card. Blanking it here leaves
+// WhatsApp's preview card with just the title + image, so the eye goes
+// straight to the bold "כדי לשריין..." line in the message itself.
+//
+// Built from siteOpenGraph/siteTwitter (not a bare `{ description: "" }`)
+// because Next.js metadata merging is shallow: a segment that sets its own
+// openGraph/twitter fully replaces the parent's rather than merging fields,
+// so a partial object here would silently drop the og:image too - see the
+// comment on siteOpenGraph in app/layout.tsx.
+//
+// Note: WhatsApp/Facebook/iMessage always show the link's own domain (e.g.
+// "vivaa.co.il") under the preview regardless of any meta tag - that part
+// isn't something a site can turn off.
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+  return {
+    description: "",
+    openGraph: { ...siteOpenGraph(locale), description: "" },
+    twitter: { ...siteTwitter(locale), description: "" },
+  };
+}
 
 /** Pulls the 11-char video id out of whatever form a hall pastes in
  *  (youtu.be/ID, youtube.com/watch?v=ID, youtube.com/embed/ID, or a bare

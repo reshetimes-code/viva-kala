@@ -3,6 +3,66 @@
 import { useEffect, useRef, useState } from "react";
 import { buildGoldNightFields } from "@/lib/categoryFields";
 import type { TemplateFields } from "@/lib/templates";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
+import type { Locale } from "@/lib/i18n/locale";
+
+// UI copy only. PLACEMENT_CHOICES' `instruction` strings, the tweakAgain()
+// chat messages, and everything sent to /api/ai-designer/chat or
+// /api/ai-invite (eventCategory, categoryFields, prompts) are AI prompt
+// content, not UI chrome - deliberately left Hebrew-only in both locales.
+// turn.question/turn.options are the AI backend's own dynamic responses
+// (already Hebrew, since the questionnaire is about a Hebrew invitation) -
+// rendered as-is, not translated here.
+const COPY = {
+  he: {
+    placementRound: "עיגול במרכז ההזמנה",
+    placementHalf: "חצי תמונה, חצי טקסט",
+    placementQuarterTop: "רצועת תמונה למעלה",
+    placementQuarterBottom: "רצועת תמונה למטה",
+    chatError: "שגיאה בשיחה עם ה-AI",
+    networkError: "שגיאת רשת - נסו שוב",
+    imageError: "שגיאה ביצירת התמונה",
+    resultAlt: "תצוגה מקדימה שנוצרה ב-AI",
+    useThis: "✓ מושלם, נשתמש בזה",
+    tweakSomething: "🔄 שנו לי משהו",
+    wantOwnPhoto: "רוצים לשלב תמונה משלכם בעיצוב?",
+    yesHavePhoto: "כן, יש לי תמונה",
+    noOriginalDesign: "לא, תיצרו לי עיצוב מקורי",
+    uploadingPhoto: "מעלים תמונה",
+    clickToUpload: "📤 לחצו כאן להעלאת תמונה",
+    back: "חזרה",
+    howToPlace: "איך תרצו לשלב את התמונה?",
+    generatingDesign: "יוצר/ת לכם עיצוב...",
+    thinking: "רגע, חושב/ת...",
+    writeYourself: "או שתכתבו לי בעצמכם (לא חובה)",
+    freeTextPlaceholder: "ספרו לי מה בא לכם...",
+    send: "שליחה",
+  },
+  en: {
+    placementRound: "Circle in the center of the invitation",
+    placementHalf: "Half photo, half text",
+    placementQuarterTop: "Photo strip on top",
+    placementQuarterBottom: "Photo strip on bottom",
+    chatError: "Error talking with the AI",
+    networkError: "Network error - try again",
+    imageError: "Error generating the image",
+    resultAlt: "AI-generated preview",
+    useThis: "✓ Perfect, let's use this",
+    tweakSomething: "🔄 Change something for me",
+    wantOwnPhoto: "Want to include your own photo in the design?",
+    yesHavePhoto: "Yes, I have a photo",
+    noOriginalDesign: "No, create an original design for me",
+    uploadingPhoto: "Uploading a photo",
+    clickToUpload: "📤 Click here to upload a photo",
+    back: "Back",
+    howToPlace: "How would you like to place the photo?",
+    generatingDesign: "Creating your design...",
+    thinking: "One moment, thinking...",
+    writeYourself: "Or write it yourself (optional)",
+    freeTextPlaceholder: "Tell me what you have in mind...",
+    send: "Send",
+  },
+};
 
 interface ChatMessage {
   role: "user" | "model";
@@ -55,6 +115,25 @@ const PLACEMENT_CHOICES: { value: UploadedPhotoPlacement; label: string; instruc
     instruction: `Fill roughly the bottom quarter of the image with the attached photo as a wide banner strip, and design the rest above it with all the event text. ${PREMIUM_FINISH}`,
   },
 ];
+
+/** Display label for a PLACEMENT_CHOICES entry - the choice's own `label`
+ *  field stays Hebrew (it's just an internal identity/default), the actual
+ *  rendered text comes from COPY so it follows the dashboard's UI language.
+ *  The `instruction` sent to the AI is separate and always English/Hebrew
+ *  prompt content regardless of locale - untouched here. */
+function placementLabel(value: UploadedPhotoPlacement, locale: Locale): string {
+  const t = COPY[locale];
+  switch (value) {
+    case "round":
+      return t.placementRound;
+    case "half":
+      return t.placementHalf;
+    case "quarter-top":
+      return t.placementQuarterTop;
+    case "quarter-bottom":
+      return t.placementQuarterBottom;
+  }
+}
 
 /** Tiny sketch of each layout - a card outline with a filled block standing
  *  in for the photo and a few lines standing in for the text, so the option
@@ -133,6 +212,8 @@ export default function AiDesignerChat({
    *  gold-night branch in choosePlacement below for why. */
   onGenerated: (imageDataUrl: string, imagePrompt: string, codedTemplate?: { templateId: string; templateFields: TemplateFields }) => void;
 }) {
+  const { locale } = useLocale();
+  const t = COPY[locale];
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [turn, setTurn] = useState<ChatTurn | null>(null);
   const [freeText, setFreeText] = useState("");
@@ -169,7 +250,7 @@ export default function AiDesignerChat({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "שגיאה בשיחה עם ה-AI");
+        setError(data.error || t.chatError);
         return;
       }
       setMessages(nextMessages);
@@ -179,7 +260,7 @@ export default function AiDesignerChat({
         setPhotoPhase("ask");
       }
     } catch {
-      setError("שגיאת רשת - נסו שוב");
+      setError(t.networkError);
     } finally {
       setLoading(false);
     }
@@ -233,13 +314,13 @@ export default function AiDesignerChat({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "שגיאה ביצירת התמונה");
+        setError(data.error || t.imageError);
         return;
       }
       setResultUrl(data.imageDataUrl);
       setResultPrompt(prompt);
     } catch {
-      setError("שגיאת רשת - נסו שוב");
+      setError(t.networkError);
     } finally {
       setGenerating(false);
     }
@@ -275,13 +356,13 @@ export default function AiDesignerChat({
     return (
       <div className="ai-invite-result">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={resultUrl} alt="תצוגה מקדימה שנוצרה ב-AI" className="ai-invite-result-img" />
+        <img src={resultUrl} alt={t.resultAlt} className="ai-invite-result-img" />
         <div className="ai-invite-result-actions">
           <button type="button" className="ai-invite-use-btn" onClick={() => onGenerated(resultUrl, resultPrompt)}>
-            ✓ מושלם, נשתמש בזה
+            {t.useThis}
           </button>
           <button type="button" className="ai-invite-retry-btn" onClick={tweakAgain}>
-            🔄 שנו לי משהו
+            {t.tweakSomething}
           </button>
         </div>
       </div>
@@ -291,13 +372,13 @@ export default function AiDesignerChat({
   if (photoPhase === "ask") {
     return (
       <div className="ai-invite-form">
-        <p className="ai-chat-question">רוצים לשלב תמונה משלכם בעיצוב?</p>
+        <p className="ai-chat-question">{t.wantOwnPhoto}</p>
         <div className="ai-chat-options">
           <button type="button" className="ai-chat-option-btn" onClick={() => setPhotoPhase("upload")}>
-            כן, יש לי תמונה
+            {t.yesHavePhoto}
           </button>
           <button type="button" className="ai-chat-option-btn" onClick={declinePhoto}>
-            לא, תיצרו לי עיצוב מקורי
+            {t.noOriginalDesign}
           </button>
         </div>
       </div>
@@ -307,7 +388,7 @@ export default function AiDesignerChat({
   if (photoPhase === "upload") {
     return (
       <div className="ai-invite-form">
-        <p className="ai-chat-question">מעלים תמונה</p>
+        <p className="ai-chat-question">{t.uploadingPhoto}</p>
         {/* .image-upload-area's default dashed border/tint is styled for the
             dark create-flow page behind it - overridden here since this
             chat always sits inside a plain white SweetAlert popup instead. */}
@@ -316,14 +397,14 @@ export default function AiDesignerChat({
           style={{ display: "flex", minHeight: 90, border: "3px dashed #d4af7a", background: "#fbf6ec" }}
         >
           <input type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhotoFile} />
-          <span className="upload-label" style={{ color: "#4a5568" }}>📤 לחצו כאן להעלאת תמונה</span>
+          <span className="upload-label" style={{ color: "#4a5568" }}>{t.clickToUpload}</span>
         </label>
         <button
           type="button"
           className="ai-invite-retry-btn mt-3"
           onClick={() => setPhotoPhase("ask")}
         >
-          חזרה
+          {t.back}
         </button>
       </div>
     );
@@ -332,7 +413,7 @@ export default function AiDesignerChat({
   if (photoPhase === "placement") {
     return (
       <div className="ai-invite-form">
-        <p className="ai-chat-question">איך תרצו לשלב את התמונה?</p>
+        <p className="ai-chat-question">{t.howToPlace}</p>
         <div className="ai-placement-grid">
           {PLACEMENT_CHOICES.map((choice) => (
             <button
@@ -342,7 +423,7 @@ export default function AiDesignerChat({
               onClick={() => choosePlacement(choice.value)}
             >
               <PlacementIcon placement={choice.value} />
-              <span>{choice.label}</span>
+              <span>{placementLabel(choice.value, locale)}</span>
             </button>
           ))}
         </div>
@@ -361,7 +442,7 @@ export default function AiDesignerChat({
       {loading || generating ? (
         <div className="ai-chat-loading">
           <span className="ai-chat-spinner" aria-hidden="true" />
-          <p className="ai-chat-question">{generating ? "יוצר/ת לכם עיצוב..." : "רגע, חושב/ת..."}</p>
+          <p className="ai-chat-question">{generating ? t.generatingDesign : t.thinking}</p>
         </div>
       ) : turn?.question ? (
         <>
@@ -375,12 +456,12 @@ export default function AiDesignerChat({
           </div>
           <div className="ai-invite-field mt-3">
             <label>
-              <OptionLabel text="או שתכתבו לי בעצמכם (לא חובה)" />
+              <OptionLabel text={t.writeYourself} />
             </label>
-            <input value={freeText} onChange={(e) => setFreeText(e.target.value)} placeholder="ספרו לי מה בא לכם..." />
+            <input value={freeText} onChange={(e) => setFreeText(e.target.value)} placeholder={t.freeTextPlaceholder} />
             {freeText.trim() && (
               <button type="button" className="ai-invite-generate-btn mt-2" onClick={sendFreeText}>
-                שליחה
+                {t.send}
               </button>
             )}
           </div>

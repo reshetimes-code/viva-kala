@@ -4,11 +4,29 @@ import { insertInvite, listInvitesByUser, countRsvpsForInvite } from "@/lib/stor
 import { getCurrentUser } from "@/lib/auth";
 import { saveImageDataUrl } from "@/lib/imageStorage";
 import { isEventCategory } from "@/lib/eventCategories";
+import { getServerLocale } from "@/lib/i18n/server";
+
+const MESSAGES = {
+  he: {
+    loginRequired: "יש להתחבר תחילה",
+    needImage: "נדרשת תמונת הזמנה",
+    needTemplate: "נדרשת תבנית עיצוב ופרטים",
+    generic: "שגיאה ביצירת הזמנה",
+  },
+  en: {
+    loginRequired: "Please log in first",
+    needImage: "An invitation image is required",
+    needTemplate: "A design template and details are required",
+    generic: "Error creating invitation",
+  },
+};
 
 export async function GET() {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "יש להתחבר תחילה" }, { status: 401 });
+    return NextResponse.json({ error: t.loginRequired }, { status: 401 });
   }
 
   const userInvites = await listInvitesByUser(user.id);
@@ -23,9 +41,11 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "יש להתחבר תחילה" }, { status: 401 });
+    return NextResponse.json({ error: t.loginRequired }, { status: 401 });
   }
 
   try {
@@ -55,10 +75,10 @@ export async function POST(req: NextRequest) {
     } = body;
 
     if (mode === "image" && !imageDataUrl) {
-      return NextResponse.json({ error: "נדרשת תמונת הזמנה" }, { status: 400 });
+      return NextResponse.json({ error: t.needImage }, { status: 400 });
     }
     if (mode === "template" && (!templateId || !templateFields)) {
-      return NextResponse.json({ error: "נדרשת תבנית עיצוב ופרטים" }, { status: 400 });
+      return NextResponse.json({ error: t.needTemplate }, { status: 400 });
     }
 
     const id = crypto.randomBytes(6).toString("hex");
@@ -96,7 +116,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, id });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "שגיאה ביצירת הזמנה";
+    const message = err instanceof Error ? err.message : t.generic;
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

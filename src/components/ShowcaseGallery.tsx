@@ -2,17 +2,25 @@
 
 import { useEffect, useState } from "react";
 import RevealOnScroll from "@/components/RevealOnScroll";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
 
 interface Example {
   src: string;
   alt: string;
 }
 
+const LABELS = {
+  he: { close: "סגירה", prev: "הדוגמה הקודמת", next: "הדוגמה הבאה" },
+  en: { close: "Close", prev: "Previous example", next: "Next example" },
+};
+
 /** The homepage's "real output" showcase grid - each example is now
  *  tappable, opening a full-screen gallery (prev/next through the same
  *  list) instead of just sitting there as a flat, non-interactive image. */
 export default function ShowcaseGallery({ examples }: { examples: Example[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const { locale } = useLocale();
+  const labels = LABELS[locale];
 
   useEffect(() => {
     if (openIndex === null) return;
@@ -44,7 +52,7 @@ export default function ShowcaseGallery({ examples }: { examples: Example[] }) {
 
       {openIndex !== null && (
         <div className="showcase-lightbox-overlay" onClick={() => setOpenIndex(null)}>
-          <button type="button" className="showcase-lightbox-close" onClick={() => setOpenIndex(null)} aria-label="סגירה">
+          <button type="button" className="showcase-lightbox-close" onClick={() => setOpenIndex(null)} aria-label={labels.close}>
             ×
           </button>
           <button
@@ -54,7 +62,7 @@ export default function ShowcaseGallery({ examples }: { examples: Example[] }) {
               e.stopPropagation();
               setOpenIndex((i) => (i === null ? null : (i - 1 + examples.length) % examples.length));
             }}
-            aria-label="הדוגמה הקודמת"
+            aria-label={labels.prev}
           >
             ‹
           </button>
@@ -72,7 +80,7 @@ export default function ShowcaseGallery({ examples }: { examples: Example[] }) {
               e.stopPropagation();
               setOpenIndex((i) => (i === null ? null : (i + 1) % examples.length));
             }}
-            aria-label="הדוגמה הבאה"
+            aria-label={labels.next}
           >
             ›
           </button>

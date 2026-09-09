@@ -2,6 +2,30 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
+
+const COPY = {
+  he: {
+    openBtn: "➕ פתיחת חשבון ללקוח חדש",
+    usernameLabel: "שם משתמש ללקוח",
+    passwordLabel: "סיסמה (לפחות 4 תווים)",
+    creating: "יוצר...",
+    create: "יצירת חשבון",
+    cancel: "ביטול",
+    genericError: "שגיאה ביצירת חשבון",
+    networkError: "שגיאת רשת - נסה שוב",
+  },
+  en: {
+    openBtn: "➕ Open a new client account",
+    usernameLabel: "Client username",
+    passwordLabel: "Password (at least 4 characters)",
+    creating: "Creating...",
+    create: "Create account",
+    cancel: "Cancel",
+    genericError: "Error creating account",
+    networkError: "Network error - please try again",
+  },
+};
 
 /** "האולם יפתח ללקוח חשבון דרך הפאנל הפנימי שלו" - the hall types in a
  *  username+password for the client right here (handed to the client
@@ -9,6 +33,8 @@ import { useRouter } from "next/navigation";
  *  a signup form. */
 export default function HallAddClientForm() {
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = COPY[locale];
   const [open, setOpen] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +53,7 @@ export default function HallAddClientForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "שגיאה ביצירת חשבון");
+        setError(data.error || t.genericError);
         setSubmitting(false);
         return;
       }
@@ -36,7 +62,7 @@ export default function HallAddClientForm() {
       setOpen(false);
       router.refresh();
     } catch {
-      setError("שגיאת רשת - נסה שוב");
+      setError(t.networkError);
     } finally {
       setSubmitting(false);
     }
@@ -45,7 +71,7 @@ export default function HallAddClientForm() {
   if (!open) {
     return (
       <button type="button" className="hall-add-client-btn" onClick={() => setOpen(true)}>
-        ➕ פתיחת חשבון ללקוח חדש
+        {t.openBtn}
       </button>
     );
   }
@@ -53,11 +79,11 @@ export default function HallAddClientForm() {
   return (
     <form className="hall-add-client-form" onSubmit={handleSubmit}>
       <div className="admin-edit-field">
-        <label>שם משתמש ללקוח</label>
+        <label>{t.usernameLabel}</label>
         <input value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
       </div>
       <div className="admin-edit-field">
-        <label>סיסמה (לפחות 4 תווים)</label>
+        <label>{t.passwordLabel}</label>
         <input
           type="text"
           value={password}
@@ -69,10 +95,10 @@ export default function HallAddClientForm() {
       {error && <div className="alert alert-error">{error}</div>}
       <div className="hall-add-client-actions">
         <button type="submit" className="hall-save-btn" disabled={submitting}>
-          {submitting ? "יוצר..." : "יצירת חשבון"}
+          {submitting ? t.creating : t.create}
         </button>
         <button type="button" className="hall-cancel-btn" onClick={() => setOpen(false)}>
-          ביטול
+          {t.cancel}
         </button>
       </div>
     </form>

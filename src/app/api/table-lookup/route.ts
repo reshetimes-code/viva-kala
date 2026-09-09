@@ -1,5 +1,17 @@
 import { NextResponse } from "next/server";
 import { findInviteById, findRsvpByIdentity, findTableById } from "@/lib/store";
+import { getServerLocale } from "@/lib/i18n/server";
+
+const MESSAGES = {
+  he: {
+    eventNotFound: "אירוע לא נמצא",
+    missingFields: "יש למלא שם פרטי, שם משפחה ומספר טלפון",
+  },
+  en: {
+    eventNotFound: "Event not found",
+    missingFields: "Please fill in first name, last name and phone number",
+  },
+};
 
 // Public endpoint behind the single QR code printed for the hall - a guest
 // scans it and types their name AND phone, and gets back only their own
@@ -10,6 +22,8 @@ import { findInviteById, findRsvpByIdentity, findTableById } from "@/lib/store";
 // would let anyone who knows (or guesses) a guest's name land on that
 // guest's assigned table.
 export async function POST(req: Request) {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   const body = await req.json().catch(() => null);
   const inviteId = typeof body?.inviteId === "string" ? body.inviteId : "";
   const guestName = typeof body?.guestName === "string" ? body.guestName : "";
@@ -17,10 +31,10 @@ export async function POST(req: Request) {
   const phone = typeof body?.phone === "string" ? body.phone : "";
 
   if (!inviteId || !(await findInviteById(inviteId))) {
-    return NextResponse.json({ error: "אירוע לא נמצא" }, { status: 404 });
+    return NextResponse.json({ error: t.eventNotFound }, { status: 404 });
   }
   if (!guestName.trim() || !familyName.trim() || !phone.trim()) {
-    return NextResponse.json({ error: "יש למלא שם פרטי, שם משפחה ומספר טלפון" }, { status: 400 });
+    return NextResponse.json({ error: t.missingFields }, { status: 400 });
   }
 
   const matches = await findRsvpByIdentity(inviteId, guestName, familyName, phone);

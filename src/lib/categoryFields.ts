@@ -1,11 +1,26 @@
 import type { EventCategory } from "@/lib/eventCategories";
+import type { Locale } from "@/lib/i18n/locale";
 
 export interface FieldDef {
   key: string;
   label: string;
+  /** English rendering of `label`, shown instead of it when the site is in
+   *  English UI mode - see fieldLabel()/fieldPlaceholder() below. Additive
+   *  (label itself stays the source of truth for existing Hebrew-only
+   *  callers) so this doesn't ripple into every consumer's types. */
+  labelEn: string;
   type: "text" | "date" | "time" | "textarea";
   required?: boolean;
   placeholder?: string;
+  placeholderEn?: string;
+}
+
+export function fieldLabel(def: FieldDef, locale: Locale): string {
+  return locale === "en" ? def.labelEn : def.label;
+}
+
+export function fieldPlaceholder(def: FieldDef, locale: Locale): string | undefined {
+  return locale === "en" ? def.placeholderEn ?? def.placeholder : def.placeholder;
 }
 
 // Only these categories get a tailored field set - חתונה, בר מצווה, בת
@@ -15,50 +30,50 @@ export interface FieldDef {
 // invitedAs, willBe, ...) completely unchanged - CategoryFieldsForm falls
 // back to that when a category has no definition below.
 const BAR_BAT_MITZVAH_FIELDS_BASE: FieldDef[] = [
-  { key: "familyName", label: "משפחת", type: "text" },
-  { key: "parentsNames", label: "שמות ההורים (לא חובה)", type: "text" },
-  { key: "siblingsNames", label: "שמות האחים (לא חובה)", type: "text" },
-  { key: "eventDate", label: "תאריך", type: "date", required: true },
-  { key: "eventStart", label: "שעת התחלת האירוע", type: "time" },
-  { key: "venue", label: "מיקום האירוע", type: "text", required: true },
+  { key: "familyName", label: "משפחת", labelEn: "Family name", type: "text" },
+  { key: "parentsNames", label: "שמות ההורים (לא חובה)", labelEn: "Parents' names (optional)", type: "text" },
+  { key: "siblingsNames", label: "שמות האחים (לא חובה)", labelEn: "Siblings' names (optional)", type: "text" },
+  { key: "eventDate", label: "תאריך", labelEn: "Date", type: "date", required: true },
+  { key: "eventStart", label: "שעת התחלת האירוע", labelEn: "Event start time", type: "time" },
+  { key: "venue", label: "מיקום האירוע", labelEn: "Event venue", type: "text", required: true },
 ];
 
 export const CATEGORY_FIELD_DEFS: Partial<Record<EventCategory, FieldDef[]>> = {
   "חתונה": [
-    { key: "groomName", label: "שם החתן", type: "text", required: true },
-    { key: "brideName", label: "שם הכלה", type: "text", required: true },
-    { key: "eventDate", label: "תאריך", type: "date", required: true },
+    { key: "groomName", label: "שם החתן", labelEn: "Groom's name", type: "text", required: true },
+    { key: "brideName", label: "שם הכלה", labelEn: "Bride's name", type: "text", required: true },
+    { key: "eventDate", label: "תאריך", labelEn: "Date", type: "date", required: true },
     // Reception before ceremony, matching the real order of a wedding day
     // (guests arrive at קבלת פנים first, the חופה itself comes after).
-    { key: "receptionTime", label: "שעת קבלת פנים", type: "time" },
-    { key: "ceremonyTime", label: "שעת טקס חופה וקידושין", type: "time" },
-    { key: "venue", label: "מיקום האירוע", type: "text", required: true },
-    { key: "groomParents", label: "שמות הורי החתן (לא חובה)", type: "text" },
-    { key: "brideParents", label: "שמות הורי הכלה (לא חובה)", type: "text" },
+    { key: "receptionTime", label: "שעת קבלת פנים", labelEn: "Reception time", type: "time" },
+    { key: "ceremonyTime", label: "שעת טקס חופה וקידושין", labelEn: "Ceremony time", type: "time" },
+    { key: "venue", label: "מיקום האירוע", labelEn: "Event venue", type: "text", required: true },
+    { key: "groomParents", label: "שמות הורי החתן (לא חובה)", labelEn: "Groom's parents (optional)", type: "text" },
+    { key: "brideParents", label: "שמות הורי הכלה (לא חובה)", labelEn: "Bride's parents (optional)", type: "text" },
   ],
   // Retired combined category - an invite saved before the בר/בת split
   // still loads and edits with the exact same fields it always had.
   "בר/בת מצווה": [
-    { key: "celebrantName", label: "שם חתן/כלת המצווה", type: "text", required: true },
-    { key: "celebrantAge", label: "בן/בת 12/13 (לא חובה)", type: "text", placeholder: "לדוגמה: בן 13" },
+    { key: "celebrantName", label: "שם חתן/כלת המצווה", labelEn: "Celebrant's name", type: "text", required: true },
+    { key: "celebrantAge", label: "בן/בת 12/13 (לא חובה)", labelEn: "Turning 12/13 (optional)", type: "text", placeholder: "לדוגמה: בן 13", placeholderEn: "e.g. turning 13" },
     ...BAR_BAT_MITZVAH_FIELDS_BASE,
   ],
   "בר מצווה": [
-    { key: "celebrantName", label: "שם חתן המצווה", type: "text", required: true },
-    { key: "celebrantAge", label: "גיל (לא חובה)", type: "text", placeholder: "לדוגמה: בן 13" },
+    { key: "celebrantName", label: "שם חתן המצווה", labelEn: "Celebrant's name", type: "text", required: true },
+    { key: "celebrantAge", label: "גיל (לא חובה)", labelEn: "Age (optional)", type: "text", placeholder: "לדוגמה: בן 13", placeholderEn: "e.g. turning 13" },
     ...BAR_BAT_MITZVAH_FIELDS_BASE,
   ],
   "בת מצווה": [
-    { key: "celebrantName", label: "שם בת המצווה", type: "text", required: true },
-    { key: "celebrantAge", label: "גיל (לא חובה)", type: "text", placeholder: "לדוגמה: בת 12" },
+    { key: "celebrantName", label: "שם בת המצווה", labelEn: "Celebrant's name", type: "text", required: true },
+    { key: "celebrantAge", label: "גיל (לא חובה)", labelEn: "Age (optional)", type: "text", placeholder: "לדוגמה: בת 12", placeholderEn: "e.g. turning 12" },
     ...BAR_BAT_MITZVAH_FIELDS_BASE,
   ],
   "חינה": [
-    { key: "groomName", label: "שם החתן", type: "text", required: true },
-    { key: "brideName", label: "שם הכלה", type: "text", required: true },
-    { key: "eventDate", label: "תאריך", type: "date", required: true },
-    { key: "eventStart", label: "שעת התחלה", type: "time" },
-    { key: "venue", label: "מיקום האירוע", type: "text", required: true },
+    { key: "groomName", label: "שם החתן", labelEn: "Groom's name", type: "text", required: true },
+    { key: "brideName", label: "שם הכלה", labelEn: "Bride's name", type: "text", required: true },
+    { key: "eventDate", label: "תאריך", labelEn: "Date", type: "date", required: true },
+    { key: "eventStart", label: "שעת התחלה", labelEn: "Start time", type: "time" },
+    { key: "venue", label: "מיקום האירוע", labelEn: "Event venue", type: "text", required: true },
   ],
 };
 
@@ -70,14 +85,16 @@ export function hasCustomFields(category: EventCategory | undefined): boolean {
  *  Returns the label of the first missing one (for a plain-language error
  *  message), or null when everything required is filled. Shared by the
  *  client form and (defensively) the API route, so the rule lives in one
- *  place. */
+ *  place. `locale` only picks which language the returned label is in -
+ *  defaults to Hebrew so existing callers that don't pass it are unchanged. */
 export function findMissingRequiredField(
   category: EventCategory,
-  values: Record<string, string>
+  values: Record<string, string>,
+  locale: Locale = "he"
 ): string | null {
   const defs = CATEGORY_FIELD_DEFS[category] ?? [];
   for (const def of defs) {
-    if (def.required && !values[def.key]?.trim()) return def.label;
+    if (def.required && !values[def.key]?.trim()) return fieldLabel(def, locale);
   }
   return null;
 }

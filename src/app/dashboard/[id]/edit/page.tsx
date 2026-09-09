@@ -1,7 +1,8 @@
 import { redirect, notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { findInviteById } from "@/lib/store";
-import { TEMPLATES, type TemplateFields } from "@/lib/templates";
+import { TEMPLATES, templateLabel, type TemplateFields } from "@/lib/templates";
+import { getServerLocale } from "@/lib/i18n/server";
 import TemplateFillForm from "@/app/create/templates/[id]/TemplateFillForm";
 import CreateInvitePage, { type ImageInviteInitialData } from "@/app/create/image/page";
 
@@ -21,10 +22,12 @@ export default async function EditInvitePage({
     const template = TEMPLATES.find((t) => t.id === invite.templateId);
     if (!template) notFound();
 
+    const locale = await getServerLocale();
+
     return (
       <TemplateFillForm
         templateId={template.id}
-        templateLabel={template.label}
+        templateLabel={templateLabel(template, locale)}
         photoStyle={template.photoStyle}
         editInviteId={invite.id}
         initialFields={invite.templateFields as unknown as TemplateFields}

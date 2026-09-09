@@ -7,6 +7,20 @@ import {
   verifySuperadminPassword,
   setSuperadminCookie,
 } from "@/lib/superadmin";
+import { getServerLocale } from "@/lib/i18n/server";
+
+const MESSAGES = {
+  he: {
+    notConfigured: "כניסת סופר-אדמין לא מוגדרת",
+    rateLimited: "יותר מדי נסיונות - נסה שוב בעוד כמה דקות",
+    wrongPassword: "סיסמה שגויה",
+  },
+  en: {
+    notConfigured: "Super-admin login is not configured",
+    rateLimited: "Too many attempts - please try again in a few minutes",
+    wrongPassword: "Incorrect password",
+  },
+};
 
 function clientIp(req: NextRequest): string {
   // Cloud Run sits behind Google's front end, which sets this - falls back
@@ -15,19 +29,21 @@ function clientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   if (!isSuperadminConfigured()) {
-    return NextResponse.json({ error: "כניסת סופר-אדמין לא מוגדרת" }, { status: 503 });
+    return NextResponse.json({ error: t.notConfigured }, { status: 503 });
   }
 
   const ip = clientIp(req);
   if (isRateLimited(ip)) {
-    return NextResponse.json({ error: "יותר מדי נסיונות - נסה שוב בעוד כמה דקות" }, { status: 429 });
+    return NextResponse.json({ error: t.rateLimited }, { status: 429 });
   }
 
   const { password } = await req.json();
   if (!password || !verifySuperadminPassword(String(password))) {
     recordFailedAttempt(ip);
-    return NextResponse.json({ error: "סיסמה שגויה" }, { status: 401 });
+    return NextResponse.json({ error: t.wrongPassword }, { status: 401 });
   }
 
   clearAttempts(ip);

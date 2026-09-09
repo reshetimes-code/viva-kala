@@ -1,6 +1,22 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { callGeminiJson, GeminiConfigError, GeminiRequestError } from "@/lib/gemini";
+import { getServerLocale } from "@/lib/i18n/server";
+
+const MESSAGES = {
+  he: {
+    loginRequired: "יש להתחבר",
+    needValidImage: "נדרשת תמונה תקינה",
+    noApiKey: "לא הוגדר מפתח API",
+    unexpected: "שגיאה לא צפויה",
+  },
+  en: {
+    loginRequired: "Please log in",
+    needValidImage: "A valid image is required",
+    noApiKey: "API key is not configured",
+    unexpected: "Unexpected error",
+  },
+};
 
 // The real "AI looked at your photo and designed this" step (Phase B's
 // primary path - textStyleHeuristic.ts is only the fallback for when this
@@ -27,16 +43,18 @@ const SYSTEM_INSTRUCTION = [
 ].join(" ");
 
 export async function POST(req: Request) {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "יש להתחבר" }, { status: 401 });
+    return NextResponse.json({ error: t.loginRequired }, { status: 401 });
   }
 
   const body = await req.json().catch(() => null);
   const imageDataUrl = typeof body?.imageDataUrl === "string" ? body.imageDataUrl : "";
   const match = /^data:([^;]+);base64,(.+)$/.exec(imageDataUrl);
   if (!match) {
-    return NextResponse.json({ error: "נדרשת תמונה תקינה" }, { status: 400 });
+    return NextResponse.json({ error: t.needValidImage }, { status: 400 });
   }
 
   try {
@@ -56,11 +74,11 @@ export async function POST(req: Request) {
     return NextResponse.json(result);
   } catch (err) {
     if (err instanceof GeminiConfigError) {
-      return NextResponse.json({ error: "לא הוגדר מפתח API" }, { status: 503 });
+      return NextResponse.json({ error: t.noApiKey }, { status: 503 });
     }
     if (err instanceof GeminiRequestError) {
       return NextResponse.json({ error: err.message }, { status: 502 });
     }
-    return NextResponse.json({ error: "שגיאה לא צפויה" }, { status: 500 });
+    return NextResponse.json({ error: t.unexpected }, { status: 500 });
   }
 }

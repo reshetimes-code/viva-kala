@@ -3,6 +3,38 @@
 import { useState } from "react";
 import { AdminCard, AdminCardRow } from "@/components/AdminCard";
 import QrCode from "@/components/QrCode";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
+
+const COPY = {
+  he: {
+    username: "שם משתמש",
+    eventDate: "תאריך האירוע",
+    location: "מיקום",
+    attending: "אישרו הגעה",
+    attendingValue: (attending: number, total: number) => `${attending} מתוך ${total} תגובות`,
+    seating: "סידורי הושבה",
+    seatingValue: (count: number) => `${count} שולחנות`,
+    closeQr: "סגירת",
+    sendQr: "שליחת",
+    qrCode: "קוד QR",
+    whatsapp: "💬 וואטסאפ",
+    email: "✉️ מייל",
+  },
+  en: {
+    username: "Username",
+    eventDate: "Event date",
+    location: "Location",
+    attending: "Confirmed",
+    attendingValue: (attending: number, total: number) => `${attending} of ${total} responses`,
+    seating: "Seating",
+    seatingValue: (count: number) => `${count} tables`,
+    closeQr: "Hide",
+    sendQr: "Show",
+    qrCode: "QR code",
+    whatsapp: "💬 WhatsApp",
+    email: "✉️ Email",
+  },
+};
 
 export default function HallClientCard({
   username,
@@ -23,6 +55,8 @@ export default function HallClientCard({
   tableCount: number;
   inviteUrl?: string;
 }) {
+  const { locale } = useLocale();
+  const t = COPY[locale];
   const [qrOpen, setQrOpen] = useState(false);
 
   const waHref = inviteUrl
@@ -34,25 +68,25 @@ export default function HallClientCard({
 
   return (
     <AdminCard title={title} subtitle={[username, date].filter(Boolean).join(" · ")}>
-      <AdminCardRow label="שם משתמש" value={username} />
-      {date && <AdminCardRow label="תאריך האירוע" value={date} />}
-      {venue && <AdminCardRow label="מיקום" value={venue} />}
-      <AdminCardRow label="אישרו הגעה" value={`${rsvpAttending} מתוך ${rsvpTotal} תגובות`} />
-      <AdminCardRow label="סידורי הושבה" value={`${tableCount} שולחנות`} />
+      <AdminCardRow label={t.username} value={username} />
+      {date && <AdminCardRow label={t.eventDate} value={date} />}
+      {venue && <AdminCardRow label={t.location} value={venue} />}
+      <AdminCardRow label={t.attending} value={t.attendingValue(rsvpAttending, rsvpTotal)} />
+      <AdminCardRow label={t.seating} value={t.seatingValue(tableCount)} />
       {inviteUrl && (
         <>
           <button type="button" className="hall-qr-toggle-btn" onClick={() => setQrOpen((v) => !v)}>
-            📱 {qrOpen ? "סגירת" : "שליחת"} קוד QR
+            📱 {qrOpen ? t.closeQr : t.sendQr} {t.qrCode}
           </button>
           {qrOpen && (
             <div className="hall-qr-panel">
               <QrCode value={inviteUrl} size={140} />
               <div className="hall-qr-actions">
                 <a className="hall-qr-action" href={waHref} target="_blank" rel="noopener noreferrer">
-                  💬 וואטסאפ
+                  {t.whatsapp}
                 </a>
                 <a className="hall-qr-action" href={mailHref}>
-                  ✉️ מייל
+                  {t.email}
                 </a>
               </div>
             </div>

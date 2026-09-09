@@ -8,8 +8,36 @@ import AdminMenu from "@/components/AdminMenu";
 import ImpersonateButton from "@/components/ImpersonateButton";
 import DeleteUserButton from "@/components/DeleteUserButton";
 import AdminUserPanel from "@/components/AdminUserPanel";
+import { getServerLocale } from "@/lib/i18n/server";
+
+const COPY = {
+  he: {
+    title: "ניהול מערכת",
+    joined: (date: string) => `נרשם ב-${date}`,
+    designsCreated: "עיצובים שיצר",
+    aiAttempts: "נסיונות עיצוב ב-AI",
+    attending: "אישרו הגעה",
+    tables: "שולחנות",
+    details: "פרטים ←",
+    noUsers: "אין עדיין משתמשים רשומים.",
+    dateLocale: "he-IL",
+  },
+  en: {
+    title: "System management",
+    joined: (date: string) => `Joined on ${date}`,
+    designsCreated: "Designs created",
+    aiAttempts: "AI design attempts",
+    attending: "Confirmed attending",
+    tables: "Tables",
+    details: "Details ←",
+    noUsers: "No registered users yet.",
+    dateLocale: "en-US",
+  },
+};
 
 export default async function AdminPage() {
+  const locale = await getServerLocale();
+  const t = COPY[locale];
   const user = await getCurrentUser();
   if (!(await hasAdminAccess(user))) redirect(user ? "/dashboard" : "/login");
 
@@ -18,7 +46,7 @@ export default async function AdminPage() {
   return (
     <div className="admin-page">
       <div className="admin-header">
-        <h1>ניהול מערכת</h1>
+        <h1>{t.title}</h1>
         <AdminMenu />
       </div>
 
@@ -31,15 +59,15 @@ export default async function AdminPage() {
             <AdminCard
               key={u.user.id}
               title={u.user.username}
-              subtitle={`נרשם ב-${new Date(u.user.createdAt).toLocaleDateString("he-IL")}`}
+              subtitle={t.joined(new Date(u.user.createdAt).toLocaleDateString(t.dateLocale))}
             >
-              <AdminCardRow label="עיצובים שיצר" value={inviteCount} />
-              <AdminCardRow label="נסיונות עיצוב ב-AI" value={u.user.aiAttempts} />
-              <AdminCardRow label="אישרו הגעה" value={totalAttending} />
-              <AdminCardRow label="שולחנות" value={totalTables} />
+              <AdminCardRow label={t.designsCreated} value={inviteCount} />
+              <AdminCardRow label={t.aiAttempts} value={u.user.aiAttempts} />
+              <AdminCardRow label={t.attending} value={totalAttending} />
+              <AdminCardRow label={t.tables} value={totalTables} />
               <div className="admin-card-actions">
                 <Link href={`/admin/users/${u.user.id}`} className="admin-row-link">
-                  פרטים ←
+                  {t.details}
                 </Link>
                 <ImpersonateButton userId={u.user.id} />
               </div>
@@ -75,7 +103,7 @@ export default async function AdminPage() {
         })}
       </div>
 
-      {users.length === 0 && <p className="admin-empty">אין עדיין משתמשים רשומים.</p>}
+      {users.length === 0 && <p className="admin-empty">{t.noUsers}</p>}
     </div>
   );
 }

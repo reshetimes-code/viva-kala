@@ -1,11 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser, createUser } from "@/lib/auth";
 import { listClientsForHall } from "@/lib/store";
+import { getServerLocale } from "@/lib/i18n/server";
+
+const MESSAGES = {
+  he: {
+    hallLoginRequired: "יש להתחבר כאולם אירועים",
+    missing: "נא למלא שם משתמש וסיסמה",
+    shortPassword: "הסיסמה חייבת להכיל לפחות 4 תווים",
+    generic: "שגיאה ביצירת חשבון לקוח",
+  },
+  en: {
+    hallLoginRequired: "Please log in as a venue",
+    missing: "Please fill in a username and password",
+    shortPassword: "Password must be at least 4 characters",
+    generic: "Error creating client account",
+  },
+};
 
 export async function GET() {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   const user = await getCurrentUser();
   if (!user || user.accountType !== "hall") {
-    return NextResponse.json({ error: "יש להתחבר כאולם אירועים" }, { status: 401 });
+    return NextResponse.json({ error: t.hallLoginRequired }, { status: 401 });
   }
   const clients = await listClientsForHall(user.id);
   return NextResponse.json({ clients });
@@ -19,17 +37,19 @@ export async function GET() {
  *  difference, and it's what makes this client show up in the hall's own
  *  panel and what gates the lead popups on their eventual invite. */
 export async function POST(req: NextRequest) {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   const user = await getCurrentUser();
   if (!user || user.accountType !== "hall") {
-    return NextResponse.json({ error: "יש להתחבר כאולם אירועים" }, { status: 401 });
+    return NextResponse.json({ error: t.hallLoginRequired }, { status: 401 });
   }
   try {
     const { username, password } = await req.json();
     if (!username || !password) {
-      return NextResponse.json({ error: "נא למלא שם משתמש וסיסמה" }, { status: 400 });
+      return NextResponse.json({ error: t.missing }, { status: 400 });
     }
     if (String(password).length < 4) {
-      return NextResponse.json({ error: "הסיסמה חייבת להכיל לפחות 4 תווים" }, { status: 400 });
+      return NextResponse.json({ error: t.shortPassword }, { status: 400 });
     }
     const client = await createUser(String(username).trim(), String(password), {
       accountType: "individual",
@@ -37,7 +57,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ success: true, client });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "שגיאה ביצירת חשבון לקוח";
+    const message = err instanceof Error ? err.message : t.generic;
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

@@ -19,7 +19,9 @@ export async function createUser(
 ): Promise<User> {
   const existing = await findUserByUsername(username);
   if (existing) {
-    throw new Error("שם המשתמש כבר תפוס");
+    // Stable code, not user-facing text - the route/page catching this picks
+    // a Hebrew/English message for it based on the request's UI language.
+    throw new Error("USERNAME_TAKEN");
   }
   const passwordHash = bcrypt.hashSync(password, 10);
   const user = await insertUser(username, passwordHash, options);

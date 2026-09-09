@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import {
   TemplateCard,
   DEFAULT_TEMPLATE_FIELDS,
-  PHOTO_STYLE_LABEL,
   PHOTO_PLACEMENTS,
+  photoStyleLabel,
   type TemplateFields,
   type PhotoPlacement,
 } from "@/lib/templates";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
 import ImageCropModal from "@/components/ImageCropModal";
 import DesktopPhoneWrapper from "@/components/DesktopPhoneWrapper";
 
@@ -20,6 +21,71 @@ const PLACEMENT_ASPECT: Record<PhotoPlacement, number> = {
   footer: 2.4,
   side: 0.42,
   background: 0.62,
+};
+
+const COPY = {
+  he: {
+    wrapperTitleEdit: "עריכת ההזמנה",
+    wrapperTitleCreate: "יצירת הזמנה",
+    headingEdit: "עריכת ההזמנה",
+    headingCreate: "מילוי פרטים",
+    subheading: "העיצוב מתעדכן בזמן אמת מימין",
+    formTitle: "פרטי ההזמנה",
+    titleLine1: "שם ראשון (למשל: שם החתן / שם החוגג)",
+    titleLine2: "שם שני (אופציונלי - למשל שם הכלה)",
+    subtitle: "כותרת משנה",
+    dateText: "תאריך לתצוגה (למשל 3.7.2026)",
+    eventDateIso: "תאריך אמיתי (ליומן/RSVP)",
+    venueText: "מקום האירוע",
+    address: "כתובת מדוייקת (לניווט)",
+    addressPlaceholder: "לניווט ב-Waze",
+    ceremonyTime: "שעת קבלת פנים",
+    receptionTime: "שעת טקס / תחילת אירוע",
+    footerNote: "שורת סיום (למשל: נשמח לראותכם)",
+    photoPlacement: "מיקום התמונה בעיצוב",
+    photoLabel: "תמונה (אופציונלי)",
+    previewAlt: "תצוגה מקדימה",
+    uploadPrompt: "📤 לחצו כאן להעלאת תמונה",
+    recrop: "✂️ חיתוך מחדש",
+    removeImage: "🗑 הסרת תמונה",
+    errorNoName: "נא למלא לפחות שם אחד",
+    errorSave: "שגיאה בשמירת ההזמנה",
+    errorNetwork: "שגיאת רשת - נסה שוב",
+    saving: "שומר...",
+    submitEdit: "שמירת שינויים",
+    submitCreate: "סיימתי לעצב, בו נמשיך",
+  },
+  en: {
+    wrapperTitleEdit: "Edit invitation",
+    wrapperTitleCreate: "Create invitation",
+    headingEdit: "Edit invitation",
+    headingCreate: "Fill in details",
+    subheading: "The design updates live on the right",
+    formTitle: "Invitation details",
+    titleLine1: "First name (e.g. groom's name / guest of honor)",
+    titleLine2: "Second name (optional - e.g. bride's name)",
+    subtitle: "Subtitle",
+    dateText: "Display date (e.g. 3.7.2026)",
+    eventDateIso: "Actual date (for calendar/RSVP)",
+    venueText: "Event venue",
+    address: "Exact address (for navigation)",
+    addressPlaceholder: "For Waze navigation",
+    ceremonyTime: "Reception time",
+    receptionTime: "Ceremony / event start time",
+    footerNote: "Closing line (e.g. We'd love to see you)",
+    photoPlacement: "Photo placement in design",
+    photoLabel: "Photo (optional)",
+    previewAlt: "Preview",
+    uploadPrompt: "📤 Click here to upload a photo",
+    recrop: "✂️ Re-crop",
+    removeImage: "🗑 Remove photo",
+    errorNoName: "Please fill in at least one name",
+    errorSave: "Error saving the invitation",
+    errorNetwork: "Network error - try again",
+    saving: "Saving...",
+    submitEdit: "Save changes",
+    submitCreate: "Done designing, let's continue",
+  },
 };
 
 export default function TemplateFillForm({
@@ -40,6 +106,8 @@ export default function TemplateFillForm({
   initialEventDate?: string;
 }) {
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = COPY[locale];
   const [fields, setFields] = useState<TemplateFields>(
     initialFields ?? { ...DEFAULT_TEMPLATE_FIELDS, photoPlacement: photoStyle }
   );
@@ -84,7 +152,7 @@ export default function TemplateFillForm({
     setError("");
 
     if (!fields.titleLine1.trim()) {
-      setError("נא למלא לפחות שם אחד");
+      setError(t.errorNoName);
       return;
     }
 
@@ -105,47 +173,47 @@ export default function TemplateFillForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "שגיאה בשמירת ההזמנה");
+        setError(data.error || t.errorSave);
         setSubmitting(false);
         return;
       }
       router.push(isEdit ? "/dashboard" : `/i/${data.id}`);
     } catch {
-      setError("שגיאת רשת - נסה שוב");
+      setError(t.errorNetwork);
       setSubmitting(false);
     }
   }
 
   return (
-    <DesktopPhoneWrapper title={editInviteId ? "עריכת ההזמנה" : "יצירת הזמנה"}>
+    <DesktopPhoneWrapper title={editInviteId ? t.wrapperTitleEdit : t.wrapperTitleCreate}>
     <div className="tpl-fill-page">
       <div className="tpl-gallery-header">
-        <h1>{editInviteId ? "עריכת ההזמנה" : "מילוי פרטים"} - {templateLabel}</h1>
-        <p>העיצוב מתעדכן בזמן אמת מימין</p>
+        <h1>{editInviteId ? t.headingEdit : t.headingCreate} - {templateLabel}</h1>
+        <p>{t.subheading}</p>
       </div>
 
       <div className="tpl-fill-grid">
         <form className="tpl-fill-form" onSubmit={handleSubmit}>
-          <h2>פרטי ההזמנה</h2>
+          <h2>{t.formTitle}</h2>
 
           <div className="tpl-fill-field">
-            <label>שם ראשון (למשל: שם החתן / שם החוגג)</label>
+            <label>{t.titleLine1}</label>
             <input value={fields.titleLine1} onChange={(e) => update("titleLine1", e.target.value)} />
           </div>
           <div className="tpl-fill-field">
-            <label>שם שני (אופציונלי - למשל שם הכלה)</label>
+            <label>{t.titleLine2}</label>
             <input value={fields.titleLine2} onChange={(e) => update("titleLine2", e.target.value)} />
           </div>
           <div className="tpl-fill-field">
-            <label>כותרת משנה</label>
+            <label>{t.subtitle}</label>
             <input value={fields.subtitle} onChange={(e) => update("subtitle", e.target.value)} />
           </div>
           <div className="tpl-fill-field">
-            <label>תאריך לתצוגה (למשל 3.7.2026)</label>
+            <label>{t.dateText}</label>
             <input value={fields.dateText} onChange={(e) => update("dateText", e.target.value)} />
           </div>
           <div className="tpl-fill-field">
-            <label>תאריך אמיתי (ליומן/RSVP)</label>
+            <label>{t.eventDateIso}</label>
             {/* Uncontrolled (defaultValue, not value) on purpose - a controlled
                 date input forces React to re-assign .value on every render,
                 and on iOS Safari that programmatic write while the native
@@ -160,28 +228,28 @@ export default function TemplateFillForm({
             />
           </div>
           <div className="tpl-fill-field">
-            <label>מקום האירוע</label>
+            <label>{t.venueText}</label>
             <input value={fields.venueText} onChange={(e) => update("venueText", e.target.value)} />
           </div>
           <div className="tpl-fill-field">
-            <label>כתובת מדוייקת (לניווט)</label>
-            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="לניווט ב-Waze" />
+            <label>{t.address}</label>
+            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t.addressPlaceholder} />
           </div>
           <div className="tpl-fill-field">
-            <label>שעת קבלת פנים</label>
+            <label>{t.ceremonyTime}</label>
             <input value={fields.ceremonyTime} onChange={(e) => update("ceremonyTime", e.target.value)} />
           </div>
           <div className="tpl-fill-field">
-            <label>שעת טקס / תחילת אירוע</label>
+            <label>{t.receptionTime}</label>
             <input value={fields.receptionTime} onChange={(e) => update("receptionTime", e.target.value)} />
           </div>
           <div className="tpl-fill-field">
-            <label>שורת סיום (למשל: נשמח לראותכם)</label>
+            <label>{t.footerNote}</label>
             <input value={fields.footerNote} onChange={(e) => update("footerNote", e.target.value)} />
           </div>
 
           <div className="tpl-fill-field">
-            <label>מיקום התמונה בעיצוב</label>
+            <label>{t.photoPlacement}</label>
             <select
               className="inputs-fields"
               style={{ background: "#fff", color: "#222", border: "1px solid #d6d9de" }}
@@ -190,25 +258,25 @@ export default function TemplateFillForm({
             >
               {PHOTO_PLACEMENTS.map((p) => (
                 <option key={p} value={p}>
-                  {PHOTO_STYLE_LABEL[p]}
+                  {photoStyleLabel(p, locale)}
                 </option>
               ))}
             </select>
           </div>
 
           <div className="tpl-fill-field">
-            <label>תמונה (אופציונלי)</label>
+            <label>{t.photoLabel}</label>
             <label className="image-upload-area" style={{ display: "flex", minHeight: 90 }}>
               <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageChange} />
               {fields.imageDataUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={fields.imageDataUrl}
-                  alt="תצוגה מקדימה"
+                  alt={t.previewAlt}
                   style={{ maxWidth: "100%", maxHeight: 140, borderRadius: 8 }}
                 />
               ) : (
-                <span className="upload-label" style={{ color: "#4a5568" }}>📤 לחצו כאן להעלאת תמונה</span>
+                <span className="upload-label" style={{ color: "#4a5568" }}>{t.uploadPrompt}</span>
               )}
             </label>
             {fields.imageDataUrl && (
@@ -218,7 +286,7 @@ export default function TemplateFillForm({
                   onClick={() => setCropOpen(true)}
                   style={{ background: "none", border: "none", color: "#3f7ff0", cursor: "pointer", fontSize: ".85rem" }}
                 >
-                  ✂️ חיתוך מחדש
+                  {t.recrop}
                 </button>
                 <button
                   type="button"
@@ -228,7 +296,7 @@ export default function TemplateFillForm({
                   }}
                   style={{ background: "none", border: "none", color: "#e0473f", cursor: "pointer", fontSize: ".85rem" }}
                 >
-                  🗑 הסרת תמונה
+                  {t.removeImage}
                 </button>
               </div>
             )}
@@ -237,7 +305,7 @@ export default function TemplateFillForm({
           {error && <div className="alert alert-error">{error}</div>}
 
           <button type="submit" className="submit-btn" disabled={submitting}>
-            <span>{submitting ? "שומר..." : editInviteId ? "שמירת שינויים" : "סיימתי לעצב, בו נמשיך"}</span>
+            <span>{submitting ? t.saving : editInviteId ? t.submitEdit : t.submitCreate}</span>
             <span className="submit-btn-arrow">›</span>
           </button>
         </form>

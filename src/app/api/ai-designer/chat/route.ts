@@ -2,6 +2,20 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { callGeminiJson, GeminiConfigError, GeminiRequestError } from "@/lib/gemini";
 import { formatEventDate } from "@/lib/categoryFields";
+import { getServerLocale } from "@/lib/i18n/server";
+
+const MESSAGES = {
+  he: {
+    loginRequired: "יש להתחבר",
+    notConfigured: "יצירת עיצוב ב-AI לא הוגדרה עדיין במערכת (חסר מפתח API)",
+    unexpected: "שגיאה לא צפויה",
+  },
+  en: {
+    loginRequired: "Please log in",
+    notConfigured: "AI design generation is not configured yet (missing API key)",
+    unexpected: "Unexpected error",
+  },
+};
 
 // Replaces the old static guided-form (src/components/AiInviteGenerator.tsx)
 // with an actual back-and-forth: the model asks one simple, tap-friendly
@@ -100,9 +114,11 @@ function buildSystemInstruction(eventCategory: string | undefined, categoryField
 }
 
 export async function POST(req: Request) {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "יש להתחבר" }, { status: 401 });
+    return NextResponse.json({ error: t.loginRequired }, { status: 401 });
   }
 
   const body = await req.json().catch(() => null);
@@ -134,11 +150,11 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     if (err instanceof GeminiConfigError) {
-      return NextResponse.json({ error: "יצירת עיצוב ב-AI לא הוגדרה עדיין במערכת (חסר מפתח API)" }, { status: 503 });
+      return NextResponse.json({ error: t.notConfigured }, { status: 503 });
     }
     if (err instanceof GeminiRequestError) {
       return NextResponse.json({ error: err.message }, { status: 502 });
     }
-    return NextResponse.json({ error: "שגיאה לא צפויה" }, { status: 500 });
+    return NextResponse.json({ error: t.unexpected }, { status: 500 });
   }
 }

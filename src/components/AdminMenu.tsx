@@ -3,15 +3,32 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
 
-const ADMIN_LINKS = [
-  { href: "/admin", label: "ניהול משתמשים" },
-  { href: "/admin/leads", label: "לידים מהאתר" },
-];
+const COPY = {
+  he: {
+    links: [
+      { href: "/admin", label: "ניהול משתמשים" },
+      { href: "/admin/leads", label: "לידים מהאתר" },
+    ],
+    logout: "יציאה",
+    menuLabel: "תפריט ניהול",
+  },
+  en: {
+    links: [
+      { href: "/admin", label: "User management" },
+      { href: "/admin/leads", label: "Leads from the site" },
+    ],
+    logout: "Log out",
+    menuLabel: "Admin menu",
+  },
+};
 
 /** A single hamburger menu reused on every admin screen, so all admin
  *  sections stay reachable from one place instead of one-off back-links. */
 export default function AdminMenu() {
+  const { locale } = useLocale();
+  const t = COPY[locale];
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -43,19 +60,19 @@ export default function AdminMenu() {
         type="button"
         className="admin-menu-btn"
         onClick={() => setOpen((v) => !v)}
-        aria-label="תפריט ניהול"
+        aria-label={t.menuLabel}
       >
         ☰
       </button>
       {open && (
         <div className="admin-menu-dropdown">
-          {ADMIN_LINKS.map((link) => (
+          {t.links.map((link) => (
             <Link key={link.href} href={link.href} className="admin-menu-link" onClick={() => setOpen(false)}>
               {link.label}
             </Link>
           ))}
           <button type="button" className="admin-menu-link admin-menu-logout" onClick={handleLogout}>
-            יציאה
+            {t.logout}
           </button>
         </div>
       )}

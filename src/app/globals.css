@@ -64,6 +64,7 @@ body {
 .landing-page { direction: rtl; background: #f4f1ea; color: #2b2b2b; font-family: 'Assistant', sans-serif; }
 
 .landing-nav {
+  position: relative;
   display: flex; align-items: center; justify-content: center;
   max-width: 1200px; margin: 0 auto; padding: 28px 24px 0;
 }
@@ -76,6 +77,11 @@ body {
   text-decoration: none; font-weight: 600; font-size: .9rem; transition: opacity .2s ease;
 }
 .landing-nav-cta:hover { opacity: .82; }
+/* Pinned to the trailing edge of the header via a logical inset, so it sits
+   on the left in Hebrew (RTL) and flips to the right in English (LTR) -
+   the conventional spot for a language switcher in each direction. */
+.hero-nav-lang { position: absolute; inset-inline-end: 24px; top: 50%; transform: translateY(-50%); }
+.hero-nav .lang-switch-btn { color: #fff; }
 
 .landing-hero {
   max-width: 760px; margin: 0 auto; text-align: center;
@@ -1567,6 +1573,9 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   color: var(--viva-teal-deep); text-decoration: none;
 }
 .qr-download-link:hover { text-decoration: underline; }
+/* .qr-share-btn is a <button>, not an <a> like .qr-download-link above -
+   reset it back to that same plain-link look instead of default button chrome. */
+.qr-share-btn { background: none; border: none; padding: 0; font-family: inherit; cursor: pointer; }
 .gm-hall-qr-steps {
   list-style: none; counter-reset: qr-step; padding: 0; margin: 0; text-align: right;
   display: flex; flex-direction: column; gap: 14px;
@@ -1680,6 +1689,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .admin-header h1 { font-size: 1.6rem; font-weight: 800; color: #2b2b2b; }
 .admin-nav-link { color: var(--viva-teal-deep); font-weight: 700; text-decoration: none; }
 .admin-nav-link:hover { text-decoration: underline; }
+.admin-back-link { display: inline-block; margin-bottom: 14px; font-size: .95rem; }
 .admin-subheading { font-size: 1.2rem; font-weight: 800; margin: 34px 0 14px; color: #2b2b2b; }
 
 .admin-table-scroll { width: 100%; overflow-x: auto; border-radius: 14px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
@@ -2603,4 +2613,44 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 }
 .legal-todo { color: #c0392b; font-weight: 700; }
 .legal-fineprint { font-size: .85rem; color: #8a8a8a; margin-top: 26px; }
+
+/* =========================================================================
+   ENGLISH UI MODE — most page wrappers above just inherit direction from
+   the html dir attribute, set dynamically by RootLayout from the language
+   cookie, but a handful of product-UI page shells hardcode direction rtl
+   so they never depended on that before this feature existed. Flip those
+   back to ltr when the site language is English. The invitation-content
+   classes tpl-card and every tpl-star and ipc-panel template are left
+   alone on purpose - they render the event details the host typed in
+   Hebrew, which stays RTL no matter what the site UI language is set to.
+   ========================================================================= */
+html[dir="ltr"] .landing-page,
+html[dir="ltr"] .viva-intro,
+html[dir="ltr"] .auth-page,
+html[dir="ltr"] .create-page,
+html[dir="ltr"] .crop-modal-box,
+html[dir="ltr"] .tpl-gallery-page,
+html[dir="ltr"] .tpl-fill-page,
+html[dir="ltr"] .desktop-wrapper,
+html[dir="ltr"] .gm-page,
+html[dir="ltr"] .dash-page,
+html[dir="ltr"] .lookup-page,
+html[dir="ltr"] .admin-page,
+html[dir="ltr"] .welcome-alert-card,
+html[dir="ltr"] .lead-alert-card {
+  direction: ltr;
+}
+
+/* =========================================================================
+   LANGUAGE SWITCHER — Hebrew/English toggle, shown on the home page header
+   ========================================================================= */
+.lang-switch { display: inline-flex; align-items: center; gap: 8px; }
+.lang-switch-btn {
+  background: none; border: none; cursor: pointer; padding: 4px 2px;
+  font: inherit; font-weight: 600; font-size: .9rem; color: inherit; opacity: .6;
+  transition: opacity .15s ease;
+}
+.lang-switch-btn:hover { opacity: .85; }
+.lang-switch-btn.is-active { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
+.lang-switch-sep { opacity: .4; font-size: .85rem; }
 

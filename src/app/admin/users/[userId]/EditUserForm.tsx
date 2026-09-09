@@ -1,8 +1,32 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
+
+const COPY = {
+  he: {
+    updateError: "שגיאה בעדכון",
+    savedOk: "נשמר בהצלחה",
+    networkError: "שגיאת רשת",
+    username: "שם משתמש",
+    newPassword: "סיסמה חדשה (השאירו ריק כדי לא לשנות)",
+    saving: "שומר...",
+    save: "שמירת שינויים",
+  },
+  en: {
+    updateError: "Error updating user",
+    savedOk: "Saved successfully",
+    networkError: "Network error",
+    username: "Username",
+    newPassword: "New password (leave blank to keep it unchanged)",
+    saving: "Saving...",
+    save: "Save changes",
+  },
+};
 
 export default function EditUserForm({ userId, currentUsername }: { userId: number; currentUsername: string }) {
+  const { locale } = useLocale();
+  const t = COPY[locale];
   const [username, setUsername] = useState(currentUsername);
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -20,13 +44,13 @@ export default function EditUserForm({ userId, currentUsername }: { userId: numb
       });
       const data = await res.json();
       if (!res.ok) {
-        setMessage({ type: "error", text: data.error || "שגיאה בעדכון" });
+        setMessage({ type: "error", text: data.error || t.updateError });
       } else {
-        setMessage({ type: "ok", text: "נשמר בהצלחה" });
+        setMessage({ type: "ok", text: t.savedOk });
         setPassword("");
       }
     } catch {
-      setMessage({ type: "error", text: "שגיאת רשת" });
+      setMessage({ type: "error", text: t.networkError });
     } finally {
       setSaving(false);
     }
@@ -35,15 +59,15 @@ export default function EditUserForm({ userId, currentUsername }: { userId: numb
   return (
     <form className="admin-edit-form" onSubmit={handleSave}>
       <div className="admin-edit-field">
-        <label>שם משתמש</label>
+        <label>{t.username}</label>
         <input value={username} onChange={(e) => setUsername(e.target.value)} />
       </div>
       <div className="admin-edit-field">
-        <label>סיסמה חדשה (השאירו ריק כדי לא לשנות)</label>
+        <label>{t.newPassword}</label>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" />
       </div>
       <button type="submit" className="admin-save-btn" disabled={saving}>
-        {saving ? "שומר..." : "שמירת שינויים"}
+        {saving ? t.saving : t.save}
       </button>
       {message && <p className={`admin-edit-msg admin-edit-msg-${message.type}`}>{message.text}</p>}
     </form>

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { TEMPLATES } from "@/lib/templates";
+import { TEMPLATES, templateLabel } from "@/lib/templates";
+import { getServerLocale } from "@/lib/i18n/server";
 import TemplateFillForm from "./TemplateFillForm";
 
 export default async function TemplateFillPage({
@@ -14,10 +15,12 @@ export default async function TemplateFillPage({
     notFound();
   }
 
+  const locale = await getServerLocale();
+
   return (
     <TemplateFillForm
       templateId={template.id}
-      templateLabel={template.label}
+      templateLabel={templateLabel(template, locale)}
       photoStyle={template.photoStyle}
     />
   );

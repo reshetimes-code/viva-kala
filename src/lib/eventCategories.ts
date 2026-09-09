@@ -25,3 +25,23 @@ const ALL_EVENT_CATEGORIES: EventCategory[] = ["חתונה", "בר/בת מצוו
 export function isEventCategory(value: unknown): value is EventCategory {
   return typeof value === "string" && (ALL_EVENT_CATEGORIES as string[]).includes(value);
 }
+
+// EventCategory itself stays Hebrew - it's the value stored on every invite
+// in the DB, not UI copy, so changing it would be a data migration, not a
+// translation. This is purely a *display* label for English UI mode -
+// wherever a category name is shown to the person operating the site (the
+// template gallery filter, the photo-upload flow's category picker, ...),
+// look it up here instead of rendering the raw EventCategory string.
+const EVENT_CATEGORY_LABEL_EN: Record<EventCategory, string> = {
+  "חתונה": "Wedding",
+  "בר/בת מצווה": "Bar/Bat Mitzvah",
+  "בר מצווה": "Bar Mitzvah",
+  "בת מצווה": "Bat Mitzvah",
+  "חינה": "Henna",
+  "יום הולדת": "Birthday",
+  "אחר": "Other",
+};
+
+export function eventCategoryLabel(category: EventCategory, locale: "he" | "en"): string {
+  return locale === "en" ? EVENT_CATEGORY_LABEL_EN[category] : category;
+}

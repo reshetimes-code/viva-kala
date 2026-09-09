@@ -781,7 +781,9 @@ export async function adminUpdateUser(
 ): Promise<boolean> {
   if (updates.username) {
     const taken = await getPool().query("SELECT 1 FROM users WHERE id <> $1 AND username = $2", [userId, updates.username]);
-    if (taken.rows.length > 0) throw new Error("שם המשתמש כבר תפוס");
+    // Stable code, not user-facing text - the route/page catching this picks
+    // a Hebrew/English message for it based on the request's UI language.
+    if (taken.rows.length > 0) throw new Error("USERNAME_TAKEN");
   }
   const setClauses: string[] = [];
   const values: unknown[] = [];

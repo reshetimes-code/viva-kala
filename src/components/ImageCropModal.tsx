@@ -4,6 +4,24 @@ import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Cropper from "cropperjs";
 import "cropperjs/dist/cropper.css";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
+
+const COPY = {
+  he: {
+    title: "חיתוך התמונה",
+    hint: "גררו והתאימו את האזור - התמונה תיחתך במדוייק לגודל האזור שבו תוצג",
+    alt: "לחיתוך",
+    cancel: "ביטול",
+    confirm: "✓ אישור חיתוך",
+  },
+  en: {
+    title: "Crop the image",
+    hint: "Drag and adjust the area - the image will be cropped exactly to the size it's shown in",
+    alt: "To crop",
+    cancel: "Cancel",
+    confirm: "✓ Confirm crop",
+  },
+};
 
 interface Props {
   imageSrc: string;
@@ -16,6 +34,8 @@ interface Props {
 export default function ImageCropModal({ imageSrc, aspectRatio, roundPreview, onConfirm, onCancel }: Props) {
   const imgRef = useRef<HTMLImageElement>(null);
   const cropperRef = useRef<Cropper | null>(null);
+  const { locale } = useLocale();
+  const t = COPY[locale];
 
   useEffect(() => {
     if (!imgRef.current) return;

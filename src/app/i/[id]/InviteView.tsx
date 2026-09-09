@@ -8,8 +8,185 @@ import { buildHeadline, buildExtraDetailLines, formatEventDate } from "@/lib/cat
 import type { EventCategory } from "@/lib/eventCategories";
 import type { TextStyle } from "@/lib/textStyleHeuristic";
 import InvitePhotoCard from "@/components/InvitePhotoCard";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
 
 const DEFAULT_CTA_COLORS = { bg: "rgba(20,20,25,0.72)", color: "#ffffff" };
+
+// All guest-facing UI chrome for this page - everything EXCEPT the two
+// externally-sent pieces called out at their own call sites (the WhatsApp
+// share message body, and the canvas-drawn share-image text), which stay
+// Hebrew regardless of the viewer's chosen UI language since they're read
+// by the host's actual guests, not by whoever is looking at this screen.
+const COPY = {
+  he: {
+    closeAria: "סגירה",
+    welcomeSubtitle: "תודה שנכנסתם להזמנה!",
+    welcomeEmphasisPre: "כדי לשמור לכם מקום מסודר ",
+    welcomeEmphasisHighlight: "בשולחן",
+    welcomeEmphasisPost: " באירוע - אנא אשרו הגעה 🙏",
+    welcomeCta: "מעבר להזמנה",
+    leadThanksFinished: "בהצלחה באירוע הבא שלכם!",
+    leadTourPromptLine1: "רוצים להכיר אותנו קצת יותר?",
+    leadTourPromptLine2: "מוזמנים לבקר באתר האולם:",
+    leadTourBtn: "למעבר לאתר האולם 🌐",
+    leadTourThanks: "תודה",
+    leadTourNoThanks: "לא תודה",
+    leadRepContact: "נציג מטעם האולם יצור קשר בקרוב...",
+    leadConfirmDateQ: "זה התאריך?",
+    leadConfirmYes: "✓ אישור",
+    leadConfirmBack: "התבלבלתי",
+    leadDateQ: "מה תאריך האירוע?",
+    leadEventTypeQ: "סוג האירוע?",
+    leadEventTypePlaceholder: "בחרו סוג אירוע",
+    eventTypeWedding: "חתונה",
+    eventTypeBarMitzvah: "בר מצווה",
+    eventTypeBrit: "ברית",
+    eventTypeOther: "אחר",
+    leadVenueQ: "איזה אולם?",
+    leadVenuePlaceholder: "שם האולם",
+    leadFinish: "סיים",
+    leadSend: "שלחו",
+    leadBenefitTitle: "רגע לפני שממשיכים...",
+    leadBenefitPrompt: "חוגגים אירוע בקרוב? תרצו לקבל הטבה מיוחדת מאיתנו?",
+    leadWantsYes: "כן, רוצה!",
+    leadWantsNo: "לא, תודה",
+    tourTitle: "אתר האולם",
+    tourBack: "← חזור להזמנה",
+    imageAlt: "הזמנה",
+    pullCta: "אשרו הגעה כאן",
+    backToInvite: "צפייה בהזמנה",
+    thanksYes: "תודה שאישרתם הגעה!",
+    thanksNo: "תודה על התגובה",
+    atHour: "בשעה",
+    navWaze: "ניווט ב-Waze",
+    navMaps: "ניווט ב-Maps",
+    rsvpTitle: "אנא אשרו הגעתכם",
+    rsvpSubtitle: "ונוכל לסדר לכם מקום שמור בשולחן",
+    firstNameLabel: "שם פרטי *",
+    lastNameLabel: "שם המשפחה *",
+    phoneLabel: "טלפון (ספרות בלבד) *",
+    phonePlaceholder: "05XXXXXXXX",
+    phoneInvalid: "מספר טלפון לא תקין (חייב 10 ספרות)",
+    guestCountLabel: "כמה מגיעים?",
+    decreaseGuestAria: "הפחתת אורח",
+    increaseGuestAria: "הוספת אורח",
+    rsvpChoiceLabel: "מגיעים לאירוע? (הבחירה שולחת את הטופס)",
+    rsvpNo: "לא",
+    rsvpYes: "כן",
+    ownerBackTitle: "חזרה לפאנל הניהול",
+    shareFab: "📤 שתפו",
+    shareTitle: "שתפו את ההזמנה",
+    shareImageBadge: "⭐ הכי משכנע",
+    shareImageBusy: "מכינים תמונה...",
+    shareImageCta: "📸 שיתוף עם תמונה גדולה",
+    shareWhatsapp: "וואטסאפ",
+    shareWhatsappContact: "וואטסאפ זר",
+    shareSms: "SMS",
+    shareCopyLink: "העתקת קישור",
+    shareWhatsappTitle: "שליחה בוואטסאפ",
+    whatsNumberLabel: "מספר הטלפון של איש הקשר",
+    whatsNumberPlaceholder: "05X-XXXXXXX",
+    whatsNumberCancel: "ביטול",
+    whatsNumberSubmit: "פתחו וואטסאפ",
+    missingDetailsTitle: "חסרים פרטים",
+    missingDetailsText: "נא למלא שם פרטי, שם משפחה וטלפון כדי לאשר הגעה",
+    gotIt: "הבנתי",
+    invalidPhoneTitle: "מספר טלפון לא תקין",
+    invalidPhoneText: "נא להזין מספר טלפון תקין בן 10 ספרות (לדוגמה: 0501234567)",
+    rsvpSaveFailedTitle: "לא הצלחנו לשמור את אישור ההגעה",
+    rsvpSaveFailedText: "בדקו את הפרטים ונסו שוב, או פנו לצוות האירוע",
+    rsvpSavedTitle: "שמרנו לכם את השולחן!",
+    rsvpSavedText: "באולם יוצג לכם מיקום השולחן השמור עבורכם",
+    great: "מעולה",
+    imageDownloadedTitle: "התמונה ירדה למחשב שלכם",
+    imageDownloadedText: "עכשיו פותחים וואטסאפ עם ההודעה מוכנה - צרפו אליה את התמונה שהורדתם",
+    desktopTitle: "ההזמנה הדיגיטלית שלכם",
+  },
+  en: {
+    closeAria: "Close",
+    welcomeSubtitle: "Thanks for opening the invitation!",
+    welcomeEmphasisPre: "To save you a proper seat ",
+    welcomeEmphasisHighlight: "at the table",
+    welcomeEmphasisPost: " for the event - please confirm your attendance 🙏",
+    welcomeCta: "Go to invitation",
+    leadThanksFinished: "Good luck with your own event!",
+    leadTourPromptLine1: "Want to get to know us a bit more?",
+    leadTourPromptLine2: "Feel free to visit the venue's website:",
+    leadTourBtn: "Visit venue website 🌐",
+    leadTourThanks: "Thanks",
+    leadTourNoThanks: "No thanks",
+    leadRepContact: "A venue representative will be in touch soon...",
+    leadConfirmDateQ: "Is this the date?",
+    leadConfirmYes: "✓ Confirm",
+    leadConfirmBack: "Let me redo that",
+    leadDateQ: "What's the event date?",
+    leadEventTypeQ: "Type of event?",
+    leadEventTypePlaceholder: "Choose event type",
+    eventTypeWedding: "Wedding",
+    eventTypeBarMitzvah: "Bar/Bat Mitzvah",
+    eventTypeBrit: "Brit",
+    eventTypeOther: "Other",
+    leadVenueQ: "Which venue?",
+    leadVenuePlaceholder: "Venue name",
+    leadFinish: "Finish",
+    leadSend: "Send",
+    leadBenefitTitle: "Just before you go...",
+    leadBenefitPrompt: "Celebrating an event soon? Want a special offer from us?",
+    leadWantsYes: "Yes, I'd love that!",
+    leadWantsNo: "No, thanks",
+    tourTitle: "Venue website",
+    tourBack: "← Back to invitation",
+    imageAlt: "Invitation",
+    pullCta: "Confirm attendance here",
+    backToInvite: "View invitation",
+    thanksYes: "Thanks for confirming your attendance!",
+    thanksNo: "Thanks for your response",
+    atHour: "at",
+    navWaze: "Navigate with Waze",
+    navMaps: "Navigate with Maps",
+    rsvpTitle: "Please confirm your attendance",
+    rsvpSubtitle: "So we can arrange a reserved seat for you at the table",
+    firstNameLabel: "First name *",
+    lastNameLabel: "Last name *",
+    phoneLabel: "Phone (digits only) *",
+    phonePlaceholder: "05XXXXXXXX",
+    phoneInvalid: "Invalid phone number (must be 10 digits)",
+    guestCountLabel: "How many are coming?",
+    decreaseGuestAria: "Decrease guest count",
+    increaseGuestAria: "Increase guest count",
+    rsvpChoiceLabel: "Attending the event? (your choice submits the form)",
+    rsvpNo: "No",
+    rsvpYes: "Yes",
+    ownerBackTitle: "Back to management panel",
+    shareFab: "📤 Share",
+    shareTitle: "Share the invitation",
+    shareImageBadge: "⭐ Most persuasive",
+    shareImageBusy: "Preparing image...",
+    shareImageCta: "📸 Share with large image",
+    shareWhatsapp: "WhatsApp",
+    shareWhatsappContact: "WhatsApp (other number)",
+    shareSms: "SMS",
+    shareCopyLink: "Copy link",
+    shareWhatsappTitle: "Send via WhatsApp",
+    whatsNumberLabel: "Contact's phone number",
+    whatsNumberPlaceholder: "05X-XXXXXXX",
+    whatsNumberCancel: "Cancel",
+    whatsNumberSubmit: "Open WhatsApp",
+    missingDetailsTitle: "Missing details",
+    missingDetailsText: "Please fill in first name, last name and phone to confirm attendance",
+    gotIt: "Got it",
+    invalidPhoneTitle: "Invalid phone number",
+    invalidPhoneText: "Please enter a valid 10-digit phone number (e.g. 0501234567)",
+    rsvpSaveFailedTitle: "We couldn't save your RSVP",
+    rsvpSaveFailedText: "Please check the details and try again, or contact the event team",
+    rsvpSavedTitle: "We've saved your table!",
+    rsvpSavedText: "Your reserved table location will be shown at the venue",
+    great: "Great",
+    imageDownloadedTitle: "The image downloaded to your device",
+    imageDownloadedText: "Now opening WhatsApp with the message ready - attach the image you downloaded to it",
+    desktopTitle: "Your digital invitation",
+  },
+} as const;
 
 interface Props {
   id: string;
@@ -81,6 +258,9 @@ export default function InviteView({
   leadVideoId,
   leadTourUrl,
 }: Props) {
+  const { locale } = useLocale();
+  const t = COPY[locale];
+
   // Only the three tailored categories (wedding/bar-bat-mitzvah/henna) have
   // enough structured data for a real headline - everything else keeps the
   // original plain-photo view unchanged (no regression for older invites).
@@ -383,9 +563,9 @@ export default function InviteView({
     if (!guestName.trim() || !familyName.trim() || !phone.trim()) {
       Swal.fire({
         icon: "warning",
-        title: "חסרים פרטים",
-        text: "נא למלא שם פרטי, שם משפחה וטלפון כדי לאשר הגעה",
-        confirmButtonText: "הבנתי",
+        title: t.missingDetailsTitle,
+        text: t.missingDetailsText,
+        confirmButtonText: t.gotIt,
         confirmButtonColor: "#d4af7a",
       });
       return;
@@ -397,9 +577,9 @@ export default function InviteView({
     if (phone.replace(/\D/g, "").length !== 10) {
       Swal.fire({
         icon: "warning",
-        title: "מספר טלפון לא תקין",
-        text: "נא להזין מספר טלפון תקין בן 10 ספרות (לדוגמה: 0501234567)",
-        confirmButtonText: "הבנתי",
+        title: t.invalidPhoneTitle,
+        text: t.invalidPhoneText,
+        confirmButtonText: t.gotIt,
         confirmButtonColor: "#d4af7a",
       });
       return;
@@ -428,9 +608,9 @@ export default function InviteView({
       if (!res.ok) {
         await Swal.fire({
           icon: "warning",
-          title: data?.error || "לא הצלחנו לשמור את אישור ההגעה",
-          text: data?.detail || "בדקו את הפרטים ונסו שוב, או פנו לצוות האירוע",
-          confirmButtonText: "הבנתי",
+          title: data?.error || t.rsvpSaveFailedTitle,
+          text: data?.detail || t.rsvpSaveFailedText,
+          confirmButtonText: t.gotIt,
           confirmButtonColor: "#d4af7a",
         });
         return;
@@ -439,9 +619,9 @@ export default function InviteView({
       if (attending) {
         await Swal.fire({
           icon: "success",
-          title: "שמרנו לכם את השולחן!",
-          text: "באולם יוצג לכם מיקום השולחן השמור עבורכם",
-          confirmButtonText: "מעולה",
+          title: t.rsvpSavedTitle,
+          text: t.rsvpSavedText,
+          confirmButtonText: t.great,
           confirmButtonColor: "#d4af7a",
           background: "#1f2a33",
           color: "#fff",
@@ -655,9 +835,9 @@ export default function InviteView({
         setTimeout(() => URL.revokeObjectURL(url), 10000);
         await Swal.fire({
           icon: "info",
-          title: "התמונה ירדה למחשב שלכם",
-          text: "עכשיו פותחים וואטסאפ עם ההודעה מוכנה - צרפו אליה את התמונה שהורדתם",
-          confirmButtonText: "הבנתי",
+          title: t.imageDownloadedTitle,
+          text: t.imageDownloadedText,
+          confirmButtonText: t.gotIt,
           confirmButtonColor: "#d4af7a",
         });
       }
@@ -688,7 +868,7 @@ export default function InviteView({
     return (
       <div className="desktop-wrapper">
         <div className="mobile-frame">
-          <div className="desktop-title">ההזמנה הדיגיטלית שלכם</div>
+          <div className="desktop-title">{t.desktopTitle}</div>
           <div className="side-button-right" />
           <div className="side-button-left-1" />
           <div className="side-button-left-2" />
@@ -711,16 +891,16 @@ export default function InviteView({
               type="button"
               className="welcome-alert-close"
               onClick={() => setShowWelcomeAlert(false)}
-              aria-label="סגירה"
+              aria-label={t.closeAria}
             >
               ×
             </button>
-            <h3 className="welcome-alert-subtitle">תודה שנכנסתם להזמנה!</h3>
+            <h3 className="welcome-alert-subtitle">{t.welcomeSubtitle}</h3>
             <p className="welcome-alert-emphasis">
-              כדי לשמור לכם מקום מסודר <span className="welcome-alert-highlight">בשולחן</span> באירוע - אנא אשרו הגעה 🙏
+              {t.welcomeEmphasisPre}<span className="welcome-alert-highlight">{t.welcomeEmphasisHighlight}</span>{t.welcomeEmphasisPost}
             </p>
             <button type="button" className="welcome-alert-cta" onClick={() => setShowWelcomeAlert(false)}>
-              מעבר להזמנה
+              {t.welcomeCta}
             </button>
           </div>
         </div>
@@ -766,11 +946,11 @@ export default function InviteView({
             {leadFinished ? (
               <>
                 <div className="lead-alert-icon">✨</div>
-                <p className="lead-alert-thanks">בהצלחה באירוע הבא שלכם!</p>
+                <p className="lead-alert-thanks">{t.leadThanksFinished}</p>
                 <p className="welcome-alert-emphasis lead-tour-prompt" style={{ marginTop: 6 }}>
-                  רוצים להכיר אותנו קצת יותר?
+                  {t.leadTourPromptLine1}
                   <br />
-                  מוזמנים לבקר באתר האולם:
+                  {t.leadTourPromptLine2}
                 </p>
                 <button
                   type="button"
@@ -781,10 +961,10 @@ export default function InviteView({
                     setTourOpen(true);
                   }}
                 >
-                  למעבר לאתר האולם 🌐
+                  {t.leadTourBtn}
                 </button>
                 <button type="button" className="lead-alert-no" style={{ width: "100%", marginTop: 10 }} onClick={declineLead}>
-                  {tourVisited ? "תודה" : "לא תודה"}
+                  {tourVisited ? t.leadTourThanks : t.leadTourNoThanks}
                 </button>
               </>
             ) : leadWantsEvent === true ? (
@@ -793,24 +973,24 @@ export default function InviteView({
                   {leadPopupSent ? (
                     <div className="lead-video-q lead-video-q-question">
                       <div className="lead-video-thanks">
-                        <p className="lead-alert-thanks">נציג מטעם האולם יצור קשר בקרוב...</p>
+                        <p className="lead-alert-thanks">{t.leadRepContact}</p>
                       </div>
                     </div>
                   ) : (
                     <div key={`${leadStep}-${leadStepPhase}`} className={`lead-video-q lead-video-q-${leadStepPhase}`}>
                       {leadStepPhase === "confirm" ? (
                         <div className="lead-video-confirm">
-                          <p className="lead-video-picked">זה התאריך? {leadPickedText}</p>
+                          <p className="lead-video-picked">{t.leadConfirmDateQ} {leadPickedText}</p>
                           <div className="lead-video-confirm-row">
                             <button type="button" className="lead-video-confirm-btn" onClick={confirmLeadDate}>
-                              ✓ אישור
+                              {t.leadConfirmYes}
                             </button>
                             <button
                               type="button"
                               className="lead-video-confirm-btn lead-video-confirm-btn-secondary"
                               onClick={backToDatePicker}
                             >
-                              התבלבלתי
+                              {t.leadConfirmBack}
                             </button>
                           </div>
                         </div>
@@ -818,7 +998,7 @@ export default function InviteView({
                         <p className="lead-video-picked">✓ {leadPickedText}</p>
                       ) : leadStep === 0 ? (
                         <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
-                          <label>מה תאריך האירוע?</label>
+                          <label>{t.leadDateQ}</label>
                           {/* iOS Safari fires a premature onChange with today's
                               date the moment an empty date input opens - before
                               the user has picked anything. Reacting to that by
@@ -854,21 +1034,21 @@ export default function InviteView({
                         </div>
                       ) : leadStep === 1 ? (
                         <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
-                          <label>סוג האירוע?</label>
+                          <label>{t.leadEventTypeQ}</label>
                           <select value={leadEventType} onChange={(e) => handleLeadTypePicked(e.target.value)}>
-                            <option value="">בחרו סוג אירוע</option>
-                            <option value="חתונה">חתונה</option>
-                            <option value="בר מצווה">בר מצווה</option>
-                            <option value="ברית">ברית</option>
-                            <option value="אחר">אחר</option>
+                            <option value="">{t.leadEventTypePlaceholder}</option>
+                            <option value="חתונה">{t.eventTypeWedding}</option>
+                            <option value="בר מצווה">{t.eventTypeBarMitzvah}</option>
+                            <option value="ברית">{t.eventTypeBrit}</option>
+                            <option value="אחר">{t.eventTypeOther}</option>
                           </select>
                         </div>
                       ) : (
                         <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
-                          <label>איזה אולם?</label>
+                          <label>{t.leadVenueQ}</label>
                           <input
                             type="text"
-                            placeholder="שם האולם"
+                            placeholder={t.leadVenuePlaceholder}
                             value={leadVenue}
                             onChange={(e) => setLeadVenue(e.target.value)}
                           />
@@ -884,7 +1064,7 @@ export default function InviteView({
                     style={{ width: "100%", marginTop: 16 }}
                     onClick={finishLeadFlow}
                   >
-                    סיים
+                    {t.leadFinish}
                   </button>
                 ) : (
                   leadStep === 2 &&
@@ -896,16 +1076,16 @@ export default function InviteView({
                       disabled={leadPopupSending}
                       onClick={sendLeadFromRsvp}
                     >
-                      שלחו
+                      {t.leadSend}
                     </button>
                   )
                 )}
               </>
             ) : (
               <>
-                <h3 className="welcome-alert-subtitle lead-benefit-title">רגע לפני שממשיכים...</h3>
+                <h3 className="welcome-alert-subtitle lead-benefit-title">{t.leadBenefitTitle}</h3>
                 <p className="welcome-alert-emphasis lead-benefit-prompt">
-                  חוגגים אירוע בקרוב? תרצו לקבל הטבה מיוחדת מאיתנו?
+                  {t.leadBenefitPrompt}
                 </p>
                 <div className="lead-alert-row">
                   {/* "לא" needs no follow-up step at all - straight back to
@@ -916,10 +1096,10 @@ export default function InviteView({
                       top, "לא" below it - not side by side - so the primary
                       action is the one that's hard to miss. */}
                   <button type="button" className="lead-alert-yes" onClick={handleWantsEventClick}>
-                    כן, רוצה!
+                    {t.leadWantsYes}
                   </button>
                   <button type="button" className="lead-alert-no" onClick={declineLead}>
-                    לא, תודה
+                    {t.leadWantsNo}
                   </button>
                 </div>
               </>
@@ -933,12 +1113,12 @@ export default function InviteView({
           <iframe
             className="tour-modal-iframe"
             src={leadTourUrl}
-            title="אתר האולם"
+            title={t.tourTitle}
             allow="accelerometer; gyroscope; fullscreen"
             allowFullScreen
           />
           <button type="button" className="tour-modal-back-btn" onClick={() => setTourOpen(false)}>
-            ← חזור להזמנה
+            {t.tourBack}
           </button>
         </div>
       )}
@@ -958,7 +1138,7 @@ export default function InviteView({
               <InvitePhotoCard
                 imageUrl={imageUrl}
                 headline={photoCardHeadline}
-                dateText={[eventDate && formatEventDate(eventDate), eventStart && `בשעה ${eventStart}`].filter(Boolean).join("\n")}
+                dateText={[eventDate && formatEventDate(eventDate), eventStart && `${t.atHour} ${eventStart}`].filter(Boolean).join("\n")}
                 venueText={address}
                 extraLines={buildExtraDetailLines(eventCategory, categoryFields)}
                 textStyle={textStyle}
@@ -984,7 +1164,7 @@ export default function InviteView({
                   style={{ background: "linear-gradient(to bottom, #4c6b85 0%, #4c6b85 34%, #323a3c 66%, #323a3c 100%)" }}
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="blank-image blank-image-fill" src={imageUrl} alt="הזמנה" />
+                <img className="blank-image blank-image-fill" src={imageUrl} alt={t.imageAlt} />
               </>
             ) : (
               <>
@@ -993,7 +1173,7 @@ export default function InviteView({
                   style={{ background: "linear-gradient(to bottom, #4c6b85 0%, #4c6b85 34%, #323a3c 66%, #323a3c 100%)" }}
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="blank-image" src={imageUrl} alt="הזמנה" />
+                <img className="blank-image" src={imageUrl} alt={t.imageAlt} />
                 <div className="blank-fade" />
               </>
             )}
@@ -1010,7 +1190,7 @@ export default function InviteView({
                 <i className="a1">▲</i>
                 <i className="a2">▲</i>
               </span>
-              <span>אשרו הגעה כאן</span>
+              <span>{t.pullCta}</span>
             </button>
           )}
         </section>
@@ -1031,7 +1211,7 @@ export default function InviteView({
                 <i className="a1">▲</i>
                 <i className="a2">▲</i>
               </span>
-              <span className="back-to-inv-label">צפייה בהזמנה</span>
+              <span className="back-to-inv-label">{t.backToInvite}</span>
             </button>
 
             <div className="rsvp-card">
@@ -1040,44 +1220,44 @@ export default function InviteView({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img className="rsvp-thanks-image" src="/party.png" alt="" aria-hidden="true" />
                   <p className="rsvp-thanks">
-                    {submitted === "yes" ? "תודה שאישרתם הגעה!" : "תודה על התגובה"}
+                    {submitted === "yes" ? t.thanksYes : t.thanksNo}
                   </p>
                   {headline && <p className="rsvp-thanks-headline">{headline}</p>}
                   {eventDate && (
                     <p className="rsvp-thanks-date">
-                      {formatEventDate(eventDate)} {eventStart && `בשעה ${eventStart}`}
+                      {formatEventDate(eventDate)} {eventStart && `${t.atHour} ${eventStart}`}
                     </p>
                   )}
                   {showNavBtn && address && (
                     <div className="rsvp-thanks-nav-row">
                       <a href={wazeUrl(address)} target="_blank" rel="noopener noreferrer" className="rsvp-thanks-nav-btn rsvp-thanks-waze">
-                        ניווט ב-Waze
+                        {t.navWaze}
                       </a>
                       <a href={googleMapsUrl(address)} target="_blank" rel="noopener noreferrer" className="rsvp-thanks-nav-btn rsvp-thanks-maps">
-                        ניווט ב-Maps
+                        {t.navMaps}
                       </a>
                     </div>
                   )}
                 </div>
               ) : (
                 <>
-                  <h2 className="rsvp-title">אנא אשרו הגעתכם</h2>
-                  <p className="rsvp-subtitle">ונוכל לסדר לכם מקום שמור בשולחן</p>
+                  <h2 className="rsvp-title">{t.rsvpTitle}</h2>
+                  <p className="rsvp-subtitle">{t.rsvpSubtitle}</p>
 
                   <div className="rsvp-field">
-                    <label>שם פרטי *</label>
+                    <label>{t.firstNameLabel}</label>
                     <input value={guestName} onChange={(e) => setGuestName(e.target.value)} required />
                   </div>
                   <div className="rsvp-field">
-                    <label>שם המשפחה *</label>
+                    <label>{t.lastNameLabel}</label>
                     <input value={familyName} onChange={(e) => setFamilyName(e.target.value)} required />
                   </div>
                   <div className="rsvp-field">
-                    <label>טלפון (ספרות בלבד) *</label>
+                    <label>{t.phoneLabel}</label>
                     <input
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="05XXXXXXXX"
+                      placeholder={t.phonePlaceholder}
                       inputMode="numeric"
                       required
                     />
@@ -1087,17 +1267,17 @@ export default function InviteView({
                         flagging the instant it's wrong instead of only
                         after "כן"/"לא" is tapped. */}
                     {phone.trim() && phone.replace(/\D/g, "").length !== 10 && (
-                      <p className="rsvp-field-error">מספר טלפון לא תקין (חייב 10 ספרות)</p>
+                      <p className="rsvp-field-error">{t.phoneInvalid}</p>
                     )}
                   </div>
                   <div className="rsvp-field">
-                    <label>כמה מגיעים?</label>
+                    <label>{t.guestCountLabel}</label>
                     <div className="rsvp-stepper">
                       <button
                         type="button"
                         className="rsvp-stepper-btn"
                         onClick={() => setGuestCount((n) => Math.max(1, n - 1))}
-                        aria-label="הפחתת אורח"
+                        aria-label={t.decreaseGuestAria}
                       >
                         −
                       </button>
@@ -1106,13 +1286,13 @@ export default function InviteView({
                         type="button"
                         className="rsvp-stepper-btn"
                         onClick={() => setGuestCount((n) => Math.min(20, n + 1))}
-                        aria-label="הוספת אורח"
+                        aria-label={t.increaseGuestAria}
                       >
                         +
                       </button>
                     </div>
                   </div>
-                  <p className="rsvp-choice-label">מגיעים לאירוע? (הבחירה שולחת את הטופס)</p>
+                  <p className="rsvp-choice-label">{t.rsvpChoiceLabel}</p>
                   <div className="rsvp-choice-row">
                     <button
                       type="button"
@@ -1120,7 +1300,7 @@ export default function InviteView({
                       disabled={sending}
                       onClick={() => submitRsvp(false)}
                     >
-                      לא
+                      {t.rsvpNo}
                     </button>
                     <button
                       type="button"
@@ -1128,7 +1308,7 @@ export default function InviteView({
                       disabled={sending}
                       onClick={() => submitRsvp(true)}
                     >
-                      כן
+                      {t.rsvpYes}
                     </button>
                   </div>
                 </>
@@ -1139,7 +1319,7 @@ export default function InviteView({
       </div>
 
       {isOwner && (
-        <a href={`/dashboard/${id}/guests`} className="owner-back-fab" title="חזרה לפאנל הניהול">
+        <a href={`/dashboard/${id}/guests`} className="owner-back-fab" title={t.ownerBackTitle}>
           🛠️
         </a>
       )}
@@ -1154,7 +1334,7 @@ export default function InviteView({
         className={`blank-share-fab${showRsvp ? " blank-share-fab-top" : ""}`}
         onClick={() => setShareOpen(true)}
       >
-        📤 שתפו
+        {t.shareFab}
       </button>
 
       <div className={`blank-share-modal${shareOpen ? " open" : ""}`} onClick={() => setShareOpen(false)}>
@@ -1162,7 +1342,7 @@ export default function InviteView({
           <button type="button" className="blank-share-close" onClick={() => setShareOpen(false)}>
             ×
           </button>
-          <div className="blank-share-title">שתפו את ההזמנה</div>
+          <div className="blank-share-title">{t.shareTitle}</div>
           {wantRsvp && (
             <button
               type="button"
@@ -1170,22 +1350,22 @@ export default function InviteView({
               onClick={shareWithImage}
               disabled={shareImageBusy}
             >
-              <span className="share-tile-image-badge">⭐ הכי משכנע</span>
-              <span>{shareImageBusy ? "מכינים תמונה..." : "📸 שיתוף עם תמונה גדולה"}</span>
+              <span className="share-tile-image-badge">{t.shareImageBadge}</span>
+              <span>{shareImageBusy ? t.shareImageBusy : t.shareImageCta}</span>
             </button>
           )}
           <div className="share-tile-grid">
             <a className="share-tile share-tile-whatsapp" href={`https://wa.me/?text=${shareText}`} target="_blank" rel="noopener noreferrer">
-              וואטסאפ
+              {t.shareWhatsapp}
             </a>
             <button type="button" className="share-tile share-tile-whatsapp-contact" onClick={openWhatsNumberModal}>
-              וואטסאפ זר
+              {t.shareWhatsappContact}
             </button>
             <a className="share-tile share-tile-sms" href={`sms:?&body=${shareText}`}>
               SMS
             </a>
             <button type="button" className="share-tile share-tile-copy" onClick={copyLink}>
-              העתקת קישור
+              {t.shareCopyLink}
             </button>
           </div>
         </div>
@@ -1199,23 +1379,23 @@ export default function InviteView({
           <button type="button" className="blank-share-close" onClick={() => setWhatsNumberOpen(false)}>
             ×
           </button>
-          <div className="blank-share-title">שליחה בוואטסאפ</div>
+          <div className="blank-share-title">{t.shareWhatsappTitle}</div>
           <form className="whats-number-form" onSubmit={submitWhatsNumber}>
-            <label className="whats-number-label">מספר הטלפון של איש הקשר</label>
+            <label className="whats-number-label">{t.whatsNumberLabel}</label>
             <input
               className="whats-number-input"
               value={whatsNumberValue}
               onChange={(e) => setWhatsNumberValue(e.target.value)}
-              placeholder="05X-XXXXXXX"
+              placeholder={t.whatsNumberPlaceholder}
               inputMode="numeric"
               autoFocus
             />
             <div className="whats-number-actions">
               <button type="button" className="whats-number-cancel" onClick={() => setWhatsNumberOpen(false)}>
-                ביטול
+                {t.whatsNumberCancel}
               </button>
               <button type="submit" className="whats-number-submit">
-                פתחו וואטסאפ
+                {t.whatsNumberSubmit}
               </button>
             </div>
           </form>

@@ -10,12 +10,50 @@ import AdminMenu from "@/components/AdminMenu";
 import ImpersonateButton from "@/components/ImpersonateButton";
 import DeleteUserButton from "@/components/DeleteUserButton";
 import QrCode from "@/components/QrCode";
+import { getServerLocale } from "@/lib/i18n/server";
+
+const COPY = {
+  he: {
+    backLink: "← ניהול משתמשים",
+    generalInfo: "פרטים כלליים",
+    joined: (date: string) => `נרשם ב-${date}`,
+    designsCreated: "עיצובים שיצר",
+    aiAttempts: "נסיונות עיצוב ב-AI",
+    invitesHeading: (count: number) => `הזמנות (${count})`,
+    noDate: "אין תאריך",
+    responses: "תגובות",
+    attending: "אישרו הגעה",
+    totalGuests: 'סה"כ אורחים',
+    tables: "שולחנות",
+    view: "צפייה ←",
+    noInvites: "המשתמש הזה עדיין לא יצר הזמנות.",
+    dateLocale: "he-IL",
+  },
+  en: {
+    backLink: "← User management",
+    generalInfo: "General info",
+    joined: (date: string) => `Joined on ${date}`,
+    designsCreated: "Designs created",
+    aiAttempts: "AI design attempts",
+    invitesHeading: (count: number) => `Invites (${count})`,
+    noDate: "No date",
+    responses: "Responses",
+    attending: "Confirmed attending",
+    totalGuests: "Total guests",
+    tables: "Tables",
+    view: "View ←",
+    noInvites: "This user hasn't created any invites yet.",
+    dateLocale: "en-US",
+  },
+};
 
 export default async function AdminUserDetailPage({
   params,
 }: {
   params: Promise<{ userId: string }>;
 }) {
+  const locale = await getServerLocale();
+  const t = COPY[locale];
   const admin = await getCurrentUser();
   if (!(await hasAdminAccess(admin))) redirect(admin ? "/dashboard" : "/login");
 
@@ -30,6 +68,9 @@ export default async function AdminUserDetailPage({
 
   return (
     <div className="admin-page">
+      <Link href="/admin" className="admin-nav-link admin-back-link">
+        {t.backLink}
+      </Link>
       <div className="admin-header">
         <h1>{detail.user.username}</h1>
         <AdminMenu />
@@ -43,27 +84,27 @@ export default async function AdminUserDetailPage({
         <EditUserForm userId={detail.user.id} currentUsername={detail.user.username} />
 
         <div className="admin-card-group" style={{ marginBottom: 20 }}>
-          <AdminCard title="פרטים כלליים" subtitle={`נרשם ב-${new Date(detail.user.createdAt).toLocaleDateString("he-IL")}`}>
-            <AdminCardRow label="עיצובים שיצר" value={detail.invites.length} />
-            <AdminCardRow label="נסיונות עיצוב ב-AI" value={detail.user.aiAttempts} />
+          <AdminCard title={t.generalInfo} subtitle={t.joined(new Date(detail.user.createdAt).toLocaleDateString(t.dateLocale))}>
+            <AdminCardRow label={t.designsCreated} value={detail.invites.length} />
+            <AdminCardRow label={t.aiAttempts} value={detail.user.aiAttempts} />
           </AdminCard>
         </div>
 
-        <h2 className="admin-subheading">הזמנות ({detail.invites.length})</h2>
+        <h2 className="admin-subheading">{t.invitesHeading(detail.invites.length)}</h2>
 
         <div className="admin-card-group">
           {detail.invites.map(({ invite, totalRsvps, totalAttending, totalGuests, totalTables }) => (
             <AdminCard
               key={invite.id}
               title={invite.partyType || invite.templateId || invite.id}
-              subtitle={invite.eventDate || "אין תאריך"}
+              subtitle={invite.eventDate || t.noDate}
             >
-              <AdminCardRow label="תגובות" value={totalRsvps} />
-              <AdminCardRow label="אישרו הגעה" value={totalAttending} />
-              <AdminCardRow label={'סה"כ אורחים'} value={totalGuests} />
-              <AdminCardRow label="שולחנות" value={totalTables} />
+              <AdminCardRow label={t.responses} value={totalRsvps} />
+              <AdminCardRow label={t.attending} value={totalAttending} />
+              <AdminCardRow label={t.totalGuests} value={totalGuests} />
+              <AdminCardRow label={t.tables} value={totalTables} />
               <Link href={`/i/${invite.id}`} className="admin-row-link">
-                צפייה ←
+                {t.view}
               </Link>
               {origin && (
                 <div className="admin-qr-block">
@@ -74,7 +115,7 @@ export default async function AdminUserDetailPage({
           ))}
         </div>
 
-      {detail.invites.length === 0 && <p className="admin-empty">המשתמש הזה עדיין לא יצר הזמנות.</p>}
+      {detail.invites.length === 0 && <p className="admin-empty">{t.noInvites}</p>}
     </div>
   );
 }

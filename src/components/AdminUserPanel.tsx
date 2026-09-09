@@ -3,6 +3,75 @@
 import { useState } from "react";
 import Link from "next/link";
 import { leadWhatsappHref } from "@/lib/waContact";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
+import type { Locale } from "@/lib/i18n/locale";
+
+const COPY = {
+  he: {
+    guestsFor: (name: string) => `אורחים - ${name}`,
+    invite: "הזמנה",
+    noResponses: "אין עדיין תגובות.",
+    leads: (count: number) => `לידים (${count})`,
+    contact: "💬 צור קשר",
+    resetPasswordLabel: "איפוס סיסמה לחשבון",
+    newPasswordPlaceholder: "סיסמה חדשה",
+    resetting: "מאפס...",
+    resetPassword: "איפוס סיסמה",
+    shortPassword: "הסיסמה חייבת להכיל לפחות 4 תווים",
+    resetError: "שגיאה באיפוס הסיסמה",
+    resetOk: "הסיסמה אופסה בהצלחה",
+    networkError: "שגיאת רשת",
+    moreDetails: "עוד פרטים ו-QR לכל הזמנה ←",
+    confirmDelete: (name: string) => `למחוק את ${name} מרשימת האורחים?`,
+    firstName: "שם פרטי",
+    lastName: "שם משפחה",
+    phone: "טלפון",
+    guestCountTitle: "כמות מגיעים",
+    attendingLabel: "מגיע/ה",
+    save: "שמירה",
+    cancel: "ביטול",
+    edit: "עריכה",
+    delete: "מחיקה",
+    attendingYes: "מגיע/ה",
+    attendingNo: "לא מגיע/ה",
+    total: 'סה"כ',
+    table: "שולחן:",
+    unassigned: "לא שובץ",
+    dateLocale: "he-IL",
+  },
+  en: {
+    guestsFor: (name: string) => `Guests - ${name}`,
+    invite: "Invite",
+    noResponses: "No responses yet.",
+    leads: (count: number) => `Leads (${count})`,
+    contact: "💬 Contact",
+    resetPasswordLabel: "Reset account password",
+    newPasswordPlaceholder: "New password",
+    resetting: "Resetting...",
+    resetPassword: "Reset password",
+    shortPassword: "Password must be at least 4 characters",
+    resetError: "Error resetting password",
+    resetOk: "Password reset successfully",
+    networkError: "Network error",
+    moreDetails: "More details and QR for each invite ←",
+    confirmDelete: (name: string) => `Delete ${name} from the guest list?`,
+    firstName: "First name",
+    lastName: "Last name",
+    phone: "Phone",
+    guestCountTitle: "Guest count",
+    attendingLabel: "Attending",
+    save: "Save",
+    cancel: "Cancel",
+    edit: "Edit",
+    delete: "Delete",
+    attendingYes: "Attending",
+    attendingNo: "Not attending",
+    total: "total",
+    table: "Table:",
+    unassigned: "Unassigned",
+    dateLocale: "en-US",
+  },
+};
 
 interface RsvpRow {
   id: number;
@@ -49,6 +118,8 @@ interface Props {
  *  AdminCard body as the existing stat rows/action buttons (admin/page.tsx),
  *  just the part rich enough to need its own client-side state. */
 export default function AdminUserPanel({ userId, username, invites, leads }: Props) {
+  const { locale } = useLocale();
+  const t = COPY[locale];
   const [inviteGroups, setInviteGroups] = useState(invites);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -85,7 +156,7 @@ export default function AdminUserPanel({ userId, username, invites, leads }: Pro
   }
 
   async function handleDeleteGuest(rsvp: RsvpRow) {
-    if (!confirm(`למחוק את ${rsvp.guestName} ${rsvp.familyName} מרשימת האורחים?`)) return;
+    if (!confirm(t.confirmDelete(`${rsvp.guestName} ${rsvp.familyName}`))) return;
     setBusyId(rsvp.id);
     try {
       const res = await fetch(`/api/admin/rsvp/${rsvp.id}`, { method: "DELETE" });
@@ -100,7 +171,7 @@ export default function AdminUserPanel({ userId, username, invites, leads }: Pro
   async function handleResetPassword(e: React.FormEvent) {
     e.preventDefault();
     if (pwValue.trim().length < 4) {
-      setPwMessage({ type: "error", text: "הסיסמה חייבת להכיל לפחות 4 תווים" });
+      setPwMessage({ type: "error", text: t.shortPassword });
       return;
     }
     setPwSaving(true);
@@ -113,13 +184,13 @@ export default function AdminUserPanel({ userId, username, invites, leads }: Pro
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setPwMessage({ type: "error", text: data?.error || "שגיאה באיפוס הסיסמה" });
+        setPwMessage({ type: "error", text: data?.error || t.resetError });
       } else {
-        setPwMessage({ type: "ok", text: "הסיסמה אופסה בהצלחה" });
+        setPwMessage({ type: "ok", text: t.resetOk });
         setPwValue("");
       }
     } catch {
-      setPwMessage({ type: "error", text: "שגיאת רשת" });
+      setPwMessage({ type: "error", text: t.networkError });
     } finally {
       setPwSaving(false);
     }
@@ -130,10 +201,10 @@ export default function AdminUserPanel({ userId, username, invites, leads }: Pro
       {inviteGroups.map((group) => (
         <div key={group.invite.id} className="admin-guest-section">
           <p className="admin-guest-section-title">
-            אורחים - {group.invite.partyType || group.invite.templateId || "הזמנה"}
+            {t.guestsFor(group.invite.partyType || group.invite.templateId || t.invite)}
             {group.invite.eventDate ? ` (${group.invite.eventDate})` : ""}
           </p>
-          {group.rsvps.length === 0 && <p className="admin-empty admin-empty-inline">אין עדיין תגובות.</p>}
+          {group.rsvps.length === 0 && <p className="admin-empty admin-empty-inline">{t.noResponses}</p>}
           <div className="admin-guest-list">
             {group.rsvps.map((r) => (
               <GuestRow
@@ -142,6 +213,7 @@ export default function AdminUserPanel({ userId, username, invites, leads }: Pro
                 tableNumber={tableNumberFor(group, r.tableId)}
                 editing={editingId === r.id}
                 busy={busyId === r.id}
+                locale={locale}
                 onEdit={() => setEditingId(r.id)}
                 onCancel={() => setEditingId(null)}
                 onSave={(draft) => handleSaveGuest(r, draft)}
@@ -154,7 +226,7 @@ export default function AdminUserPanel({ userId, username, invites, leads }: Pro
 
       {leads.length > 0 && (
         <div className="admin-guest-section">
-          <p className="admin-guest-section-title">לידים ({leads.length})</p>
+          <p className="admin-guest-section-title">{t.leads(leads.length)}</p>
           <div className="admin-guest-list">
             {leads.map((l) => (
               <div key={l.id} className="admin-guest-row">
@@ -163,7 +235,7 @@ export default function AdminUserPanel({ userId, username, invites, leads }: Pro
                   <span className="admin-guest-meta">
                     <span dir="ltr">{l.phone}</span>
                     {l.eventType ? ` · ${l.eventType}` : ""}
-                    {l.eventDate ? ` · ${new Date(l.eventDate).toLocaleDateString("he-IL")}` : ""}
+                    {l.eventDate ? ` · ${new Date(l.eventDate).toLocaleDateString(t.dateLocale)}` : ""}
                     {l.eventVenue ? ` · ${l.eventVenue}` : ""}
                   </span>
                 </div>
@@ -173,7 +245,7 @@ export default function AdminUserPanel({ userId, username, invites, leads }: Pro
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  💬 צור קשר
+                  {t.contact}
                 </a>
               </div>
             ))}
@@ -182,23 +254,23 @@ export default function AdminUserPanel({ userId, username, invites, leads }: Pro
       )}
 
       <form className="admin-pw-reset-form" onSubmit={handleResetPassword}>
-        <label>איפוס סיסמה לחשבון</label>
+        <label>{t.resetPasswordLabel}</label>
         <div className="admin-pw-reset-row">
           <input
             type="password"
-            placeholder="סיסמה חדשה"
+            placeholder={t.newPasswordPlaceholder}
             value={pwValue}
             onChange={(e) => setPwValue(e.target.value)}
           />
           <button type="submit" className="admin-save-btn" disabled={pwSaving}>
-            {pwSaving ? "מאפס..." : "איפוס סיסמה"}
+            {pwSaving ? t.resetting : t.resetPassword}
           </button>
         </div>
         {pwMessage && <p className={`admin-edit-msg admin-edit-msg-${pwMessage.type}`}>{pwMessage.text}</p>}
       </form>
 
       <Link href={`/admin/users/${userId}`} className="admin-row-link">
-        עוד פרטים ו-QR לכל הזמנה ←
+        {t.moreDetails}
       </Link>
     </div>
   );
@@ -209,6 +281,7 @@ function GuestRow({
   tableNumber,
   editing,
   busy,
+  locale,
   onEdit,
   onCancel,
   onSave,
@@ -218,11 +291,13 @@ function GuestRow({
   tableNumber: string | null;
   editing: boolean;
   busy: boolean;
+  locale: Locale;
   onEdit: () => void;
   onCancel: () => void;
   onSave: (draft: { guestName: string; familyName: string; phone: string; attending: boolean; guestCount: number }) => void;
   onDelete: () => void;
 }) {
+  const t = COPY[locale];
   const [guestName, setGuestName] = useState(rsvp.guestName);
   const [familyName, setFamilyName] = useState(rsvp.familyName);
   const [phone, setPhone] = useState(rsvp.phone);
@@ -233,19 +308,19 @@ function GuestRow({
     return (
       <div className="admin-guest-row admin-guest-row-editing">
         <div className="admin-guest-edit-fields">
-          <input value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="שם פרטי" />
-          <input value={familyName} onChange={(e) => setFamilyName(e.target.value)} placeholder="שם משפחה" />
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="טלפון" dir="ltr" />
+          <input value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder={t.firstName} />
+          <input value={familyName} onChange={(e) => setFamilyName(e.target.value)} placeholder={t.lastName} />
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t.phone} dir="ltr" />
           <input
             type="number"
             min={1}
             value={guestCount}
             onChange={(e) => setGuestCount(Math.max(1, Number(e.target.value) || 1))}
-            title="כמות מגיעים"
+            title={t.guestCountTitle}
           />
           <label className="admin-guest-attending-toggle">
             <input type="checkbox" checked={attending} onChange={(e) => setAttending(e.target.checked)} />
-            מגיע/ה
+            {t.attendingLabel}
           </label>
         </div>
         <div className="admin-guest-actions">
@@ -255,10 +330,10 @@ function GuestRow({
             disabled={busy}
             onClick={() => onSave({ guestName, familyName, phone, attending, guestCount })}
           >
-            שמירה
+            {t.save}
           </button>
           <button type="button" className="admin-cancel-btn" disabled={busy} onClick={onCancel}>
-            ביטול
+            {t.cancel}
           </button>
         </div>
       </div>
@@ -275,19 +350,19 @@ function GuestRow({
           <span dir="ltr">{rsvp.phone}</span>
           {" · "}
           <span className={rsvp.attending ? "admin-guest-yes" : "admin-guest-no"}>
-            {rsvp.attending ? "מגיע/ה" : "לא מגיע/ה"}
+            {rsvp.attending ? t.attendingYes : t.attendingNo}
           </span>
           {" · "}
-          {rsvp.guestCount} סה&quot;כ
+          {rsvp.guestCount} {t.total}
           {" · "}
-          שולחן: {tableNumber ?? "לא שובץ"}
+          {t.table} {tableNumber ?? t.unassigned}
         </span>
       </div>
       <div className="admin-guest-actions">
-        <button type="button" className="admin-table-edit" title="עריכה" onClick={onEdit}>
+        <button type="button" className="admin-table-edit" title={t.edit} onClick={onEdit}>
           ✏️
         </button>
-        <button type="button" className="admin-table-delete" title="מחיקה" disabled={busy} onClick={onDelete}>
+        <button type="button" className="admin-table-delete" title={t.delete} disabled={busy} onClick={onDelete}>
           🗑
         </button>
       </div>

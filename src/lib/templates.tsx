@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import { EVENT_CATEGORIES, type EventCategory } from "@/lib/eventCategories";
+import type { Locale } from "@/lib/i18n/locale";
 
 // Re-exported for back-compat - every existing import of EventCategory/
 // EVENT_CATEGORIES from "@/lib/templates" keeps working unchanged. The
@@ -56,26 +57,48 @@ export const PHOTO_STYLE_LABEL: Record<PhotoPlacement, string> = {
   background: "תמונת רקע מלאה",
 };
 
+const PHOTO_STYLE_LABEL_EN: Record<PhotoPlacement, string> = {
+  round: "Circle, centered",
+  square: "Square, centered",
+  header: "Banner at the top",
+  footer: "Banner at the bottom",
+  side: "Side strip",
+  background: "Full background photo",
+};
+
+export function photoStyleLabel(style: PhotoPlacement, locale: Locale): string {
+  return locale === "en" ? PHOTO_STYLE_LABEL_EN[style] : PHOTO_STYLE_LABEL[style];
+}
+
 export interface TemplateDef {
   id: string;
   label: string;
+  /** English rendering of `label` for the gallery/picker UI in English
+   *  mode - see templateLabel() below. The template's own rendered card
+   *  (tpl-card et al) still shows whatever text the host actually typed,
+   *  unaffected by this. */
+  labelEn: string;
   swatch: string;
   photoStyle: PhotoPlacement;
   categories: EventCategory[];
 }
 
+export function templateLabel(t: Pick<TemplateDef, "label" | "labelEn">, locale: Locale): string {
+  return locale === "en" ? t.labelEn : t.label;
+}
+
 export const TEMPLATES: TemplateDef[] = [
-  { id: "cream-script", label: "סקריפט זהב על קרם", swatch: "linear-gradient(135deg,#f6efe2,#d9b96a)", photoStyle: "round", categories: ["חתונה"] },
-  { id: "dark-gold", label: "כהה ומינימלי בזהב", swatch: "linear-gradient(135deg,#1b1b1f,#c9a24b)", photoStyle: "square", categories: ["חתונה", "בר/בת מצווה", "בר מצווה", "בת מצווה"] },
-  { id: "floral-blush", label: "מסגרת פרחונית", swatch: "linear-gradient(135deg,#f7e3e6,#c98a93)", photoStyle: "header", categories: ["חתונה", "חינה"] },
-  { id: "navy-bold", label: "נייבי מודגש", swatch: "linear-gradient(135deg,#12213f,#c9a24b)", photoStyle: "footer", categories: ["חתונה", "בר/בת מצווה", "בר מצווה", "בת מצווה", "אחר"] },
-  { id: "line-frame", label: "מסגרת קווים דקה", swatch: "linear-gradient(135deg,#ffffff,#9aa0a8)", photoStyle: "side", categories: ["חתונה"] },
-  { id: "botanical-green", label: "בוטני ירוק", swatch: "linear-gradient(135deg,#f3f1e6,#5c7a5c)", photoStyle: "background", categories: ["חתונה", "חינה"] },
-  { id: "sunset-tropical", label: "שקיעה טרופית", swatch: "linear-gradient(135deg,#2f7c85,#f2a154)", photoStyle: "round", categories: ["חתונה"] },
-  { id: "gold-ornate-dark", label: "זהב מהודר על כהה", swatch: "linear-gradient(135deg,#2a1240,#d4af37)", photoStyle: "square", categories: ["בר/בת מצווה", "בר מצווה", "בת מצווה", "חתונה"] },
-  { id: "birthday-fun", label: "יום הולדת צבעוני", swatch: "linear-gradient(135deg,#e6379a,#ff8fc7)", photoStyle: "round", categories: ["יום הולדת"] },
-  { id: "festive-balloons", label: "חגיגי עם בלונים", swatch: "linear-gradient(135deg,#f5efd8,#c9a24b)", photoStyle: "header", categories: ["יום הולדת", "בר/בת מצווה", "בר מצווה", "בת מצווה"] },
-  { id: "gold-night", label: "רקע לילה זהוב", swatch: "linear-gradient(135deg,#0c0c10,#2a2418,#d9b969)", photoStyle: "background", categories: ["חתונה"] },
+  { id: "cream-script", label: "סקריפט זהב על קרם", labelEn: "Gold script on cream", swatch: "linear-gradient(135deg,#f6efe2,#d9b96a)", photoStyle: "round", categories: ["חתונה"] },
+  { id: "dark-gold", label: "כהה ומינימלי בזהב", labelEn: "Dark & minimal gold", swatch: "linear-gradient(135deg,#1b1b1f,#c9a24b)", photoStyle: "square", categories: ["חתונה", "בר/בת מצווה", "בר מצווה", "בת מצווה"] },
+  { id: "floral-blush", label: "מסגרת פרחונית", labelEn: "Floral frame", swatch: "linear-gradient(135deg,#f7e3e6,#c98a93)", photoStyle: "header", categories: ["חתונה", "חינה"] },
+  { id: "navy-bold", label: "נייבי מודגש", labelEn: "Bold navy", swatch: "linear-gradient(135deg,#12213f,#c9a24b)", photoStyle: "footer", categories: ["חתונה", "בר/בת מצווה", "בר מצווה", "בת מצווה", "אחר"] },
+  { id: "line-frame", label: "מסגרת קווים דקה", labelEn: "Thin line frame", swatch: "linear-gradient(135deg,#ffffff,#9aa0a8)", photoStyle: "side", categories: ["חתונה"] },
+  { id: "botanical-green", label: "בוטני ירוק", labelEn: "Botanical green", swatch: "linear-gradient(135deg,#f3f1e6,#5c7a5c)", photoStyle: "background", categories: ["חתונה", "חינה"] },
+  { id: "sunset-tropical", label: "שקיעה טרופית", labelEn: "Tropical sunset", swatch: "linear-gradient(135deg,#2f7c85,#f2a154)", photoStyle: "round", categories: ["חתונה"] },
+  { id: "gold-ornate-dark", label: "זהב מהודר על כהה", labelEn: "Ornate gold on dark", swatch: "linear-gradient(135deg,#2a1240,#d4af37)", photoStyle: "square", categories: ["בר/בת מצווה", "בר מצווה", "בת מצווה", "חתונה"] },
+  { id: "birthday-fun", label: "יום הולדת צבעוני", labelEn: "Colorful birthday", swatch: "linear-gradient(135deg,#e6379a,#ff8fc7)", photoStyle: "round", categories: ["יום הולדת"] },
+  { id: "festive-balloons", label: "חגיגי עם בלונים", labelEn: "Festive with balloons", swatch: "linear-gradient(135deg,#f5efd8,#c9a24b)", photoStyle: "header", categories: ["יום הולדת", "בר/בת מצווה", "בר מצווה", "בת מצווה"] },
+  { id: "gold-night", label: "רקע לילה זהוב", labelEn: "Golden night background", swatch: "linear-gradient(135deg,#0c0c10,#2a2418,#d9b969)", photoStyle: "background", categories: ["חתונה"] },
 ];
 
 /** Per-template accent colors for UI chrome that sits OUTSIDE the card itself

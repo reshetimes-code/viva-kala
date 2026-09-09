@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
+
+const SLOGAN = { he: "האירוע מתחיל כאן", en: "Where the event begins" };
 
 /** Full-screen brand intro played once when the landing page loads - the real
  *  logo file wipes in top-to-bottom (V + spark first, wordmark a beat later,
@@ -10,6 +13,7 @@ import { useEffect, useState } from "react";
 export default function VivaIntro() {
   const [hide, setHide] = useState(false);
   const [removed, setRemoved] = useState(false);
+  const { locale } = useLocale();
 
   useEffect(() => {
     const hideTimer = setTimeout(() => setHide(true), 3500);
@@ -32,7 +36,7 @@ export default function VivaIntro() {
           <img src="/logoViva.png" alt="VIVA" className="viva-intro-logo-img" />
           <div className="viva-intro-spark-glow" />
         </div>
-        <div className="viva-intro-slogan">האירוע מתחיל כאן</div>
+        <div className="viva-intro-slogan">{SLOGAN[locale]}</div>
       </div>
     </div>
   );

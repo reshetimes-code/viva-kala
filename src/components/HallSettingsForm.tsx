@@ -1,6 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
+
+const COPY = {
+  he: {
+    youtubeLabel: "קישור סרטון YouTube (לא חובה)",
+    tourLabel: "קישור לאתר האולם / דף פרסום (לא חובה)",
+    saving: "שומר...",
+    saved: "✓ נשמר",
+    save: "שמירה",
+  },
+  en: {
+    youtubeLabel: "YouTube video link (optional)",
+    tourLabel: "Venue website / listing page link (optional)",
+    saving: "Saving...",
+    saved: "✓ Saved",
+    save: "Save",
+  },
+};
 
 export default function HallSettingsForm({
   initialYoutubeUrl,
@@ -9,6 +27,8 @@ export default function HallSettingsForm({
   initialYoutubeUrl: string;
   initialTourUrl: string;
 }) {
+  const { locale } = useLocale();
+  const t = COPY[locale];
   const [youtubeUrl, setYoutubeUrl] = useState(initialYoutubeUrl);
   const [tourUrl, setTourUrl] = useState(initialTourUrl);
   const [saving, setSaving] = useState(false);
@@ -32,7 +52,7 @@ export default function HallSettingsForm({
   return (
     <div className="hall-settings-form">
       <div className="admin-edit-field">
-        <label>קישור סרטון YouTube (לא חובה)</label>
+        <label>{t.youtubeLabel}</label>
         <input
           value={youtubeUrl}
           onChange={(e) => {
@@ -44,7 +64,7 @@ export default function HallSettingsForm({
         />
       </div>
       <div className="admin-edit-field">
-        <label>קישור לאתר האולם / דף פרסום (לא חובה)</label>
+        <label>{t.tourLabel}</label>
         <input
           value={tourUrl}
           onChange={(e) => {
@@ -56,7 +76,7 @@ export default function HallSettingsForm({
         />
       </div>
       <button type="button" className="hall-save-btn" onClick={handleSave} disabled={saving}>
-        {saving ? "שומר..." : saved ? "✓ נשמר" : "שמירה"}
+        {saving ? t.saving : saved ? t.saved : t.save}
       </button>
     </div>
   );

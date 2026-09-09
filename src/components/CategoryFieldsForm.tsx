@@ -2,8 +2,33 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CATEGORY_FIELD_DEFS, type FieldDef } from "@/lib/categoryFields";
+import { CATEGORY_FIELD_DEFS, fieldLabel, fieldPlaceholder, type FieldDef } from "@/lib/categoryFields";
 import type { EventCategory } from "@/lib/eventCategories";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
+import type { Locale } from "@/lib/i18n/locale";
+
+const COPY = {
+  he: {
+    heading: "📋 הפרטים של האירוע",
+    subheading: "רק כמה פרטים - את/ה ממלא/ת, ואנחנו מעצבים את זה יפה בשבילך.",
+    addDetails: "➕ הוספת פרטים להזמנה",
+    saving: "שומר...",
+    saved: "✓ השינוי נשמר",
+    staleBanner: "⚠️ שיניתם פרטים אחרי שהתמונה נוצרה - היא עדיין מציגה את הפרטים הישנים.",
+    updatingImage: "מעדכן את התמונה...",
+    updateImage: "🪄 עדכון התמונה עם הפרטים החדשים",
+  },
+  en: {
+    heading: "📋 Event details",
+    subheading: "Just a few details - you fill them in, and we'll design it beautifully for you.",
+    addDetails: "➕ Add more details",
+    saving: "Saving...",
+    saved: "✓ Change saved",
+    staleBanner: "⚠️ You changed details after the image was created - it still shows the old details.",
+    updatingImage: "Updating the image...",
+    updateImage: "🪄 Update the image with the new details",
+  },
+};
 
 /** Renders only the fields a category actually needs (wedding/bar-bat-
  *  mitzvah/henna) - the required ones up front and big, anything optional
@@ -29,6 +54,8 @@ export default function CategoryFieldsForm({
   quickUpdating?: boolean;
   onUpdateImage?: () => void;
 }) {
+  const { locale } = useLocale();
+  const t = COPY[locale];
   const defs = CATEGORY_FIELD_DEFS[category] ?? [];
   const required = defs.filter((d) => d.required);
   const optional = defs.filter((d) => !d.required);
@@ -66,15 +93,16 @@ export default function CategoryFieldsForm({
 
   return (
     <div className="category-section basic-info-section">
-      <h3 className="category-title">📋 הפרטים של האירוע</h3>
+      <h3 className="category-title">{t.heading}</h3>
       <p className="upper-section-text" style={{ fontSize: 13, opacity: 0.75, marginBottom: 16 }}>
-        רק כמה פרטים - את/ה ממלא/ת, ואנחנו מעצבים את זה יפה בשבילך.
+        {t.subheading}
       </p>
 
       {required.map((def) => (
         <FieldInput
           key={def.key}
           def={def}
+          locale={locale}
           value={values[def.key] ?? ""}
           onChange={(v) => setField(def.key, v)}
           justSavedTick={justSavedKey === def.key ? saveTick : null}
@@ -101,7 +129,7 @@ export default function CategoryFieldsForm({
                 whiteSpace: "nowrap",
               }}
             >
-              ➕ הוספת פרטים להזמנה
+              {t.addDetails}
             </button>
           ) : (
             <div className="category-optional-fields mt-2">
@@ -109,6 +137,7 @@ export default function CategoryFieldsForm({
                 <FieldInput
                   key={def.key}
                   def={def}
+                  locale={locale}
                   value={values[def.key] ?? ""}
                   onChange={(v) => setField(def.key, v)}
                   justSavedTick={justSavedKey === def.key ? saveTick : null}
@@ -133,15 +162,15 @@ export default function CategoryFieldsForm({
         // SSR - createPortal would crash the render there otherwise.
         createPortal(
           <div className="stale-image-banner">
-            <p>⚠️ שיניתם פרטים אחרי שהתמונה נוצרה - היא עדיין מציגה את הפרטים הישנים.</p>
+            <p>{t.staleBanner}</p>
             <button type="button" className="stale-image-update-btn" onClick={onUpdateImage} disabled={quickUpdating}>
               {quickUpdating ? (
                 <>
                   <span className="stale-image-update-spinner" aria-hidden="true" />
-                  מעדכן את התמונה...
+                  {t.updatingImage}
                 </>
               ) : (
-                "🪄 עדכון התמונה עם הפרטים החדשים"
+                t.updateImage
               )}
             </button>
           </div>,
@@ -153,12 +182,14 @@ export default function CategoryFieldsForm({
 
 function FieldInput({
   def,
+  locale,
   value,
   onChange,
   justSavedTick,
   savePhase,
 }: {
   def: FieldDef;
+  locale: Locale;
   value: string;
   onChange: (v: string) => void;
   /** Non-null exactly while this field is the one that just changed - its
@@ -172,19 +203,20 @@ function FieldInput({
    *  which fades itself out via CSS). */
   savePhase: "saving" | "saved";
 }) {
+  const t = COPY[locale];
   return (
     <div className="mt-3">
       <label className="bottom-section-text field-label-row">
-        <span>{def.label}</span>
+        <span>{fieldLabel(def, locale)}</span>
         {justSavedTick != null && (
           <span key={justSavedTick}>
             {savePhase === "saving" ? (
               <span className="field-saving-indicator">
                 <span className="field-saving-spinner" aria-hidden="true" />
-                שומר...
+                {t.saving}
               </span>
             ) : (
-              <span className="field-saved-badge">✓ השינוי נשמר</span>
+              <span className="field-saved-badge">{t.saved}</span>
             )}
           </span>
         )}
@@ -192,7 +224,7 @@ function FieldInput({
       <input
         className="inputs-fields"
         type={def.type === "textarea" ? "text" : def.type}
-        placeholder={def.placeholder}
+        placeholder={fieldPlaceholder(def, locale)}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />

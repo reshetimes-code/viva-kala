@@ -2,14 +2,28 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { updateRsvpDetails, deleteRsvp } from "@/lib/store";
 import { hasAdminAccess } from "@/lib/superadmin";
+import { getServerLocale } from "@/lib/i18n/server";
+
+const MESSAGES = {
+  he: {
+    forbidden: "אין הרשאה",
+    rsvpNotFound: "אישור הגעה לא נמצא",
+  },
+  en: {
+    forbidden: "Not authorized",
+    rsvpNotFound: "RSVP not found",
+  },
+};
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ rsvpId: string }> }
 ) {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   const admin = await getCurrentUser();
   if (!(await hasAdminAccess(admin))) {
-    return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
+    return NextResponse.json({ error: t.forbidden }, { status: 403 });
   }
 
   const { rsvpId } = await params;
@@ -23,7 +37,7 @@ export async function PATCH(
 
   const rsvp = await updateRsvpDetails(Number(rsvpId), updates);
   if (!rsvp) {
-    return NextResponse.json({ error: "אישור הגעה לא נמצא" }, { status: 404 });
+    return NextResponse.json({ error: t.rsvpNotFound }, { status: 404 });
   }
   return NextResponse.json({ success: true, rsvp });
 }
@@ -32,15 +46,17 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ rsvpId: string }> }
 ) {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   const admin = await getCurrentUser();
   if (!(await hasAdminAccess(admin))) {
-    return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
+    return NextResponse.json({ error: t.forbidden }, { status: 403 });
   }
 
   const { rsvpId } = await params;
   const ok = await deleteRsvp(Number(rsvpId));
   if (!ok) {
-    return NextResponse.json({ error: "אישור הגעה לא נמצא" }, { status: 404 });
+    return NextResponse.json({ error: t.rsvpNotFound }, { status: 404 });
   }
   return NextResponse.json({ success: true });
 }

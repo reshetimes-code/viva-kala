@@ -3,20 +3,34 @@ import { getCurrentUser } from "@/lib/auth";
 import { deleteInvite, findInviteById, updateInvite } from "@/lib/store";
 import { deleteStoredImage, saveImageDataUrl } from "@/lib/imageStorage";
 import { isEventCategory } from "@/lib/eventCategories";
+import { getServerLocale } from "@/lib/i18n/server";
+
+const MESSAGES = {
+  he: {
+    loginRequired: "יש להתחבר תחילה",
+    notFound: "הזמנה לא נמצאה",
+  },
+  en: {
+    loginRequired: "Please log in first",
+    notFound: "Invitation not found",
+  },
+};
 
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "יש להתחבר תחילה" }, { status: 401 });
+    return NextResponse.json({ error: t.loginRequired }, { status: 401 });
   }
 
   const { id } = await params;
   const invite = await findInviteById(id);
   if (!invite || invite.userId !== user.id) {
-    return NextResponse.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
+    return NextResponse.json({ error: t.notFound }, { status: 404 });
   }
 
   await deleteInvite(id, user.id);
@@ -28,14 +42,16 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "יש להתחבר תחילה" }, { status: 401 });
+    return NextResponse.json({ error: t.loginRequired }, { status: 401 });
   }
   const { id } = await params;
   const invite = await findInviteById(id);
   if (!invite || invite.userId !== user.id) {
-    return NextResponse.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
+    return NextResponse.json({ error: t.notFound }, { status: 404 });
   }
   return NextResponse.json({ invite });
 }
@@ -44,14 +60,16 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const locale = await getServerLocale();
+  const t = MESSAGES[locale];
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "יש להתחבר תחילה" }, { status: 401 });
+    return NextResponse.json({ error: t.loginRequired }, { status: 401 });
   }
   const { id } = await params;
   const invite = await findInviteById(id);
   if (!invite || invite.userId !== user.id) {
-    return NextResponse.json({ error: "הזמנה לא נמצאה" }, { status: 404 });
+    return NextResponse.json({ error: t.notFound }, { status: 404 });
   }
 
   const body = await req.json();

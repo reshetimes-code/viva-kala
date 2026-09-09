@@ -1,6 +1,46 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "@/lib/i18n/LanguageProvider";
+
+// UI copy only - the whole `prompt` array built inside sendRequest() below is
+// AI prompt content sent to /api/ai-invite (and `eventDetails`, passed in
+// from the caller) and is deliberately left untouched/Hebrew regardless of
+// locale, per the project-wide rule for this cluster.
+const COPY = {
+  he: {
+    error: "שגיאה בביצוע השינוי",
+    networkError: "שגיאת רשת - נסו שוב",
+    pickBetter: "בחרו את הגרסה שאהבתם יותר:",
+    hereResult: "הנה התוצאה:",
+    optionAlt: (n: number) => `אפשרות ${n}`,
+    cancel: "ביטול",
+    remaining: (n: number) => `נותרו ${n} שינויי עיצוב לחשבון.`,
+    previewAlt: "תצוגה מקדימה",
+    generatingTwo: "יוצר שתי אפשרויות לבחירה...",
+    whatToChange: "מה לשנות?",
+    requestPlaceholder: "לדוגמה: תוסיפו משפט מעל השם...",
+    send: "שליחה",
+    useThis: "✓ מושלם, נשתמש בזה",
+    close: "סגירה",
+  },
+  en: {
+    error: "Error making the change",
+    networkError: "Network error - try again",
+    pickBetter: "Choose the version you liked better:",
+    hereResult: "Here's the result:",
+    optionAlt: (n: number) => `Option ${n}`,
+    cancel: "Cancel",
+    remaining: (n: number) => `${n} design changes left for your account.`,
+    previewAlt: "Preview",
+    generatingTwo: "Creating two options to choose from...",
+    whatToChange: "What would you like to change?",
+    requestPlaceholder: "For example: add a sentence above the name...",
+    send: "Send",
+    useThis: "✓ Perfect, let's use this",
+    close: "Close",
+  },
+};
 
 /** Free-text "tell us what to change" chat for an already-generated
  *  invitation image - e.g. "add a sentence above the name" or "make the
@@ -31,6 +71,8 @@ export default function DesignChangeChat({
   onUse: (newImageUrl: string) => void;
   onClose: () => void;
 }) {
+  const { locale } = useLocale();
+  const t = COPY[locale];
   const [currentImage, setCurrentImage] = useState(imageUrl);
   const [changed, setChanged] = useState(false);
   const [input, setInput] = useState("");
@@ -93,7 +135,7 @@ export default function DesignChangeChat({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "שגיאה בביצוע השינוי");
+        setError(data.error || t.error);
         if (res.status === 403) setBlocked(true);
         return;
       }
@@ -103,7 +145,7 @@ export default function DesignChangeChat({
       setInput("");
       if (typeof data.regenerationsRemaining === "number") setRemaining(data.regenerationsRemaining);
     } catch {
-      setError("שגיאת רשת - נסו שוב");
+      setError(t.networkError);
     } finally {
       setLoading(false);
     }
@@ -119,7 +161,7 @@ export default function DesignChangeChat({
     return (
       <div className="ai-invite-form">
         <p className="ai-invite-note" style={{ fontWeight: 700 }}>
-          {pendingVariants.length > 1 ? "בחרו את הגרסה שאהבתם יותר:" : "הנה התוצאה:"}
+          {pendingVariants.length > 1 ? t.pickBetter : t.hereResult}
         </p>
         <div
           style={{
@@ -140,12 +182,12 @@ export default function DesignChangeChat({
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt={`אפשרות ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={url} alt={t.optionAlt(i + 1)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </button>
           ))}
         </div>
         <button type="button" className="ai-invite-retry-btn" onClick={onClose} style={{ width: "100%" }}>
-          ביטול
+          {t.cancel}
         </button>
       </div>
     );
@@ -158,13 +200,13 @@ export default function DesignChangeChat({
           page.tsx) - it was easy to skip as fine print inline here. */}
       {remaining !== null && (
         <p className="ai-invite-note" style={{ fontWeight: 700, opacity: 0.85, marginBottom: 8 }}>
-          נותרו {remaining} שינויי עיצוב לחשבון.
+          {t.remaining(remaining)}
         </p>
       )}
 
       <div style={{ margin: "0 auto 16px", maxWidth: 220, borderRadius: 14, overflow: "hidden", aspectRatio: "9 / 16" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={currentImage} alt="תצוגה מקדימה" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <img src={currentImage} alt={t.previewAlt} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -172,16 +214,16 @@ export default function DesignChangeChat({
       {loading ? (
         <div className="ai-chat-loading">
           <span className="ai-chat-spinner" aria-hidden="true" />
-          <p className="ai-chat-question">יוצר שתי אפשרויות לבחירה...</p>
+          <p className="ai-chat-question">{t.generatingTwo}</p>
         </div>
       ) : (
         !blocked && (
           <div className="ai-invite-field">
-            <label>מה לשנות?</label>
+            <label>{t.whatToChange}</label>
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="לדוגמה: תוסיפו משפט מעל השם..."
+              placeholder={t.requestPlaceholder}
               rows={4}
               onKeyDown={(e) => {
                 // Enter sends, Shift+Enter still adds a line break - a
@@ -195,7 +237,7 @@ export default function DesignChangeChat({
             />
             {input.trim() && (
               <button type="button" className="ai-invite-generate-btn mt-2" onClick={sendRequest}>
-                שליחה
+                {t.send}
               </button>
             )}
           </div>
@@ -205,11 +247,11 @@ export default function DesignChangeChat({
       <div className="ai-invite-result-actions" style={{ marginTop: 16 }}>
         {changed && (
           <button type="button" className="ai-invite-use-btn" onClick={() => onUse(currentImage)}>
-            ✓ מושלם, נשתמש בזה
+            {t.useThis}
           </button>
         )}
         <button type="button" className="ai-invite-retry-btn" onClick={onClose}>
-          {changed ? "ביטול" : "סגירה"}
+          {changed ? t.cancel : t.close}
         </button>
       </div>
     </div>
