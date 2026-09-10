@@ -1767,6 +1767,17 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   background: #eceae2; color: #6b6558; white-space: nowrap;
 }
 .admin-card-badge-hall { background: rgba(184,134,11,0.14); color: #8a6710; }
+/* A hall's client account always renders as the row(s) directly below that
+   hall (see admin/page.tsx's ordering) - indented with a gold accent line
+   so the pairing reads at a glance, not just by proximity, once the list
+   has more than a couple of accounts in it. Negative margin-top tightens
+   .admin-card-group's own 10px gap for just this pairing, so the client
+   card visually attaches to its hall instead of floating the same distance
+   away as any two unrelated accounts. */
+.admin-card-client-wrap {
+  margin-top: -6px; margin-inline-start: 20px; padding-inline-start: 12px;
+  border-inline-start: 3px solid rgba(184,134,11,0.35);
+}
 .admin-card-chevron { color: #9a9488; transition: transform .2s ease; flex-shrink: 0; }
 .admin-card.is-open .admin-card-chevron { transform: rotate(180deg); }
 .admin-card-body { padding: 4px 18px 18px; border-top: 1px solid #f0ede3; display: flex; flex-direction: column; gap: 10px; }
