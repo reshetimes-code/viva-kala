@@ -40,7 +40,18 @@ export default function ImpersonateButton({
     setBusy(true);
     try {
       const res = await fetch(endpoint ?? `/api/admin/impersonate/${userId}`, { method: "POST" });
-      if (res.ok) router.push("/dashboard");
+      if (res.ok) {
+        // router.push() alone can serve /dashboard from Next's client-side
+        // Router Cache - a stale copy rendered under the PREVIOUS session,
+        // from before this swapped the cookie. That's what made this look
+        // broken: the first click "did nothing" (silently landed on cached,
+        // wrong-session content) and only a second navigation forced a
+        // fresh fetch. router.refresh() forces this one to actually re-run
+        // server-side with the new session, the same fix LoginPage already
+        // uses after its own fetch+cookie swap.
+        router.replace("/dashboard");
+        router.refresh();
+      }
     } finally {
       setBusy(false);
     }
