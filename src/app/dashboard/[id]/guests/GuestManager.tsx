@@ -72,6 +72,12 @@ const COPY = {
       cancel: "ביטול",
     },
     deleteTableConfirm: "למחוק את השולחן הזה? האורחים המשובצים בו יעברו ל'ללא שיבוץ'.",
+    noTablesYetModal: {
+      title: "עדיין לא יצרתם שולחן",
+      text: "כדי לשבץ אורחים צריך קודם שולחן אחד לפחות. ליצור עכשיו?",
+      confirm: "כן",
+      cancel: "לא",
+    },
   },
   en: {
     back: "→ Back",
@@ -129,6 +135,12 @@ const COPY = {
       cancel: "Cancel",
     },
     deleteTableConfirm: "Delete this table? Guests assigned to it will move to 'Unassigned'.",
+    noTablesYetModal: {
+      title: "You haven't created a table yet",
+      text: "You need at least one table before you can seat guests. Create one now?",
+      confirm: "Yes",
+      cancel: "No",
+    },
   },
 };
 
@@ -295,6 +307,27 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
     setTimeout(() => setJustSavedId((cur) => (cur === rsvpId ? null : cur)), 1600);
   }
 
+  // Blocks the native dropdown from opening (mousedown/touchstart fire
+  // before the picker shows, unlike click) when there isn't a single table
+  // to assign to yet, and offers to jump straight to the seating tab (where
+  // "add a table" lives) instead of letting the host pick from an empty
+  // "ללא שיבוץ"-only list with no clue why nothing else is there.
+  function guardTableSelect(e: React.SyntheticEvent<HTMLSelectElement>) {
+    if (tables.length > 0) return;
+    e.preventDefault();
+    Swal.fire({
+      icon: "question",
+      title: t.noTablesYetModal.title,
+      text: t.noTablesYetModal.text,
+      showCancelButton: true,
+      confirmButtonText: t.noTablesYetModal.confirm,
+      cancelButtonText: t.noTablesYetModal.cancel,
+      confirmButtonColor: "#b8860b",
+    }).then((result) => {
+      if (result.isConfirmed) setTab("seating");
+    });
+  }
+
   return (
     <div className="gm-page">
       <div className="gm-header">
@@ -398,6 +431,8 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
                   className="gm-select"
                   value={r.tableId ?? ""}
                   onChange={(e) => handleAssign(r.id, e.target.value)}
+                  onMouseDown={guardTableSelect}
+                  onTouchStart={guardTableSelect}
                 >
                   <option value="">{t.noTableOption}</option>
                   {tables.map((tbl) => (
