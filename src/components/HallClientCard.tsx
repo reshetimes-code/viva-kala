@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AdminCard, AdminCardRow } from "@/components/AdminCard";
 import QrCode from "@/components/QrCode";
+import ImpersonateButton from "@/components/ImpersonateButton";
 import { useLocale } from "@/lib/i18n/LanguageProvider";
 
 const COPY = {
@@ -19,6 +20,7 @@ const COPY = {
     qrCode: "קוד QR",
     whatsapp: "💬 וואטסאפ",
     email: "✉️ מייל",
+    loginAsClient: "🔑 כניסה לחשבון הלקוח",
   },
   en: {
     username: "Username",
@@ -33,10 +35,12 @@ const COPY = {
     qrCode: "QR code",
     whatsapp: "💬 WhatsApp",
     email: "✉️ Email",
+    loginAsClient: "🔑 Log into client's account",
   },
 };
 
 export default function HallClientCard({
+  userId,
   username,
   title,
   date,
@@ -46,6 +50,7 @@ export default function HallClientCard({
   tableCount,
   inviteUrl,
 }: {
+  userId: number;
   username: string;
   title: string;
   date: string;
@@ -93,6 +98,12 @@ export default function HallClientCard({
           )}
         </>
       )}
+      <ImpersonateButton
+        userId={userId}
+        endpoint={`/api/hall/clients/${userId}/impersonate`}
+        label={t.loginAsClient}
+        className="hall-login-as-client-btn"
+      />
     </AdminCard>
   );
 }

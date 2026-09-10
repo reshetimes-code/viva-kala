@@ -119,6 +119,7 @@ export default async function HallDashboardPage() {
                 return (
                   <HallClientCard
                     key={c.userId}
+                    userId={c.userId}
                     username={c.username}
                     title={title}
                     date={date}

@@ -15,9 +15,22 @@ const COPY = {
   },
 };
 
-/** Jumps the admin straight into an event owner's own dashboard - swaps the
- *  admin's session for that user's, then navigates to their main page. */
-export default function ImpersonateButton({ userId }: { userId: number }) {
+/** Jumps straight into another account's own dashboard - swaps the current
+ *  session for that user's, then navigates to their main page. Defaults to
+ *  the superadmin's impersonate route; a hall reuses this same component
+ *  against its own scoped one (/api/hall/clients/[userId]/impersonate) -
+ *  see HallClientCard. */
+export default function ImpersonateButton({
+  userId,
+  endpoint,
+  label,
+  className,
+}: {
+  userId: number;
+  endpoint?: string;
+  label?: string;
+  className?: string;
+}) {
   const { locale } = useLocale();
   const t = COPY[locale];
   const router = useRouter();
@@ -26,7 +39,7 @@ export default function ImpersonateButton({ userId }: { userId: number }) {
   async function handleClick() {
     setBusy(true);
     try {
-      const res = await fetch(`/api/admin/impersonate/${userId}`, { method: "POST" });
+      const res = await fetch(endpoint ?? `/api/admin/impersonate/${userId}`, { method: "POST" });
       if (res.ok) router.push("/dashboard");
     } finally {
       setBusy(false);
@@ -34,8 +47,8 @@ export default function ImpersonateButton({ userId }: { userId: number }) {
   }
 
   return (
-    <button type="button" className="admin-impersonate-btn" onClick={handleClick} disabled={busy}>
-      {busy ? t.entering : t.goToDashboard}
+    <button type="button" className={className ?? "admin-impersonate-btn"} onClick={handleClick} disabled={busy}>
+      {busy ? t.entering : label ?? t.goToDashboard}
     </button>
   );
 }
