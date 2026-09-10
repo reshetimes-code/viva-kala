@@ -2619,11 +2619,20 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .rsvp-thanks-date { margin-top: 8px; font-size: 1.05rem; font-weight: 600; color: #6b5f47; }
 /* The seating/QR-code note - must read as clearly emphasized (bold, boxed,
    on-brand gold) since it's the one instruction guests actually need to
-   act on once they're at the venue. */
+   act on once they're at the venue. The opening line ("to find your seat")
+   is split out on its own, bigger and in red, above the rest of the
+   explanation - the one part of this box a guest must not skim past. */
 .rsvp-thanks-seating {
   margin-top: 16px; padding: 12px 16px; border-radius: 14px;
   background: rgba(184,134,11,0.1); border: 1.5px solid rgba(184,134,11,0.35);
-  font-size: 1.02rem; font-weight: 800; color: #7a5c14; line-height: 1.5;
+  text-align: center;
+}
+.rsvp-thanks-seating-highlight {
+  margin: 0; font-size: 1.12rem; /* the box's base 1.02rem, +10% */
+  font-weight: 800; color: #c62828; line-height: 1.35;
+}
+.rsvp-thanks-seating-rest {
+  margin: 4px 0 0; font-size: 1.02rem; font-weight: 800; color: #7a5c14; line-height: 1.5;
 }
 .rsvp-thanks-nav-row { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
 .rsvp-thanks-nav-btn {

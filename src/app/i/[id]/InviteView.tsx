@@ -59,7 +59,8 @@ const COPY = {
     backToInvite: "צפייה בהזמנה",
     thanksYes: "תודה שאישרתם הגעה!",
     thanksNo: "תודה על התגובה",
-    thanksSeatingNote: "כדי לראות את מקום הישיבה שלכם באולם, סרקו את הקוד שם - יוצג לכם המקום שלכם עם מספר השולחן",
+    thanksSeatingNoteHighlight: "כדי לראות את מקום הישיבה שלכם",
+    thanksSeatingNoteRest: "באולם, סרקו את הקוד שם - יוצג לכם המקום שלכם עם מספר השולחן",
     atHour: "בשעה",
     navWaze: "ניווט ב-Waze",
     navMaps: "ניווט ב-Maps",
@@ -145,7 +146,8 @@ const COPY = {
     backToInvite: "View invitation",
     thanksYes: "Thanks for confirming your attendance!",
     thanksNo: "Thanks for your response",
-    thanksSeatingNote: "To find your seat in the hall, scan the code there - it will show you your seat with the table number",
+    thanksSeatingNoteHighlight: "To find your seat",
+    thanksSeatingNoteRest: "in the hall, scan the code there - it will show you your seat with the table number",
     atHour: "at",
     navWaze: "Navigate with Waze",
     navMaps: "Navigate with Maps",
@@ -1259,7 +1261,10 @@ export default function InviteView({
                       RSVP has no seat to find, so this stays out of that
                       branch. */}
                   {submitted === "yes" && (
-                    <p className="rsvp-thanks-seating">{t.thanksSeatingNote}</p>
+                    <div className="rsvp-thanks-seating">
+                      <p className="rsvp-thanks-seating-highlight">{t.thanksSeatingNoteHighlight}</p>
+                      <p className="rsvp-thanks-seating-rest">{t.thanksSeatingNoteRest}</p>
+                    </div>
                   )}
                   {showNavBtn && address && (
                     <div className="rsvp-thanks-nav-row">
