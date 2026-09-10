@@ -747,8 +747,21 @@ async function buildUserFullDetail(user: StoredUser, aiAttempts: number) {
   );
   const leads = leadsRes.rows.map(rowToLead);
 
+  // Resolved only when this account is itself a hall's client (hallId set) -
+  // lets the admin listing show which hall a client belongs to by name,
+  // not just its raw id.
+  const hallUser = user.hallId ? await findUserById(user.hallId) : undefined;
+
   return {
-    user: { id: user.id, username: user.username, createdAt: user.createdAt, aiAttempts },
+    user: {
+      id: user.id,
+      username: user.username,
+      createdAt: user.createdAt,
+      aiAttempts,
+      accountType: user.accountType,
+      hallId: user.hallId,
+      hallUsername: hallUser?.username,
+    },
     invites,
     leads,
   };

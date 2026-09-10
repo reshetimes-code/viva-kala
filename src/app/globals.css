@@ -1758,6 +1758,15 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .admin-card-summary-text { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
 .admin-card-title { font-weight: 800; font-size: 1rem; color: #232a36; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .admin-card-subtitle { font-size: .82rem; color: #9a9488; }
+/* Private (default) vs. business/hall account - shown right on the summary
+   row so it's visible without opening the card. Neutral gray reads as the
+   ordinary case; a real hall account gets the on-brand gold treatment so it
+   stands out in a list that's mostly private signups. */
+.admin-card-badge {
+  flex-shrink: 0; font-size: .74rem; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+  background: #eceae2; color: #6b6558; white-space: nowrap;
+}
+.admin-card-badge-hall { background: rgba(184,134,11,0.14); color: #8a6710; }
 .admin-card-chevron { color: #9a9488; transition: transform .2s ease; flex-shrink: 0; }
 .admin-card.is-open .admin-card-chevron { transform: rotate(180deg); }
 .admin-card-body { padding: 4px 18px 18px; border-top: 1px solid #f0ede3; display: flex; flex-direction: column; gap: 10px; }

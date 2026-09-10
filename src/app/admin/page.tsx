@@ -21,6 +21,9 @@ const COPY = {
     details: "פרטים ←",
     noUsers: "אין עדיין משתמשים רשומים.",
     dateLocale: "he-IL",
+    accountTypeHall: "עסקי (אולם)",
+    accountTypeIndividual: "פרטי",
+    accountTypeHallClient: (hallName: string) => `פרטי · לקוח של ${hallName}`,
   },
   en: {
     title: "System management",
@@ -32,6 +35,9 @@ const COPY = {
     details: "Details ←",
     noUsers: "No registered users yet.",
     dateLocale: "en-US",
+    accountTypeHall: "Business (hall)",
+    accountTypeIndividual: "Private",
+    accountTypeHallClient: (hallName: string) => `Private · client of ${hallName}`,
   },
 };
 
@@ -55,11 +61,27 @@ export default async function AdminPage() {
           const inviteCount = u.invites.length;
           const totalAttending = u.invites.reduce((sum, g) => sum + g.totalAttending, 0);
           const totalTables = u.invites.reduce((sum, g) => sum + g.totalTables, 0);
+          // "hall" = the venue's own account (a real business); everyone
+          // else is a private/individual signup - but one created BY a hall
+          // through its own client panel (hallId set) still gets flagged as
+          // that hall's client rather than reading as an anonymous private
+          // account with no connection to any business.
+          const accountBadgeLabel =
+            u.user.accountType === "hall"
+              ? t.accountTypeHall
+              : u.user.hallUsername
+                ? t.accountTypeHallClient(u.user.hallUsername)
+                : t.accountTypeIndividual;
           return (
             <AdminCard
               key={u.user.id}
               title={u.user.username}
               subtitle={t.joined(new Date(u.user.createdAt).toLocaleDateString(t.dateLocale))}
+              badge={
+                <span className={`admin-card-badge${u.user.accountType === "hall" ? " admin-card-badge-hall" : ""}`}>
+                  {accountBadgeLabel}
+                </span>
+              }
             >
               <AdminCardRow label={t.designsCreated} value={inviteCount} />
               <AdminCardRow label={t.aiAttempts} value={u.user.aiAttempts} />
