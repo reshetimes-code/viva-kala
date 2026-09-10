@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:unit": "node --experimental-strip-types --test src/lib/leadDateGuard.test.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@google-cloud/storage": "^8.0.1",
@@ -21,6 +23,7 @@
     "sweetalert2": "^11.26.25"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",

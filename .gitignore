@@ -51,3 +51,8 @@ devlog*.txt
 
 public/uploads/*
 !public/uploads/.gitkeep
+
+# Playwright output (e2e/ tests themselves are committed, just not their runs)
+/test-results/
+/playwright-report/
+/blob-report/
