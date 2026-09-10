@@ -39,6 +39,13 @@ const COPY = {
     noTablesYet: "עדיין לא יצרתם שולחנות.",
     addTableRound: "הוספת שולחן",
     tableCapacitySuffix: (taken: number, capacity: number) => `(${taken}/${capacity} מקומות)`,
+    addGuestManually: "➕ הוספת אורח ידנית",
+    addGuestManuallyHint: "לאורח שלא יודע/ת לאשר הגעה בעצמו - תוסיפו אותו/ה כאן ותוכלו לשבץ לשולחן",
+    newGuestNamePlaceholder: "שם פרטי",
+    newGuestFamilyPlaceholder: "שם משפחה (לא חובה)",
+    newGuestPhonePlaceholder: "טלפון (לא חובה)",
+    addGuestSubmit: "➕ הוספה",
+    addGuestGenericError: "שגיאה בהוספת האורח",
     editCapacityTitle: "עריכת כמות מקומות",
     noGuestsAtTable: "אין עדיין אורחים משובצים",
     addGuestToTable: "➕ הוספת אורח לשולחן זה...",
@@ -89,6 +96,13 @@ const COPY = {
     noTablesYet: "You haven't created any tables yet.",
     addTableRound: "Add a table",
     tableCapacitySuffix: (taken: number, capacity: number) => `(${taken}/${capacity} seats)`,
+    addGuestManually: "➕ Add a guest manually",
+    addGuestManuallyHint: "For a guest who can't RSVP themselves - add them here and you'll be able to seat them at a table",
+    newGuestNamePlaceholder: "First name",
+    newGuestFamilyPlaceholder: "Family name (optional)",
+    newGuestPhonePlaceholder: "Phone (optional)",
+    addGuestSubmit: "➕ Add",
+    addGuestGenericError: "Error adding guest",
     editCapacityTitle: "Edit seat count",
     noGuestsAtTable: "No guests assigned yet",
     addGuestToTable: "➕ Add a guest to this table...",
@@ -130,6 +144,10 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
   const [qrOpen, setQrOpen] = useState(false);
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const [addingTable, setAddingTable] = useState(false);
+  const [addingGuest, setAddingGuest] = useState(false);
+  const [newGuestName, setNewGuestName] = useState("");
+  const [newGuestFamilyName, setNewGuestFamilyName] = useState("");
+  const [newGuestPhone, setNewGuestPhone] = useState("");
 
   const attending = rsvps.filter((r) => r.attending);
   const notAttending = rsvps.filter((r) => !r.attending);
@@ -161,6 +179,35 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
         setNewTableCapacity("");
         setAddingTable(false);
         await refresh();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleAddGuest(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newGuestName.trim()) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/invites/${inviteId}/guests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guestName: newGuestName.trim(),
+          familyName: newGuestFamilyName.trim(),
+          phone: newGuestPhone.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setNewGuestName("");
+        setNewGuestFamilyName("");
+        setNewGuestPhone("");
+        setAddingGuest(false);
+        await refresh();
+      } else {
+        Swal.fire({ icon: "error", text: data.error || t.addGuestGenericError });
       }
     } finally {
       setBusy(false);
@@ -291,6 +338,47 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
 
       {tab === "guests" && (
         <div className="gm-list">
+          {addingGuest ? (
+            <form className="gm-add-guest-form" onSubmit={handleAddGuest}>
+              <input
+                className="gm-add-guest-input"
+                placeholder={t.newGuestNamePlaceholder}
+                value={newGuestName}
+                onChange={(e) => setNewGuestName(e.target.value)}
+                autoFocus
+                required
+              />
+              <input
+                className="gm-add-guest-input"
+                placeholder={t.newGuestFamilyPlaceholder}
+                value={newGuestFamilyName}
+                onChange={(e) => setNewGuestFamilyName(e.target.value)}
+              />
+              <input
+                className="gm-add-guest-input"
+                placeholder={t.newGuestPhonePlaceholder}
+                value={newGuestPhone}
+                onChange={(e) => setNewGuestPhone(e.target.value)}
+                type="tel"
+                inputMode="tel"
+              />
+              <button type="submit" className="gm-add-guest-btn" disabled={busy}>
+                {t.addGuestSubmit}
+              </button>
+            </form>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="gm-add-guest-btn gm-add-guest-btn-full"
+                onClick={() => setAddingGuest(true)}
+              >
+                {t.addGuestManually}
+              </button>
+              <p className="gm-add-guest-hint">{t.addGuestManuallyHint}</p>
+            </>
+          )}
+
           {rsvps.length === 0 && <p className="gm-empty">{t.noRsvpsYet}</p>}
 
           {attending.map((r) => (
