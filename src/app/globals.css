@@ -2595,11 +2595,12 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   min-height: calc(100dvh - 130px); display: flex; flex-direction: column;
   align-items: center; justify-content: flex-start; padding: 10px 0;
 }
-/* At least 60% of the page's own height, everything else (thanks message,
-   date, nav buttons) flows below it in normal document order. */
+/* ~45% of the page's own height (was 60%) - shrinking the photo pulls the
+   thanks message/buttons block up right underneath it instead of leaving
+   it stranded near the bottom of the screen. */
 .rsvp-thanks-image {
-  width: 100%; height: 60dvh; min-height: 60dvh; object-fit: cover;
-  border-radius: 20px; margin-bottom: 22px; box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+  width: 100%; height: 45dvh; min-height: 45dvh; object-fit: cover;
+  border-radius: 20px; margin-bottom: 14px; box-shadow: 0 12px 30px rgba(0,0,0,0.18);
 }
 .rsvp-thanks {
   font-family: 'Assistant', sans-serif; font-size: clamp(1.7rem, 7vw, 2.2rem); font-weight: 800;
@@ -2607,7 +2608,15 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 }
 .rsvp-thanks-headline { margin-top: 16px; font-size: 1.2rem; font-weight: 700; color: #4a3f30; }
 .rsvp-thanks-date { margin-top: 8px; font-size: 1.05rem; font-weight: 600; color: #6b5f47; }
-.rsvp-thanks-nav-row { display: flex; gap: 10px; justify-content: center; margin-top: 24px; }
+/* The seating/QR-code note - must read as clearly emphasized (bold, boxed,
+   on-brand gold) since it's the one instruction guests actually need to
+   act on once they're at the venue. */
+.rsvp-thanks-seating {
+  margin-top: 16px; padding: 12px 16px; border-radius: 14px;
+  background: rgba(184,134,11,0.1); border: 1.5px solid rgba(184,134,11,0.35);
+  font-size: 1.02rem; font-weight: 800; color: #7a5c14; line-height: 1.5;
+}
+.rsvp-thanks-nav-row { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
 .rsvp-thanks-nav-btn {
   display: inline-block; padding: 14px 24px; border-radius: 999px; color: #fff; font-weight: 700;
   font-size: 1rem; text-decoration: none; box-shadow: 0 8px 20px rgba(0,0,0,0.15);

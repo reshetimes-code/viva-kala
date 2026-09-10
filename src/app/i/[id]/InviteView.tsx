@@ -58,6 +58,7 @@ const COPY = {
     backToInvite: "צפייה בהזמנה",
     thanksYes: "תודה שאישרתם הגעה!",
     thanksNo: "תודה על התגובה",
+    thanksSeatingNote: "כדי לראות את מקום הישיבה שלכם באולם, סרקו את הקוד שם - יוצג לכם המקום שלכם עם מספר השולחן",
     atHour: "בשעה",
     navWaze: "ניווט ב-Waze",
     navMaps: "ניווט ב-Maps",
@@ -143,6 +144,7 @@ const COPY = {
     backToInvite: "View invitation",
     thanksYes: "Thanks for confirming your attendance!",
     thanksNo: "Thanks for your response",
+    thanksSeatingNote: "To find your seat in the hall, scan the code there - it will show you your seat with the table number",
     atHour: "at",
     navWaze: "Navigate with Waze",
     navMaps: "Navigate with Maps",
@@ -450,6 +452,17 @@ export default function InviteView({
   // flash that's gone in under a second didn't give anyone a real chance
   // to check they picked the right date, "out" = fading out right before
   // the next question fades in.
+  // Guards the date field below against the well-known iOS Safari bug where
+  // an empty <input type="date"> fires a "change" event with TODAY's date
+  // the instant its picker opens - before the guest has tapped anything.
+  // Real human interaction can't beat the picker's own open animation, so
+  // any "change" within leadDateGuardMs of focus is that phantom event, not
+  // a real pick - see the ref-wired onchange below.
+  const leadDateFocusedAt = useRef(0);
+  // Short enough that a real tap (which can't land before the sheet has
+  // even finished animating open) never gets swallowed, long enough to
+  // catch the same-tick phantom fire.
+  const leadDateGuardMs = 200;
   const [leadStep, setLeadStep] = useState<0 | 1 | 2>(0);
   const [leadStepPhase, setLeadStepPhase] = useState<"question" | "picked" | "confirm" | "out">("question");
   const [leadPickedText, setLeadPickedText] = useState("");
@@ -1037,9 +1050,17 @@ export default function InviteView({
                             type="date"
                             defaultValue={leadEventDate}
                             onChange={(e) => setLeadEventDate(e.target.value)}
+                            onFocus={() => {
+                              leadDateFocusedAt.current = Date.now();
+                            }}
                             ref={(el) => {
                               if (!el) return;
-                              el.onchange = (e) => handleLeadDatePicked((e.target as HTMLInputElement).value);
+                              el.onchange = (e) => {
+                                // Phantom pre-pick fire (see leadDateGuardMs above) -
+                                // ignore it and leave the picker open for a real one.
+                                if (Date.now() - leadDateFocusedAt.current < leadDateGuardMs) return;
+                                handleLeadDatePicked((e.target as HTMLInputElement).value);
+                              };
                             }}
                           />
                         </div>
@@ -1238,6 +1259,12 @@ export default function InviteView({
                     <p className="rsvp-thanks-date">
                       {formatEventDate(eventDate)} {eventStart && `${t.atHour} ${eventStart}`}
                     </p>
+                  )}
+                  {/* Only relevant to guests who are actually coming - a "no"
+                      RSVP has no seat to find, so this stays out of that
+                      branch. */}
+                  {submitted === "yes" && (
+                    <p className="rsvp-thanks-seating">{t.thanksSeatingNote}</p>
                   )}
                   {showNavBtn && address && (
                     <div className="rsvp-thanks-nav-row">
