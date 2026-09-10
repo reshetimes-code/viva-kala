@@ -9,8 +9,8 @@ import { buildHeadline, headlineToString, buildShareGreeting } from "@/lib/categ
 import { TITLE, siteOpenGraph, siteTwitter } from "../../layout";
 import InviteView from "./InviteView";
 
-// The root layout's generic description ("יצירת הזמנות דיגיטליות מעוצבות
-// לאירועים") makes sense on the marketing homepage, but on a shared invite
+// The root layout's generic description ("סידורי הושבה - הזמנות דיגיטלית -
+// אישורי הגעה") makes sense on the marketing homepage, but on a shared invite
 // link it competes with the actual WhatsApp message for the recipient's
 // attention right above it in the same preview card. Blanking it here leaves
 // WhatsApp's preview card with just the title + image, so the eye goes

@@ -7,8 +7,8 @@ import { dirFor } from "@/lib/i18n/locale";
 
 export const TITLE = { he: "VIVA | האירוע מתחיל כאן", en: "VIVA | Where the event begins" };
 const DESCRIPTION = {
-  he: "יצירת הזמנות דיגיטליות מעוצבות לאירועים",
-  en: "Beautifully designed digital invitations for your event",
+  he: "סידורי הושבה - הזמנות דיגיטלית - אישורי הגעה",
+  en: "Seating arrangements - Digital invitations - RSVP confirmations",
 };
 const OG_ALT = { he: "VIVA - האירוע מתחיל כאן", en: "VIVA - Where the event begins" };
 
