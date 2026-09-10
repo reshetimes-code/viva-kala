@@ -1801,6 +1801,18 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 }
 .hall-add-client-form { max-width: 420px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f0ede3; }
 .hall-add-client-actions { display: flex; gap: 10px; }
+
+/* Success step right after creating a client account - the one moment the
+   hall has both the new username and (plaintext) password on screen, so
+   the "send it over" action has to live right here, not on some later
+   screen where the password is gone. */
+.hall-client-created { display: flex; flex-direction: column; gap: 4px; }
+.hall-client-created-title { font-weight: 800; color: #1e7d3a; font-size: 1.05rem; margin: 0; }
+.hall-client-created-hint { color: #6b6660; font-size: .9rem; margin: 0 0 10px; }
+.hall-client-wa-btn {
+  display: block; width: 100%; text-align: center; text-decoration: none !important;
+  margin-bottom: 10px; box-sizing: border-box;
+}
 .hall-qr-toggle-btn {
   margin-top: 6px; background: none; border: 1px solid #d6d9de; border-radius: 999px;
   padding: 8px 16px; font-weight: 700; font-size: .85rem; color: #232a36; cursor: pointer;
