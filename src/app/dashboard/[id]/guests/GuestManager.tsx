@@ -40,6 +40,7 @@ const COPY = {
     addTableRound: "הוספת שולחן",
     tableCapacitySuffix: (taken: number, capacity: number) => `(${taken}/${capacity} מקומות)`,
     addGuestManually: "➕ הוספת אורח ידנית",
+    addGuestManuallySub: "לאורחים שלא עברו באישור הגעה",
     addGuestManuallyHint: "לאורח שלא יודע/ת לאשר הגעה בעצמו - תוסיפו אותו/ה כאן ותוכלו לשבץ לשולחן",
     newGuestNamePlaceholder: "שם פרטי",
     newGuestFamilyPlaceholder: "שם משפחה (לא חובה)",
@@ -103,6 +104,7 @@ const COPY = {
     addTableRound: "Add a table",
     tableCapacitySuffix: (taken: number, capacity: number) => `(${taken}/${capacity} seats)`,
     addGuestManually: "➕ Add a guest manually",
+    addGuestManuallySub: "For guests who didn't RSVP",
     addGuestManuallyHint: "For a guest who can't RSVP themselves - add them here and you'll be able to seat them at a table",
     newGuestNamePlaceholder: "First name",
     newGuestFamilyPlaceholder: "Family name (optional)",
@@ -403,10 +405,11 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
             <>
               <button
                 type="button"
-                className="gm-add-guest-btn gm-add-guest-btn-full"
+                className="gm-add-guest-btn gm-add-guest-btn-full gm-add-guest-btn-stacked"
                 onClick={() => setAddingGuest(true)}
               >
-                {t.addGuestManually}
+                <span className="gm-add-guest-btn-label">{t.addGuestManually}</span>
+                <span className="gm-add-guest-btn-sub">{t.addGuestManuallySub}</span>
               </button>
               <p className="gm-add-guest-hint">{t.addGuestManuallyHint}</p>
             </>

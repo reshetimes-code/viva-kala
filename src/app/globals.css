@@ -1622,6 +1622,17 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   cursor: pointer; white-space: nowrap; box-sizing: border-box;
 }
 .gm-add-table-btn:disabled, .gm-add-guest-btn:disabled { opacity: .6; }
+/* Only the standalone "add a guest manually" trigger (not the form's own
+   "+ הוספה" submit button, which shares the same base class) carries a
+   second, smaller line right under its label - who this button is actually
+   for, right where the eye already is instead of leaving that only to the
+   separate hint paragraph below. */
+.gm-add-guest-btn-stacked {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; min-height: 60px; padding: 10px 16px; white-space: normal;
+}
+.gm-add-guest-btn-label { font-weight: 700; font-size: 1rem; }
+.gm-add-guest-btn-sub { font-weight: 500; font-size: .78rem; color: rgba(212,175,55,0.75); }
 .gm-add-table-capacity-input { flex: 1 1 200px; }
 .gm-add-guest-hint { text-align: center; color: #9a9488; font-size: .85rem; margin: -2px 0 16px; }
 
@@ -1700,8 +1711,16 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    there; on an actual phone the same max-width/padding still collapses down
    comfortably since nothing here is fixed-width. */
 .admin-page { min-height: 100vh; width: 100%; background: #f4f1ea; padding: 32px 24px 60px; direction: rtl; font-family: 'Assistant', sans-serif; max-width: 1320px; margin: 0 auto; box-sizing: border-box; }
-.admin-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.admin-header { position: relative; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
 .admin-header h1 { font-size: 1.6rem; font-weight: 800; color: #2b2b2b; }
+/* .dash-logout-btn's own colors (near-white on the dark navy dashboard
+   header) are unreadable here on this light cream page - same button,
+   dark-on-light palette for this context instead. */
+.admin-header .dash-logout-btn {
+  background: #fff; border-color: #e2ddd0; color: #2b2b2b;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.admin-header .dash-logout-btn:hover { background: #f4f1ea; }
 .admin-nav-link { color: var(--viva-teal-deep); font-weight: 700; text-decoration: none; }
 .admin-nav-link:hover { text-decoration: underline; }
 .admin-back-link { display: inline-block; margin-bottom: 14px; font-size: .95rem; }
