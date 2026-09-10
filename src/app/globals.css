@@ -604,6 +604,21 @@ body {
 .register-link-row a { color: var(--fi-teal-soft); font-weight: 700; text-decoration: none; }
 .register-link-row a:hover { text-decoration: underline; color: #fff; }
 
+/* Sign-up CTA on the login card - same size/shape as .login-button so it
+   reads as an equally real option, not a footnote link, but outlined
+   instead of filled so the primary "sign in" action still wins visually. */
+.signup-button {
+  display: block; width: 100%; padding: 19px; box-sizing: border-box;
+  background: transparent; border: 1.5px solid rgba(212,175,55,0.55); border-radius: 999px;
+  color: #d4af7a; font-size: 1.15rem; font-weight: 700; letter-spacing: .03em;
+  text-align: center; text-decoration: none; cursor: pointer;
+  transition: all .3s ease;
+}
+.signup-button:hover {
+  background: rgba(212,175,55,0.12); border-color: rgba(212,175,55,0.85); color: #f0d9a8;
+  transform: translateY(-2px); box-shadow: 0 14px 32px rgba(0,0,0,0.25);
+}
+
 .alert {
   border-radius: 12px; padding: 15px 20px; margin-bottom: 16px;
   font-size: .95rem; font-weight: 500;
