@@ -469,7 +469,15 @@ export default function InviteView({
   function handleLeadDatePicked(value: string) {
     if (!value) return;
     setLeadPickedText(formatEventDate(value));
-    setLeadStepPhase("confirm");
+    // iOS Safari's native date-picker sheet is still animating itself
+    // closed when this native "change" event fires. leadStepPhase feeds the
+    // key on the question wrapper below (key={`${leadStep}-${leadStepPhase}`}),
+    // so setting it right here unmounts the <input type="date"> the sheet
+    // is still attached to mid-dismissal - which iOS shows as the sheet
+    // snapping/glitching shut on its own instead of closing normally from
+    // the tap. Letting the sheet finish its own close first (a short delay
+    // is enough - there's no real event to wait on) fixes that.
+    setTimeout(() => setLeadStepPhase("confirm"), 250);
   }
 
   function confirmLeadDate() {
