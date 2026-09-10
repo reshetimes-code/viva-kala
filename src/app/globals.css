@@ -1987,7 +1987,12 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   text-shadow: 0 2px 14px rgba(0,0,0,0.35);
 }
 .dash-logout-btn {
-  position: absolute; top: -4px; right: 0;
+  /* Logical, not physical "right" - .dash-header's title is truly centered
+     so either side is fine there, but .admin-header's title sits at the
+     RTL-start (right) edge, which used to collide with this sitting on the
+     physical right too. inset-inline-end puts it on the opposite edge from
+     that title in both directions. */
+  position: absolute; top: -4px; inset-inline-end: 0;
   width: 40px; height: 40px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.35);
