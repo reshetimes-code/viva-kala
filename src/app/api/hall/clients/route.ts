@@ -8,12 +8,14 @@ const MESSAGES = {
     hallLoginRequired: "יש להתחבר כאולם אירועים",
     missing: "נא למלא שם משתמש וסיסמה",
     shortPassword: "הסיסמה חייבת להכיל לפחות 4 תווים",
+    usernameTaken: "שם המשתמש כבר תפוס",
     generic: "שגיאה ביצירת חשבון לקוח",
   },
   en: {
     hallLoginRequired: "Please log in as a venue",
     missing: "Please fill in a username and password",
     shortPassword: "Password must be at least 4 characters",
+    usernameTaken: "This username is already taken",
     generic: "Error creating client account",
   },
 };
@@ -57,7 +59,12 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ success: true, client });
   } catch (err) {
-    const message = err instanceof Error ? err.message : t.generic;
+    const message =
+      err instanceof Error && err.message === "USERNAME_TAKEN"
+        ? t.usernameTaken
+        : err instanceof Error
+        ? err.message
+        : t.generic;
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
