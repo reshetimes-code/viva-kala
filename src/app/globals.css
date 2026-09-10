@@ -604,6 +604,10 @@ body {
 .register-link-row a { color: var(--fi-teal-soft); font-weight: 700; text-decoration: none; }
 .register-link-row a:hover { text-decoration: underline; color: #fff; }
 
+/* Small caption above the sign-up button - just enough context that the
+   button below doesn't need to spell out "don't have an account" itself. */
+.signup-hint { text-align: center; color: var(--fi-muted); font-size: .85rem; margin: 0 0 10px; }
+
 /* Sign-up CTA on the login card - same size/shape as .login-button so it
    reads as an equally real option, not a footnote link, but outlined
    instead of filled so the primary "sign in" action still wins visually. */

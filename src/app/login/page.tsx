@@ -15,6 +15,7 @@ const COPY = {
     loading: "מתחבר...",
     submit: "התחברות למערכת",
     or: "או",
+    noAccount: "אין לכם חשבון?",
     signupLink: "הרשמה למערכת",
     genericError: "שגיאה בהתחברות",
     networkError: "שגיאת רשת - נסה שוב",
@@ -28,6 +29,7 @@ const COPY = {
     loading: "Signing in...",
     submit: "Sign in",
     or: "or",
+    noAccount: "Don't have an account?",
     signupLink: "Create one",
     genericError: "Sign-in error",
     networkError: "Network error - please try again",
@@ -120,6 +122,7 @@ export default function LoginPage() {
           <span>{t.or}</span>
         </div>
 
+        <p className="signup-hint">{t.noAccount}</p>
         <Link href="/signup" className="signup-button">
           {t.signupLink}
         </Link>
