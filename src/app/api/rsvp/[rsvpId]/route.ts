@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { findRsvpById, findInviteById, assignRsvpTable } from "@/lib/store";
+import { findRsvpById, findInviteById, findTableById, assignRsvpTable } from "@/lib/store";
 import { getServerLocale } from "@/lib/i18n/server";
 
 const MESSAGES = {
@@ -8,11 +8,13 @@ const MESSAGES = {
     loginRequired: "יש להתחבר תחילה",
     rsvpNotFound: "אישור הגעה לא נמצא",
     forbidden: "אין הרשאה",
+    tableNotFound: "שולחן לא נמצא",
   },
   en: {
     loginRequired: "Please log in first",
     rsvpNotFound: "RSVP not found",
     forbidden: "Not authorized",
+    tableNotFound: "Table not found",
   },
 };
 
@@ -39,6 +41,16 @@ export async function PATCH(
   }
 
   const { tableId } = await req.json();
+  if (tableId) {
+    // Without this, a host could point their own guest's table_id at a
+    // table row that actually belongs to a completely different invite
+    // (the rsvp-ownership check above only verifies the rsvp itself, not
+    // that this id is really one of THIS invite's own tables).
+    const table = await findTableById(tableId);
+    if (!table || table.inviteId !== invite.id) {
+      return NextResponse.json({ error: t.tableNotFound }, { status: 404 });
+    }
+  }
   await assignRsvpTable(rsvp.id, tableId ?? null);
   return NextResponse.json({ success: true });
 }

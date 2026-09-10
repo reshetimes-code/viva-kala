@@ -60,7 +60,7 @@ export async function PATCH(
   if (parsedCapacity !== null && (!Number.isFinite(parsedCapacity) || parsedCapacity <= 0)) {
     return NextResponse.json({ error: t.invalidCapacity }, { status: 400 });
   }
-  const table = await updateTableCapacity(tableId, parsedCapacity);
+  const table = await updateTableCapacity(tableId, id, parsedCapacity);
   if (!table) {
     return NextResponse.json({ error: t.tableNotFound }, { status: 404 });
   }

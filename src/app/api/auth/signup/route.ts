@@ -2,25 +2,39 @@ import { NextRequest, NextResponse } from "next/server";
 import { createUser, createSessionToken, setSessionCookie } from "@/lib/auth";
 import { updateHallSettings } from "@/lib/store";
 import { getServerLocale } from "@/lib/i18n/server";
+import { createRateLimiter, clientIp } from "@/lib/rateLimit";
 
 const MESSAGES = {
   he: {
     missing: "נא למלא שם משתמש וסיסמה",
     shortPassword: "הסיסמה חייבת להכיל לפחות 4 תווים",
     usernameTaken: "שם המשתמש כבר תפוס",
+    rateLimited: "יותר מדי נסיונות הרשמה - נסה שוב מאוחר יותר",
     generic: "שגיאה בהרשמה",
   },
   en: {
     missing: "Please fill in a username and password",
     shortPassword: "Password must be at least 4 characters",
     usernameTaken: "This username is already taken",
+    rateLimited: "Too many sign-up attempts - please try again later",
     generic: "Sign-up error",
   },
 };
 
+// Unlike the login limiter, every attempt counts here (not just failures) -
+// the thing being throttled is mass account creation itself, not password
+// guessing. A generous cap so a shared office/home IP signing up a few
+// legitimate accounts never trips it.
+const limiter = createRateLimiter(10, 60 * 60 * 1000);
+
 export async function POST(req: NextRequest) {
   const locale = await getServerLocale();
   const t = MESSAGES[locale];
+  const ip = clientIp(req);
+  if (limiter.isLimited(ip)) {
+    return NextResponse.json({ error: t.rateLimited }, { status: 429 });
+  }
+  limiter.recordFailure(ip);
   try {
     const { username, password, accountType, youtubeUrl, tourUrl } = await req.json();
 

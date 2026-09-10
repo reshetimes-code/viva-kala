@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getUserImageRegenerationsUsed, incrementUserImageRegenerations } from "@/lib/store";
 import { getServerLocale } from "@/lib/i18n/server";
+import { isOwnedUrl } from "@/lib/imageStorage";
 
 const MESSAGES = {
   he: {
@@ -168,6 +169,14 @@ export async function POST(req: Request) {
     const dataUrlMatch = /^data:([^;]+);base64,(.+)$/.exec(rawBaseImage);
     if (dataUrlMatch) {
       baseImagePart = { mimeType: dataUrlMatch[1], data: dataUrlMatch[2] };
+    } else if (!isOwnedUrl(rawBaseImage)) {
+      // Anything other than our own saved-image URLs here would make this
+      // server fetch an attacker-chosen URL (internal hosts, cloud
+      // metadata endpoints, arbitrary large responses) - an SSRF hole, not
+      // a real "load the existing photo" case. Every legitimate baseImage
+      // is either a fresh data: URL (handled above) or a URL this app
+      // itself produced via imageStorage.ts.
+      return NextResponse.json({ error: t.loadImageFailed }, { status: 400 });
     } else {
       try {
         const imgRes = await fetch(rawBaseImage);

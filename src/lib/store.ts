@@ -616,10 +616,21 @@ export async function insertTable(inviteId: string, number: string, capacity?: n
   return rowToTable(res.rows[0]);
 }
 
-export async function updateTableCapacity(tableId: string, capacity: number | null): Promise<StoredTable | undefined> {
+// inviteId scopes this the same way deleteTable below already does - without
+// it, any caller who owns *some* invite could PATCH its own /tables/{id}
+// route with a table id that actually belongs to a different invite (ids
+// are predictable: "t<inviteId>-<n>") and silently edit someone else's
+// seating chart, since the route's own ownership check only verifies the
+// invite id in the URL, not that the table id in the URL is really one of
+// that invite's own tables.
+export async function updateTableCapacity(
+  tableId: string,
+  inviteId: string,
+  capacity: number | null
+): Promise<StoredTable | undefined> {
   const res = await getPool().query(
-    "UPDATE tables SET capacity = $1 WHERE id = $2 RETURNING *",
-    [capacity, tableId]
+    "UPDATE tables SET capacity = $1 WHERE id = $2 AND invite_id = $3 RETURNING *",
+    [capacity, tableId, inviteId]
   );
   return res.rows[0] ? rowToTable(res.rows[0]) : undefined;
 }

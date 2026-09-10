@@ -26,10 +26,15 @@ function publicUrl(filename: string): string {
   return `https://storage.googleapis.com/${BUCKET_NAME}/${filename}`;
 }
 
-/** True for a URL this module owns (so deleteStoredImage knows what it can
- *  safely try to remove) - either the current GCS form or the old local
- *  "/uploads/..." form from before this migration (harmless no-op now). */
-function isOwnedUrl(url: string): boolean {
+/** True for a URL this module owns - either the current GCS form or the old
+ *  local "/uploads/..." form from before this migration (harmless no-op
+ *  now, and not a fetchable absolute URL either way). Used by
+ *  deleteStoredImage below to know what it can safely try to remove, and
+ *  exported so any other server-side code that's about to fetch() a
+ *  client-supplied "existing image" URL (see api/ai-invite/route.ts) can
+ *  check it's really one of ours first - fetching an arbitrary attacker-
+ *  supplied URL server-side is an SSRF hole, not a feature. */
+export function isOwnedUrl(url: string): boolean {
   return url.startsWith(publicUrl("")) || url.startsWith("/uploads/");
 }
 
