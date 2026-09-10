@@ -62,6 +62,11 @@ export async function setSessionCookie(token: string) {
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
+    // Without this, the browser would also send the session token over a
+    // plain http:// connection (a MITM downgrade, a stray non-TLS link) -
+    // off locally only, where there's no TLS to require, matching the same
+    // pattern already used for the superadmin cookie in superadmin.ts.
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
