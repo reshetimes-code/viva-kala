@@ -2386,6 +2386,10 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 }
 .rsvp-field { margin-bottom: 20px; text-align: right; }
 .rsvp-field label { display: block; font-weight: 700; color: #4a3f30; margin-bottom: 8px; }
+/* Warm bridge line between the lead video and the first question ("what's
+   the date?") - without it the jump from "yes I want the offer" straight
+   into a date picker felt abrupt. */
+.lead-date-intro { font-weight: 800; color: #c0392b; font-size: 1.1rem; margin: 0 0 12px; text-align: center; }
 .rsvp-field-error { margin: 6px 4px 0; font-size: .82rem; font-weight: 700; color: #c0392b; }
 .rsvp-field input, .rsvp-field select {
   width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 999px; border: 1px solid #d8cba8;

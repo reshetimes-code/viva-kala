@@ -35,6 +35,7 @@ const COPY = {
     leadConfirmDateQ: "זה התאריך?",
     leadConfirmYes: "✓ אישור",
     leadConfirmBack: "התבלבלתי",
+    leadDateIntro: "תודה שבחרתם בנו! 🙏",
     leadDateQ: "מה תאריך האירוע?",
     leadEventTypeQ: "סוג האירוע?",
     leadEventTypePlaceholder: "בחרו סוג אירוע",
@@ -119,6 +120,7 @@ const COPY = {
     leadConfirmDateQ: "Is this the date?",
     leadConfirmYes: "✓ Confirm",
     leadConfirmBack: "Let me redo that",
+    leadDateIntro: "Thank you for choosing us! 🙏",
     leadDateQ: "What's the event date?",
     leadEventTypeQ: "Type of event?",
     leadEventTypePlaceholder: "Choose event type",
@@ -998,6 +1000,7 @@ export default function InviteView({
                         <p className="lead-video-picked">✓ {leadPickedText}</p>
                       ) : leadStep === 0 ? (
                         <div className="rsvp-field" style={{ textAlign: "center", margin: 0 }}>
+                          <p className="lead-date-intro">{t.leadDateIntro}</p>
                           <label>{t.leadDateQ}</label>
                           {/* iOS Safari fires a premature onChange with today's
                               date the moment an empty date input opens - before
