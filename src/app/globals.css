@@ -1528,13 +1528,6 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .gm-list { display: flex; flex-direction: column; gap: 14px; }
 .gm-empty { text-align: center; color: #9a9488; padding: 40px 0 16px; font-size: 1rem; }
 .gm-empty-tables { display: flex; flex-direction: column; align-items: center; }
-.gm-add-table-round {
-  width: 140px; height: 140px; border-radius: 50%; border: none; cursor: pointer;
-  background: linear-gradient(135deg, #1c1c1e, #2f2f32); color: #d4af7a;
-  font-weight: 800; font-size: 1.05rem; box-shadow: 0 12px 28px rgba(0,0,0,0.35);
-  margin-bottom: 30px; transition: transform .15s ease;
-}
-.gm-add-table-round:hover, .gm-add-table-round:active { transform: scale(1.05); }
 .gm-section-title { font-weight: 800; color: #6b6660; margin: 8px 0 0; font-size: 1rem; }
 
 .gm-guest-card { background: #fff; border-radius: 18px; padding: 18px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
@@ -1607,13 +1600,13 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   width: 100%; margin-top: 12px; padding: 11px 14px; border-radius: 12px; border: 1.5px solid #ddd8cb;
   background: #fdfcf9; font-size: .9rem; font-family: 'Assistant', sans-serif; color: #4a4a4a;
 }
-.gm-add-table-form, .gm-add-guest-form { display: flex; flex-wrap: wrap; gap: 10px; }
-.gm-add-table-input, .gm-add-guest-input {
+.gm-add-guest-form { display: flex; flex-wrap: wrap; gap: 10px; }
+.gm-add-guest-input {
   flex: 1 1 160px; min-width: 0; min-height: 52px; border-radius: 14px; border: 1.5px solid #ddd8cb;
   padding: 0 16px; font-size: 1.05rem; font-family: 'Assistant', sans-serif; background: #fff; box-sizing: border-box;
   color: #4a4a4a;
 }
-.gm-add-table-input::placeholder, .gm-add-guest-input::placeholder { color: #9a9488; }
+.gm-add-guest-input::placeholder { color: #9a9488; }
 .gm-add-table-btn-full, .gm-add-guest-btn-full { width: 100%; margin-bottom: 4px; }
 .gm-add-table-btn, .gm-add-guest-btn {
   flex: 1 1 140px; min-width: 0; min-height: 52px; padding: 0 16px; border-radius: 14px;
@@ -1633,7 +1626,6 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 }
 .gm-add-guest-btn-label { font-weight: 700; font-size: 1rem; }
 .gm-add-guest-btn-sub { font-weight: 500; font-size: .78rem; color: rgba(212,175,55,0.75); }
-.gm-add-table-capacity-input { flex: 1 1 200px; }
 .gm-add-guest-hint { text-align: center; color: #9a9488; font-size: .85rem; margin: -2px 0 16px; }
 
 .gm-table-card { background: #fff; border-radius: 18px; padding: 18px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); }

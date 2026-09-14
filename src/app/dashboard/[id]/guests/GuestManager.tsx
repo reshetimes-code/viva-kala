@@ -36,8 +36,9 @@ const COPY = {
     capacityTitle: "פה תוסיפו כמה מקומות יש בשולחן - לפי המספר הזה יסודרו כמות האורחים בשולחן",
     addTableSubmit: "➕ הוספה",
     addTableFull: "➕ הוספת שולחן",
+    addTableModalTitle: "הוספת שולחן חדש",
+    addTableNumberRequired: "צריך למלא מספר שולחן",
     noTablesYet: "עדיין לא יצרתם שולחנות.",
-    addTableRound: "הוספת שולחן",
     tableCapacitySuffix: (taken: number, capacity: number) => `(${taken}/${capacity} מקומות)`,
     addGuestManually: "➕ הוספת אורח ידנית",
     addGuestManuallySub: "לאורחים שלא עברו באישור הגעה",
@@ -100,8 +101,9 @@ const COPY = {
     capacityTitle: "Add how many seats this table has - guests will be arranged around it up to this number",
     addTableSubmit: "➕ Add",
     addTableFull: "➕ Add a table",
+    addTableModalTitle: "Add a new table",
+    addTableNumberRequired: "Please enter a table number",
     noTablesYet: "You haven't created any tables yet.",
-    addTableRound: "Add a table",
     tableCapacitySuffix: (taken: number, capacity: number) => `(${taken}/${capacity} seats)`,
     addGuestManually: "➕ Add a guest manually",
     addGuestManuallySub: "For guests who didn't RSVP",
@@ -152,12 +154,9 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
   const [rsvps, setRsvps] = useState(initialRsvps);
   const [tables, setTables] = useState(initialTables);
   const [tab, setTab] = useState<"guests" | "seating">("guests");
-  const [newTableNumber, setNewTableNumber] = useState("");
-  const [newTableCapacity, setNewTableCapacity] = useState("");
   const [busy, setBusy] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
-  const [addingTable, setAddingTable] = useState(false);
   const [addingGuest, setAddingGuest] = useState(false);
   const [newGuestName, setNewGuestName] = useState("");
   const [newGuestFamilyName, setNewGuestFamilyName] = useState("");
@@ -175,25 +174,41 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
     }
   }
 
-  async function handleAddTable(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newTableNumber.trim()) return;
+  async function handleAddTable() {
+    const { value, isConfirmed } = await Swal.fire<{ number: string; capacity: number | null }>({
+      title: t.addTableModalTitle,
+      html:
+        `<input id="swal-table-number" class="swal2-input" inputmode="numeric" placeholder="${t.newTablePlaceholder}">` +
+        `<input id="swal-table-capacity" class="swal2-input" inputmode="numeric" placeholder="${t.newCapacityPlaceholder}" title="${t.capacityTitle}">`,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: t.addTableSubmit,
+      cancelButtonText: t.editCapacityModal.cancel,
+      confirmButtonColor: "#b8860b",
+      didOpen: () => {
+        document.getElementById("swal-table-number")?.focus();
+      },
+      preConfirm: () => {
+        const numberInput = document.getElementById("swal-table-number") as HTMLInputElement | null;
+        const capacityInput = document.getElementById("swal-table-capacity") as HTMLInputElement | null;
+        const number = numberInput?.value.trim() ?? "";
+        if (!number) {
+          Swal.showValidationMessage(t.addTableNumberRequired);
+          return false;
+        }
+        const capacityRaw = capacityInput?.value.trim() ?? "";
+        return { number, capacity: capacityRaw ? Number(capacityRaw) : null };
+      },
+    });
+    if (!isConfirmed || !value) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/invites/${inviteId}/tables`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          number: newTableNumber.trim(),
-          capacity: newTableCapacity.trim() ? Number(newTableCapacity.trim()) : null,
-        }),
+        body: JSON.stringify(value),
       });
-      if (res.ok) {
-        setNewTableNumber("");
-        setNewTableCapacity("");
-        setAddingTable(false);
-        await refresh();
-      }
+      if (res.ok) await refresh();
     } finally {
       setBusy(false);
     }
@@ -458,40 +473,13 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
             {t.qrButton}
           </button>
 
-          {addingTable ? (
-            <form className="gm-add-table-form" onSubmit={handleAddTable}>
-              <input
-                className="gm-add-table-input"
-                placeholder={t.newTablePlaceholder}
-                value={newTableNumber}
-                onChange={(e) => setNewTableNumber(e.target.value)}
-                inputMode="numeric"
-                autoFocus
-              />
-              <input
-                className="gm-add-table-input gm-add-table-capacity-input"
-                placeholder={t.newCapacityPlaceholder}
-                value={newTableCapacity}
-                onChange={(e) => setNewTableCapacity(e.target.value)}
-                inputMode="numeric"
-                title={t.capacityTitle}
-              />
-              <button type="submit" className="gm-add-table-btn" disabled={busy}>
-                {t.addTableSubmit}
-              </button>
-            </form>
-          ) : (
-            <button type="button" className="gm-add-table-btn gm-add-table-btn-full" onClick={() => setAddingTable(true)}>
-              {t.addTableFull}
-            </button>
-          )}
+          <button type="button" className="gm-add-table-btn gm-add-table-btn-full" onClick={handleAddTable} disabled={busy}>
+            {t.addTableFull}
+          </button>
 
           {tables.length === 0 && (
             <div className="gm-empty-tables">
               <p className="gm-empty">{t.noTablesYet}</p>
-              <button type="button" className="gm-add-table-round" onClick={() => setAddingTable(true)}>
-                {t.addTableRound}
-              </button>
             </div>
           )}
 
