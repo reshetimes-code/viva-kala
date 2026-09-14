@@ -1367,6 +1367,15 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    with white-on-white text. Force it back to normal dark-on-light contrast. */
 .swal2-select { color: #1c1c1e !important; background: #fff !important; }
 
+/* SweetAlert only auto-sizes the single built-in `input` option - inputs
+   we inject ourselves via `html:` (e.g. the add-table modal, which needs
+   two fields) fall back to the browser's intrinsic default width instead
+   of filling the popup, which overflowed the html-container sideways on
+   narrow screens and made the field look cut off/off-center. Give those
+   their own full-width sizing instead of relying on .swal2-input's margin. */
+.swal-table-field { display: block; width: 100%; box-sizing: border-box; margin: 10px 0 0; }
+.swal-table-field:first-of-type { margin-top: 4px; }
+
 /* --- image crop modal (Cropper.js) --- */
 .crop-modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 100000;

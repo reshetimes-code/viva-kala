@@ -178,8 +178,8 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
     const { value, isConfirmed } = await Swal.fire<{ number: string; capacity: number | null }>({
       title: t.addTableModalTitle,
       html:
-        `<input id="swal-table-number" class="swal2-input" inputmode="numeric" placeholder="${t.newTablePlaceholder}">` +
-        `<input id="swal-table-capacity" class="swal2-input" inputmode="numeric" placeholder="${t.newCapacityPlaceholder}" title="${t.capacityTitle}">`,
+        `<input id="swal-table-number" class="swal2-input swal-table-field" inputmode="numeric" placeholder="${t.newTablePlaceholder}">` +
+        `<input id="swal-table-capacity" class="swal2-input swal-table-field" inputmode="numeric" placeholder="${t.newCapacityPlaceholder}" title="${t.capacityTitle}">`,
       focusConfirm: false,
       showCancelButton: true,
       confirmButtonText: t.addTableSubmit,
