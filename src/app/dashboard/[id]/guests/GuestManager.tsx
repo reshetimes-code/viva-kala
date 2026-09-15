@@ -44,8 +44,8 @@ const COPY = {
     addGuestManuallySub: "לאורחים שלא עברו באישור הגעה",
     addGuestManuallyHint: "לאורח שלא יודע/ת לאשר הגעה בעצמו - תוסיפו אותו/ה כאן ותוכלו לשבץ לשולחן",
     newGuestNamePlaceholder: "שם פרטי",
-    newGuestFamilyPlaceholder: "שם משפחה (לא חובה)",
-    newGuestPhonePlaceholder: "טלפון (לא חובה)",
+    newGuestFamilyPlaceholder: "שם משפחה",
+    newGuestPhonePlaceholder: "טלפון",
     addGuestSubmit: "➕ הוספה",
     addGuestGenericError: "שגיאה בהוספת האורח",
     editCapacityTitle: "עריכת כמות מקומות",
@@ -109,8 +109,8 @@ const COPY = {
     addGuestManuallySub: "For guests who didn't RSVP",
     addGuestManuallyHint: "For a guest who can't RSVP themselves - add them here and you'll be able to seat them at a table",
     newGuestNamePlaceholder: "First name",
-    newGuestFamilyPlaceholder: "Family name (optional)",
-    newGuestPhonePlaceholder: "Phone (optional)",
+    newGuestFamilyPlaceholder: "Family name",
+    newGuestPhonePlaceholder: "Phone",
     addGuestSubmit: "➕ Add",
     addGuestGenericError: "Error adding guest",
     editCapacityTitle: "Edit seat count",
@@ -216,7 +216,7 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
 
   async function handleAddGuest(e: React.FormEvent) {
     e.preventDefault();
-    if (!newGuestName.trim()) return;
+    if (!newGuestName.trim() || !newGuestFamilyName.trim() || !newGuestPhone.trim()) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/invites/${inviteId}/guests`, {
@@ -403,6 +403,7 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
                 placeholder={t.newGuestFamilyPlaceholder}
                 value={newGuestFamilyName}
                 onChange={(e) => setNewGuestFamilyName(e.target.value)}
+                required
               />
               <input
                 className="gm-add-guest-input"
@@ -411,6 +412,7 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
                 onChange={(e) => setNewGuestPhone(e.target.value)}
                 type="tel"
                 inputMode="tel"
+                required
               />
               <button type="submit" className="gm-add-guest-btn" disabled={busy}>
                 {t.addGuestSubmit}

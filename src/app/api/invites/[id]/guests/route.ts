@@ -14,12 +14,16 @@ const MESSAGES = {
     loginRequired: "יש להתחבר תחילה",
     notFound: "הזמנה לא נמצאה",
     nameRequired: "יש להזין שם אורח",
+    familyNameRequired: "יש להזין שם משפחה",
+    phoneRequired: "יש להזין מספר טלפון",
     phoneConflict: "מספר הטלפון הזה כבר רשום תחת שם אחר להזמנה זו",
   },
   en: {
     loginRequired: "Please log in first",
     notFound: "Invitation not found",
     nameRequired: "Guest name is required",
+    familyNameRequired: "Family name is required",
+    phoneRequired: "Phone number is required",
     phoneConflict: "That phone number is already registered under a different name for this invitation",
   },
 };
@@ -79,6 +83,12 @@ export async function POST(
 
   if (!guestName) {
     return NextResponse.json({ error: t.nameRequired }, { status: 400 });
+  }
+  if (!familyName) {
+    return NextResponse.json({ error: t.familyNameRequired }, { status: 400 });
+  }
+  if (!phone) {
+    return NextResponse.json({ error: t.phoneRequired }, { status: 400 });
   }
 
   try {
