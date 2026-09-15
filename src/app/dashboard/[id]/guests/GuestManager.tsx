@@ -32,7 +32,7 @@ const COPY = {
     savedBadge: "✓ נשמר",
     qrButton: "📱 קוד QR להדפסה באולם",
     newTablePlaceholder: "מספר שולחן חדש",
-    newCapacityPlaceholder: "כמות מקומות (לא חובה)",
+    newCapacityPlaceholder: "כמות מקומות",
     capacityTitle: "פה תוסיפו כמה מקומות יש בשולחן - לפי המספר הזה יסודרו כמות האורחים בשולחן",
     addTableSubmit: "➕ הוספה",
     addTableFull: "➕ הוספת שולחן",
@@ -97,7 +97,7 @@ const COPY = {
     savedBadge: "✓ Saved",
     qrButton: "📱 QR code for printing at the venue",
     newTablePlaceholder: "New table number",
-    newCapacityPlaceholder: "Number of seats (optional)",
+    newCapacityPlaceholder: "Number of seats",
     capacityTitle: "Add how many seats this table has - guests will be arranged around it up to this number",
     addTableSubmit: "➕ Add",
     addTableFull: "➕ Add a table",
@@ -411,7 +411,7 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
                 value={newGuestPhone}
                 onChange={(e) => setNewGuestPhone(e.target.value)}
                 type="tel"
-                inputMode="tel"
+                inputMode="numeric"
                 required
               />
               <button type="submit" className="gm-add-guest-btn" disabled={busy}>

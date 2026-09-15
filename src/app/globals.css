@@ -1373,8 +1373,9 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    of filling the popup, which overflowed the html-container sideways on
    narrow screens and made the field look cut off/off-center. Give those
    their own full-width sizing instead of relying on .swal2-input's margin. */
-.swal-table-field { display: block; width: 100%; box-sizing: border-box; margin: 10px 0 0; }
+.swal-table-field { display: block; width: 100%; box-sizing: border-box; margin: 10px 0 0; color: #2b2b2b; }
 .swal-table-field:first-of-type { margin-top: 4px; }
+.swal-table-field::placeholder { color: #6b6660; }
 
 /* --- image crop modal (Cropper.js) --- */
 .crop-modal-overlay {
@@ -1615,6 +1616,10 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   padding: 0 16px; font-size: 1.05rem; font-family: 'Assistant', sans-serif; background: #fff; box-sizing: border-box;
   color: #4a4a4a;
 }
+/* input[type=tel] renders its placeholder/value left-aligned by default in
+   some mobile browsers even inside an RTL page - force it to match the
+   other (text) fields in this form. */
+html[dir="rtl"] .gm-add-guest-input[type="tel"] { direction: rtl; text-align: right; }
 .gm-add-guest-input::placeholder { color: #9a9488; }
 .gm-add-table-btn-full, .gm-add-guest-btn-full { width: 100%; margin-bottom: 4px; }
 .gm-add-table-btn, .gm-add-guest-btn {
