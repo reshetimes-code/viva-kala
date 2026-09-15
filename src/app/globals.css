@@ -1542,6 +1542,14 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 
 .gm-guest-card { background: #fff; border-radius: 18px; padding: 18px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
 .gm-guest-card-muted { opacity: .65; }
+@keyframes gm-guest-card-new-flash {
+  0%, 100% { box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+  15%, 45%, 75% { box-shadow: 0 0 0 3px rgba(212,175,55,0.55), 0 4px 14px rgba(0,0,0,0.06); }
+}
+.gm-guest-card-new { animation: gm-guest-card-new-flash 2.2s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .gm-guest-card-new { animation: none; }
+}
 .gm-guest-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .gm-guest-name { font-size: 1.15rem; font-weight: 800; color: #2b2b2b; }
 .gm-badge { padding: 6px 14px; border-radius: 999px; font-size: .85rem; font-weight: 700; }

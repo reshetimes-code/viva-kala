@@ -157,6 +157,7 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
   const [busy, setBusy] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
+  const [newlyAddedId, setNewlyAddedId] = useState<number | null>(null);
   const [addingGuest, setAddingGuest] = useState(false);
   const [newGuestName, setNewGuestName] = useState("");
   const [newGuestFamilyName, setNewGuestFamilyName] = useState("");
@@ -235,6 +236,10 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
         setNewGuestPhone("");
         setAddingGuest(false);
         await refresh();
+        if (data.rsvp?.id != null) {
+          setNewlyAddedId(data.rsvp.id);
+          setTimeout(() => setNewlyAddedId((cur) => (cur === data.rsvp.id ? null : cur)), 2200);
+        }
       } else {
         Swal.fire({ icon: "error", text: data.error || t.addGuestGenericError });
       }
@@ -435,7 +440,7 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
           {rsvps.length === 0 && <p className="gm-empty">{t.noRsvpsYet}</p>}
 
           {attending.map((r) => (
-            <div key={r.id} className="gm-guest-card">
+            <div key={r.id} className={`gm-guest-card${r.id === newlyAddedId ? " gm-guest-card-new" : ""}`}>
               <div className="gm-guest-top">
                 <span className="gm-guest-name">
                   {r.guestName} {r.familyName}
