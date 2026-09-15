@@ -523,7 +523,7 @@ export async function insertRsvp(rsvp: Omit<StoredRsvp, "id" | "createdAt" | "ta
 }
 
 export async function listRsvpsByInvite(inviteId: string): Promise<StoredRsvp[]> {
-  const res = await getPool().query("SELECT * FROM rsvps WHERE invite_id = $1 ORDER BY created_at ASC", [inviteId]);
+  const res = await getPool().query("SELECT * FROM rsvps WHERE invite_id = $1 ORDER BY created_at DESC", [inviteId]);
   return res.rows.map(rowToRsvp);
 }
 
