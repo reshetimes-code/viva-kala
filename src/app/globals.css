@@ -2789,3 +2789,61 @@ html[dir="ltr"] .lead-alert-card {
   .hero-lang-switch .lang-switch-btn { padding: 7px 13px; font-size: .76rem; }
 }
 
+/* --- Accessibility widget ---
+   Rendered once in the root layout, so it floats on every page (dashboard,
+   invitations, login, the marketing site - everywhere), on top of anything
+   else on the page short of the AI-designer full-screen loader. Fixed
+   positioning keeps it out of normal layout flow, so it's safe next to the
+   heavily custom-designed screens (video-background invites, phone-frame
+   dashboard views) elsewhere in this file. */
+.a11y-widget { position: fixed; bottom: 16px; left: 16px; z-index: 1000000; }
+.a11y-trigger {
+  width: 52px; height: 52px; border-radius: 50%; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #1c1c1e, #2f2f32); color: #d4af7a;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35); transition: transform .15s ease;
+}
+.a11y-trigger:hover, .a11y-trigger:focus-visible { transform: scale(1.06); }
+.a11y-panel {
+  position: absolute; bottom: 62px; left: 0; width: 260px; max-width: calc(100vw - 32px);
+  background: #fff; color: #2b2b2b; border-radius: 16px; padding: 16px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.25); font-family: 'Assistant', sans-serif;
+  box-sizing: border-box;
+}
+.a11y-panel-title { font-weight: 800; font-size: 1.05rem; margin-bottom: 12px; color: #1c3d4a; }
+.a11y-font-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px; }
+.a11y-font-btn {
+  width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #ddd8cb; background: #fdfcf9;
+  font-weight: 800; cursor: pointer; color: #1c3d4a;
+}
+.a11y-font-btn:disabled { opacity: .4; cursor: default; }
+.a11y-font-pct { font-weight: 700; color: #6b6660; min-width: 44px; text-align: center; font-size: .85rem; }
+.a11y-flags { display: flex; flex-direction: column; gap: 8px; }
+.a11y-flag-btn {
+  width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #ddd8cb; background: #fdfcf9;
+  color: #2b2b2b; font-size: .88rem; font-weight: 600; cursor: pointer; text-align: start;
+}
+.a11y-flag-btn[aria-pressed="true"] { background: #1c3d4a; border-color: #1c3d4a; color: #fff; }
+.a11y-reset-btn {
+  width: 100%; margin-top: 12px; padding: 9px; border-radius: 10px; border: none;
+  background: #f0ede4; color: #6b6660; font-weight: 700; cursor: pointer; font-size: .82rem;
+}
+.a11y-statement-link {
+  display: block; text-align: center; margin-top: 10px; font-size: .8rem; color: #b8860b; text-decoration: underline;
+}
+
+/* Effects the widget toggles on <html>. Font scaling is a plain root
+   font-size percentage - every font-size in this file is set in rem
+   (spacing/sizing is px), so this only enlarges text, not layout. */
+:root.a11y-contrast { filter: invert(1) hue-rotate(180deg); }
+:root.a11y-grayscale { filter: grayscale(1); }
+:root.a11y-contrast.a11y-grayscale { filter: invert(1) hue-rotate(180deg) grayscale(1); }
+.a11y-underline-links a { text-decoration: underline !important; }
+.a11y-readable-font, .a11y-readable-font * {
+  font-family: Arial, Helvetica, sans-serif !important; letter-spacing: 0.01em !important;
+}
+.a11y-stop-animations *, .a11y-stop-animations *::before, .a11y-stop-animations *::after {
+  animation-duration: 0s !important; animation-delay: 0s !important;
+  transition-duration: 0s !important; transition-delay: 0s !important;
+}
+

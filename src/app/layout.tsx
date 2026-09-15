@@ -4,6 +4,7 @@ import "sweetalert2/dist/sweetalert2.min.css";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { getServerLocale } from "@/lib/i18n/server";
 import { dirFor } from "@/lib/i18n/locale";
+import AccessibilityWidget from "@/components/AccessibilityWidget";
 
 export const TITLE = { he: "VIVA | האירוע מתחיל כאן", en: "VIVA | Where the event begins" };
 const DESCRIPTION = {
@@ -63,7 +64,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang={locale} dir={dirFor(locale)} className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <LanguageProvider initialLocale={locale}>{children}</LanguageProvider>
+        <LanguageProvider initialLocale={locale}>
+          {children}
+          <AccessibilityWidget />
+        </LanguageProvider>
       </body>
     </html>
   );
