@@ -2787,6 +2787,11 @@ html[dir="ltr"] .lead-alert-card {
 @media (max-width: 640px) {
   .hero-lang-switch { top: 14px; inset-inline-start: 14px; }
   .hero-lang-switch .lang-switch-btn { padding: 7px 13px; font-size: .76rem; }
+  /* The logo is centered at a fixed height regardless of screen width, so
+     on narrow phones it grows wide enough to reach under the language
+     switch button pinned to the corner - shrink it 20% here so the two
+     don't overlap. */
+  .landing-logo-img { height: 115px; }
 }
 
 /* --- Accessibility widget ---
