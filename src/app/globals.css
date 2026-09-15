@@ -1629,6 +1629,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    other (text) fields in this form. */
 html[dir="rtl"] .gm-add-guest-input[type="tel"] { direction: rtl; text-align: right; }
 .gm-add-guest-input::placeholder { color: #9a9488; }
+.gm-add-guest-error { flex-basis: 100%; margin: -4px 0 0; }
 .gm-add-table-btn-full, .gm-add-guest-btn-full { width: 100%; margin-bottom: 4px; }
 .gm-add-table-btn, .gm-add-guest-btn {
   flex: 1 1 140px; min-width: 0; min-height: 52px; padding: 0 16px; border-radius: 14px;

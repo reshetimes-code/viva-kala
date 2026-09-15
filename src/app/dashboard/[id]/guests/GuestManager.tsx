@@ -46,6 +46,7 @@ const COPY = {
     newGuestNamePlaceholder: "שם פרטי",
     newGuestFamilyPlaceholder: "שם משפחה",
     newGuestPhonePlaceholder: "טלפון",
+    newGuestPhoneInvalid: "מספר טלפון לא תקין (חייב 10 ספרות)",
     addGuestSubmit: "➕ הוספה",
     addGuestGenericError: "שגיאה בהוספת האורח",
     editCapacityTitle: "עריכת כמות מקומות",
@@ -111,6 +112,7 @@ const COPY = {
     newGuestNamePlaceholder: "First name",
     newGuestFamilyPlaceholder: "Family name",
     newGuestPhonePlaceholder: "Phone",
+    newGuestPhoneInvalid: "Invalid phone number (must be 10 digits)",
     addGuestSubmit: "➕ Add",
     addGuestGenericError: "Error adding guest",
     editCapacityTitle: "Edit seat count",
@@ -218,6 +220,7 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
   async function handleAddGuest(e: React.FormEvent) {
     e.preventDefault();
     if (!newGuestName.trim() || !newGuestFamilyName.trim() || !newGuestPhone.trim()) return;
+    if (newGuestPhone.replace(/\D/g, "").length !== 10) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/invites/${inviteId}/guests`, {
@@ -419,6 +422,9 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
                 inputMode="numeric"
                 required
               />
+              {newGuestPhone.trim() && newGuestPhone.replace(/\D/g, "").length !== 10 && (
+                <p className="rsvp-field-error gm-add-guest-error">{t.newGuestPhoneInvalid}</p>
+              )}
               <button type="submit" className="gm-add-guest-btn" disabled={busy}>
                 {t.addGuestSubmit}
               </button>

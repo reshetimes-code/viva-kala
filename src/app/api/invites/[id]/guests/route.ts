@@ -16,6 +16,7 @@ const MESSAGES = {
     nameRequired: "יש להזין שם אורח",
     familyNameRequired: "יש להזין שם משפחה",
     phoneRequired: "יש להזין מספר טלפון",
+    phoneInvalid: "מספר טלפון לא תקין (חייב 10 ספרות)",
     phoneConflict: "מספר הטלפון הזה כבר רשום תחת שם אחר להזמנה זו",
   },
   en: {
@@ -24,6 +25,7 @@ const MESSAGES = {
     nameRequired: "Guest name is required",
     familyNameRequired: "Family name is required",
     phoneRequired: "Phone number is required",
+    phoneInvalid: "Invalid phone number (must be 10 digits)",
     phoneConflict: "That phone number is already registered under a different name for this invitation",
   },
 };
@@ -89,6 +91,9 @@ export async function POST(
   }
   if (!phone) {
     return NextResponse.json({ error: t.phoneRequired }, { status: 400 });
+  }
+  if (phone.replace(/\D/g, "").length !== 10) {
+    return NextResponse.json({ error: t.phoneInvalid }, { status: 400 });
   }
 
   try {
