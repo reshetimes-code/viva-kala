@@ -69,3 +69,29 @@ export function ensureHallColumns(): Promise<void> {
   }
   return hallColumnsReady;
 }
+
+// Same lazy/idempotent self-heal as ensureUserQuotaColumn above, for the
+// per-guest "personal link" feature: each rsvp row gets its own unguessable
+// token (generated on demand, not at insert time, so it also self-heals for
+// rsvps created before this column existed) that a guest-specific
+// /table-lookup/guest/[token] page resolves straight to their table, with no
+// name/phone typing. The partial unique index (only over non-null tokens)
+// is what insertRsvpToken's ON CONFLICT relies on to detect the vanishingly
+// unlikely case of two guests randomly generating the same token.
+let rsvpTokenColumnReady: Promise<void> | undefined;
+
+export function ensureRsvpTokenColumn(): Promise<void> {
+  if (!rsvpTokenColumnReady) {
+    rsvpTokenColumnReady = getPool()
+      .query(
+        `ALTER TABLE rsvps ADD COLUMN IF NOT EXISTS token TEXT;
+         CREATE UNIQUE INDEX IF NOT EXISTS rsvps_token_idx ON rsvps(token) WHERE token IS NOT NULL;`
+      )
+      .then(() => undefined)
+      .catch((err) => {
+        rsvpTokenColumnReady = undefined;
+        throw err;
+      });
+  }
+  return rsvpTokenColumnReady;
+}

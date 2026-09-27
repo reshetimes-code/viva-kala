@@ -61,9 +61,16 @@ CREATE TABLE IF NOT EXISTS rsvps (
   attending    BOOLEAN NOT NULL DEFAULT false,
   guest_count  INTEGER NOT NULL DEFAULT 1,
   table_id     TEXT,
+  -- Unguessable per-guest token behind /table-lookup/guest/[token] (see
+  -- ensureRsvpTokenColumn in db.ts for why an already-running database gets
+  -- this column via an idempotent ALTER TABLE instead of relying on this
+  -- definition). Generated lazily, not at insert time, so it stays NULL
+  -- until the first personal link is requested for that guest.
+  token        TEXT,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS rsvps_invite_id_idx ON rsvps(invite_id);
+CREATE UNIQUE INDEX IF NOT EXISTS rsvps_token_idx ON rsvps(token) WHERE token IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS tables (
   id         TEXT PRIMARY KEY,

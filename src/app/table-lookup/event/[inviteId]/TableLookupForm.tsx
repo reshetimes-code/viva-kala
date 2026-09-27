@@ -16,7 +16,7 @@ const COPY = {
       <>
         השם או מספר הטלפון שהזנתם אינם תואמים את הפרטים באישור ההגעה 🤔
         <br />
-        בדקו שהקלדתם אותם בדיוק כפי שנמסרו, או פנו לצוות באירוע.
+        בדקו במיוחד את מספר הטלפון - שהקלדתם אותו (ואת השם) בדיוק כפי שנמסרו, או פנו לצוות באירוע.
       </>
     ),
     searchAgain: "חיפוש נוסף",
@@ -25,6 +25,7 @@ const COPY = {
     firstName: "שם פרטי",
     lastName: "שם המשפחה",
     phone: "מספר טלפון (כפי שנמסר באישור ההגעה)",
+    phoneInvalid: "מספר טלפון לא תקין (חייב 10 ספרות)",
     searching: "מחפש...",
     findMyTable: "מצאו לי שולחן",
   },
@@ -34,7 +35,7 @@ const COPY = {
       <>
         The name or phone number you entered doesn&apos;t match the details on the RSVP 🤔
         <br />
-        Check that you typed them exactly as given, or ask the event staff.
+        Double-check the phone number especially - that it (and the name) was typed exactly as given, or ask the event staff.
       </>
     ),
     searchAgain: "Search again",
@@ -43,6 +44,7 @@ const COPY = {
     firstName: "First name",
     lastName: "Last name",
     phone: "Phone number (as given on the RSVP)",
+    phoneInvalid: "Invalid phone number (must be 10 digits)",
     searching: "Searching...",
     findMyTable: "Find my table",
   },
@@ -58,8 +60,14 @@ export default function TableLookupForm({ inviteId }: { inviteId: string }) {
   const [error, setError] = useState("");
   const [results, setResults] = useState<Match[] | null>(null);
 
+  const phoneInvalid = phone.trim() !== "" && phone.replace(/\D/g, "").length !== 10;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (phone.replace(/\D/g, "").length !== 10) {
+      setError(t.phoneInvalid);
+      return;
+    }
     setSending(true);
     setError("");
     setResults(null);
@@ -117,20 +125,21 @@ export default function TableLookupForm({ inviteId }: { inviteId: string }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="rsvp-field">
+      <div className="rsvp-field lookup-field">
         <label>{t.firstName}</label>
         <input value={guestName} onChange={(e) => setGuestName(e.target.value)} required />
       </div>
-      <div className="rsvp-field">
+      <div className="rsvp-field lookup-field">
         <label>{t.lastName}</label>
         <input value={familyName} onChange={(e) => setFamilyName(e.target.value)} required />
       </div>
-      <div className="rsvp-field">
+      <div className="rsvp-field lookup-field">
         <label>{t.phone}</label>
-        <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+        <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="numeric" required />
+        {phoneInvalid && <p className="rsvp-field-error">{t.phoneInvalid}</p>}
       </div>
       {error && <p className="admin-edit-msg admin-edit-msg-error">{error}</p>}
-      <button type="submit" className="welcome-alert-cta" disabled={sending}>
+      <button type="submit" className="welcome-alert-cta" disabled={sending || phoneInvalid}>
         {sending ? t.searching : t.findMyTable}
       </button>
     </form>

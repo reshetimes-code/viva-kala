@@ -1575,6 +1575,12 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   animation: gm-saved-fade 1.6s ease forwards;
 }
 
+.gm-guest-link-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.gm-copy-link-btn {
+  flex: 1; min-height: 40px; border-radius: 12px; border: 1.5px dashed #ddd8cb;
+  background: #fdfcf9; color: #232a36; font-weight: 700; font-size: .85rem; cursor: pointer;
+}
+
 .gm-qr-btn {
   width: 100%; margin-bottom: 16px; padding: 14px; border-radius: 14px; border: 1.5px dashed #ddd8cb;
   background: #fff; color: #232a36; font-weight: 700; font-size: .95rem; cursor: pointer;
@@ -1704,18 +1710,37 @@ html[dir="rtl"] .gm-add-guest-input[type="tel"] { direction: rtl; text-align: ri
   padding: 24px; direction: rtl; font-family: 'Assistant', sans-serif;
   background: radial-gradient(circle at 50% 0%, #2e8b93, #1c3d4a 70%);
 }
+@keyframes lookup-card-in {
+  from { opacity: 0; transform: scale(.82) translateY(36px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes lookup-number-pop {
+  0% { opacity: 0; transform: scale(.4) rotate(-8deg); }
+  60% { opacity: 1; transform: scale(1.12) rotate(2deg); }
+  100% { transform: scale(1) rotate(0); }
+}
 .lookup-card {
   background: #fff; border-radius: 24px; padding: 44px 28px; text-align: center;
   width: 100%; max-width: 380px; box-shadow: 0 24px 60px -16px rgba(0,0,0,0.4);
+  animation: lookup-card-in .55s cubic-bezier(.34,1.56,.64,1);
 }
 .lookup-hello { font-size: 1.15rem; font-weight: 700; color: #2b2b2b; margin-bottom: 24px; }
 .lookup-label { font-size: 1.1rem; font-weight: 600; color: #6b6660; margin-bottom: 8px; }
 .lookup-table-number {
   font-family: 'Heebo', sans-serif; font-weight: 900; font-size: clamp(4rem, 22vw, 6rem);
   color: #1c3d4a; line-height: 1;
+  animation: lookup-number-pop .6s cubic-bezier(.34,1.56,.64,1);
 }
 .lookup-pending { font-size: 1.05rem; color: #6b6660; line-height: 1.6; padding: 20px 0; }
 .lookup-venue { margin-top: 24px; padding-top: 20px; border-top: 1px solid #eee; color: #9a9488; font-size: .95rem; }
+@keyframes lookup-field-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.lookup-field { opacity: 0; animation: lookup-field-in .45s ease-out forwards; }
+.lookup-field:nth-of-type(1) { animation-delay: .1s; }
+.lookup-field:nth-of-type(2) { animation-delay: .2s; }
+.lookup-field:nth-of-type(3) { animation-delay: .3s; }
 
 /* =========================================================================
    ADMIN — super-admin panel (user management + leads)

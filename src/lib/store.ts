@@ -1,5 +1,6 @@
+import crypto from "crypto";
 import type { EventCategory } from "@/lib/eventCategories";
-import { getPool, ensureUserQuotaColumn, ensureHallColumns } from "@/lib/db";
+import { getPool, ensureUserQuotaColumn, ensureHallColumns, ensureRsvpTokenColumn } from "@/lib/db";
 import { deleteStoredImage } from "@/lib/imageStorage";
 
 // How long a past event's invite (and its RSVPs/tables/uploaded photo) is
@@ -92,6 +93,10 @@ export interface StoredRsvp {
   attending: boolean;
   guestCount: number;
   tableId: string | null;
+  /** Unguessable per-guest token behind /table-lookup/guest/[token] - null
+   *  until the host first requests that guest's personal link (see
+   *  getOrCreateRsvpToken). */
+  token: string | null;
   createdAt: string;
 }
 
@@ -180,6 +185,7 @@ function rowToRsvp(row: any): StoredRsvp {
     attending: row.attending,
     guestCount: row.guest_count,
     tableId: row.table_id,
+    token: row.token ?? null,
     createdAt: row.created_at.toISOString(),
   };
 }
@@ -480,7 +486,7 @@ function sameGuestIdentity(a: string, b: string): boolean {
 // guest's own name/phone/table after the fact is the event owner editing it
 // directly in their dashboard (PATCH /api/rsvp/[rsvpId]), never this
 // guest-facing endpoint.
-export async function insertRsvp(rsvp: Omit<StoredRsvp, "id" | "createdAt" | "tableId">): Promise<StoredRsvp> {
+export async function insertRsvp(rsvp: Omit<StoredRsvp, "id" | "createdAt" | "tableId" | "token">): Promise<StoredRsvp> {
   const phone = rsvp.phone?.trim();
 
   // The route layer requires a phone number before ever calling this - an
@@ -556,6 +562,32 @@ export async function findRsvpByIdentity(
     [inviteId, guestName, familyName, phone]
   );
   return res.rows.map(rowToRsvp);
+}
+
+// Personal per-guest link (see ensureRsvpTokenColumn in db.ts) - generated
+// lazily the first time a host requests it, not at insertRsvp time, so
+// guests already on file before this feature existed get one transparently
+// too. The UPDATE...COALESCE is atomic: if a concurrent call already set a
+// token first, this quietly returns that one instead of the freshly
+// generated candidate going to waste.
+export async function getOrCreateRsvpToken(rsvpId: number): Promise<string | undefined> {
+  await ensureRsvpTokenColumn();
+  const candidate = crypto.randomBytes(16).toString("hex");
+  const res = await getPool().query(
+    "UPDATE rsvps SET token = COALESCE(token, $2) WHERE id = $1 RETURNING token",
+    [rsvpId, candidate]
+  );
+  return res.rows[0]?.token ?? undefined;
+}
+
+// Public counterpart to findRsvpByIdentity for the personal-link table
+// lookup (/table-lookup/guest/[token]) - the token itself already is the
+// identity check (unguessable, unique to one guest), so no name/phone match
+// is needed on top of it.
+export async function findRsvpByToken(token: string): Promise<StoredRsvp | undefined> {
+  await ensureRsvpTokenColumn();
+  const res = await getPool().query("SELECT * FROM rsvps WHERE token = $1", [token]);
+  return res.rows[0] ? rowToRsvp(res.rows[0]) : undefined;
 }
 
 export async function assignRsvpTable(rsvpId: number, tableId: string | null): Promise<boolean> {

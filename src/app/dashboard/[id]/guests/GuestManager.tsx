@@ -30,6 +30,8 @@ const COPY = {
     noTableOption: "ללא שיבוץ",
     tableOption: (n: string) => `שולחן ${n}`,
     savedBadge: "✓ נשמר",
+    copyGuestLink: "🔗 קישור אישי לשולחן",
+    linkCopied: "✓ הועתק",
     qrButton: "📱 קוד QR להדפסה באולם",
     newTablePlaceholder: "מספר שולחן חדש",
     newCapacityPlaceholder: "כמות מקומות",
@@ -96,6 +98,8 @@ const COPY = {
     noTableOption: "Unassigned",
     tableOption: (n: string) => `Table ${n}`,
     savedBadge: "✓ Saved",
+    copyGuestLink: "🔗 Personal table link",
+    linkCopied: "✓ Copied",
     qrButton: "📱 QR code for printing at the venue",
     newTablePlaceholder: "New table number",
     newCapacityPlaceholder: "Number of seats",
@@ -160,6 +164,7 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
   const [qrOpen, setQrOpen] = useState(false);
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const [newlyAddedId, setNewlyAddedId] = useState<number | null>(null);
+  const [copiedLinkId, setCopiedLinkId] = useState<number | null>(null);
   const [addingGuest, setAddingGuest] = useState(false);
   const [newGuestName, setNewGuestName] = useState("");
   const [newGuestFamilyName, setNewGuestFamilyName] = useState("");
@@ -297,6 +302,20 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
     return guestsForTable(tableId)
       .filter((r) => r.id !== excludeRsvpId)
       .reduce((sum, r) => sum + (r.guestCount ?? 1), 0);
+  }
+
+  // Fetches (or, server-side, lazily mints) this guest's own token and
+  // copies their personal /table-lookup/guest/[token] link - the host can
+  // send it directly to that one guest (e.g. over WhatsApp) so they land on
+  // their table with nothing to type, instead of going through the
+  // shared-QR form.
+  async function handleCopyGuestLink(rsvpId: number) {
+    const res = await fetch(`/api/rsvp/${rsvpId}`);
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.token) return;
+    await navigator.clipboard.writeText(`${window.location.origin}/table-lookup/guest/${data.token}`);
+    setCopiedLinkId(rsvpId);
+    setTimeout(() => setCopiedLinkId((cur) => (cur === rsvpId ? null : cur)), 2200);
   }
 
   async function handleAssign(rsvpId: number, tableId: string) {
@@ -473,6 +492,13 @@ export default function GuestManager({ inviteId, inviteTitle, initialRsvps, init
                   ))}
                 </select>
                 {justSavedId === r.id && <span className="gm-saved-badge">{t.savedBadge}</span>}
+              </div>
+
+              <div className="gm-guest-link-row">
+                <button type="button" className="gm-copy-link-btn" onClick={() => handleCopyGuestLink(r.id)}>
+                  {t.copyGuestLink}
+                </button>
+                {copiedLinkId === r.id && <span className="gm-saved-badge">{t.linkCopied}</span>}
               </div>
             </div>
           ))}
