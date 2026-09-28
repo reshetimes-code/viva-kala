@@ -590,6 +590,21 @@ export async function findRsvpByToken(token: string): Promise<StoredRsvp | undef
   return res.rows[0] ? rowToRsvp(res.rows[0]) : undefined;
 }
 
+// Phone-only counterpart to findRsvpByIdentity, for the table-lookup form's
+// primary (phone-first) flow - a phone number is already effectively unique
+// per guest within one invite (insertRsvp refuses to let a second name reuse
+// an existing phone there, see RsvpPhoneConflictError), so it alone is
+// normally enough to resolve one guest's table without also asking for
+// their name. The form only falls back to findRsvpByIdentity (name+phone)
+// after repeated phone-only misses.
+export async function findRsvpByPhone(inviteId: string, phone: string): Promise<StoredRsvp[]> {
+  const res = await getPool().query(
+    `SELECT * FROM rsvps WHERE invite_id = $1 AND attending AND trim(phone) = trim($2)`,
+    [inviteId, phone]
+  );
+  return res.rows.map(rowToRsvp);
+}
+
 export async function assignRsvpTable(rsvpId: number, tableId: string | null): Promise<boolean> {
   const res = await getPool().query("UPDATE rsvps SET table_id = $1 WHERE id = $2", [tableId, rsvpId]);
   return (res.rowCount ?? 0) > 0;

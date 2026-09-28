@@ -1,26 +1,25 @@
 import { NextResponse } from "next/server";
-import { findInviteById, findRsvpByIdentity, findTableById } from "@/lib/store";
+import { findInviteById, findRsvpByIdentity, findRsvpByPhone, findTableById } from "@/lib/store";
 import { getServerLocale } from "@/lib/i18n/server";
 
 const MESSAGES = {
   he: {
     eventNotFound: "אירוע לא נמצא",
-    missingFields: "יש למלא שם פרטי, שם משפחה ומספר טלפון",
+    missingFields: "יש למלא מספר טלפון",
   },
   en: {
     eventNotFound: "Event not found",
-    missingFields: "Please fill in first name, last name and phone number",
+    missingFields: "Please fill in a phone number",
   },
 };
 
-// Public endpoint behind the single QR code printed for the hall - a guest
-// scans it and types their name AND phone, and gets back only their own
-// table number for that one event (matched strictly within that inviteId).
-// Phone is required alongside the name, not optional: it's the same
-// name+phone pair that was locked in as their identity when they RSVP'd
-// (see insertRsvp/findRsvpByIdentity in store.ts) - matching on name alone
-// would let anyone who knows (or guesses) a guest's name land on that
-// guest's assigned table.
+// Public endpoint behind the single QR code printed for the hall. Phone
+// number is the primary identifier (see findRsvpByPhone - a phone is
+// already effectively unique per guest within one invite, since insertRsvp
+// refuses to let a second name reuse an existing one), so guestName/
+// familyName are optional here: the form's first attempt sends phone alone,
+// and only falls back to also sending the guest's name (routed to the
+// stricter findRsvpByIdentity) after repeated phone-only misses.
 export async function POST(req: Request) {
   const locale = await getServerLocale();
   const t = MESSAGES[locale];
@@ -33,11 +32,14 @@ export async function POST(req: Request) {
   if (!inviteId || !(await findInviteById(inviteId))) {
     return NextResponse.json({ error: t.eventNotFound }, { status: 404 });
   }
-  if (!guestName.trim() || !familyName.trim() || !phone.trim()) {
+  if (!phone.trim()) {
     return NextResponse.json({ error: t.missingFields }, { status: 400 });
   }
 
-  const matches = await findRsvpByIdentity(inviteId, guestName, familyName, phone);
+  const matches =
+    guestName.trim() && familyName.trim()
+      ? await findRsvpByIdentity(inviteId, guestName, familyName, phone)
+      : await findRsvpByPhone(inviteId, phone);
   const results = await Promise.all(
     matches.map(async (r) => ({
       guestName: r.guestName,
