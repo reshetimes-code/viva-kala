@@ -1733,6 +1733,15 @@ html[dir="rtl"] .gm-add-guest-input[type="tel"] { direction: rtl; text-align: ri
 }
 .lookup-pending { font-size: 1.05rem; color: #6b6660; line-height: 1.6; padding: 20px 0; }
 .lookup-hint { font-size: .9rem; color: #b8860b; font-weight: 700; margin-bottom: 16px; }
+/* Phone-only entry screen (see TableLookupForm) - the phone field is the
+   ONLY thing on the page at that point, so it gets an oversized "type here"
+   treatment instead of blending in as just another form field, making it
+   unmistakable what the guest is meant to enter. */
+.lookup-phone-hero label { display: block; text-align: center; font-size: 1.1rem; font-weight: 800; color: #1c3d4a; margin-bottom: 12px; }
+.lookup-page .lookup-phone-hero input {
+  height: 78px; font-size: 2rem; font-weight: 800; text-align: center; letter-spacing: 3px;
+  font-family: 'Heebo', sans-serif; border: 2px solid #d4af7a; border-radius: 18px;
+}
 .lookup-venue { margin-top: 24px; padding-top: 20px; border-top: 1px solid #eee; color: #9a9488; font-size: .95rem; }
 @keyframes lookup-field-in {
   from { opacity: 0; transform: translateY(14px); }
@@ -2729,6 +2738,12 @@ html[dir="rtl"] .gm-add-guest-input[type="tel"] { direction: rtl; text-align: ri
 }
 .rsvp-thanks-waze { background: #33ccff; }
 .rsvp-thanks-maps { background: #4285f4; }
+.rsvp-thanks-calendar-row { display: flex; justify-content: center; margin-top: 12px; }
+.rsvp-thanks-calendar-btn {
+  display: inline-block; width: 100%; box-sizing: border-box; text-align: center; padding: 14px 24px;
+  border-radius: 999px; background: #b8860b; color: #fff; font-weight: 700; font-size: 1rem;
+  text-decoration: none; box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
 
 /* =========================================================================
    LEGAL PAGES — accessibility statement, privacy policy

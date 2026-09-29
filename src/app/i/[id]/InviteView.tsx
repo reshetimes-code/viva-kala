@@ -64,6 +64,7 @@ const COPY = {
     atHour: "בשעה",
     navWaze: "ניווט ב-Waze",
     navMaps: "ניווט ב-Maps",
+    addToCalendar: "🗓️ הוספת תזכורת ליומן",
     rsvpTitle: "אנא אשרו הגעתכם",
     rsvpSubtitle: "ונוכל לסדר לכם מקום שמור בשולחן",
     firstNameLabel: "שם פרטי *",
@@ -151,6 +152,7 @@ const COPY = {
     atHour: "at",
     navWaze: "Navigate with Waze",
     navMaps: "Navigate with Maps",
+    addToCalendar: "🗓️ Add a calendar reminder",
     rsvpTitle: "Please confirm your attendance",
     rsvpSubtitle: "So we can arrange a reserved seat for you at the table",
     firstNameLabel: "First name *",
@@ -1273,6 +1275,13 @@ export default function InviteView({
                       </a>
                       <a href={googleMapsUrl(address)} target="_blank" rel="noopener noreferrer" className="rsvp-thanks-nav-btn rsvp-thanks-maps">
                         {t.navMaps}
+                      </a>
+                    </div>
+                  )}
+                  {submitted === "yes" && eventDate && (
+                    <div className="rsvp-thanks-calendar-row">
+                      <a href={`/api/invites/${id}/calendar`} className="rsvp-thanks-calendar-btn">
+                        {t.addToCalendar}
                       </a>
                     </div>
                   )}

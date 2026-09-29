@@ -32,7 +32,7 @@ const COPY = {
     notAssignedYet: "עדיין לא שובצתם לשולחן - בואו לבדוק שוב בעוד כמה דקות, או פנו לצוות באירוע 🙂",
     firstName: "שם פרטי",
     lastName: "שם המשפחה",
-    phone: "מספר טלפון (כפי שנמסר באישור ההגעה)",
+    phone: "📱 מספר טלפון (כפי שנמסר באישור ההגעה)",
     phoneInvalid: "מספר טלפון לא תקין (חייב 10 ספרות)",
     searching: "מחפש...",
     findMyTable: "מצאו לי שולחן",
@@ -53,7 +53,7 @@ const COPY = {
     notAssignedYet: "You haven't been assigned a table yet - check back in a few minutes, or ask the event staff 🙂",
     firstName: "First name",
     lastName: "Last name",
-    phone: "Phone number (as given on the RSVP)",
+    phone: "📱 Phone number (as given on the RSVP)",
     phoneInvalid: "Invalid phone number (must be 10 digits)",
     searching: "Searching...",
     findMyTable: "Find my table",
@@ -174,7 +174,7 @@ export default function TableLookupForm({ inviteId }: { inviteId: string }) {
           </div>
         </>
       )}
-      <div className="rsvp-field lookup-field">
+      <div className={`rsvp-field lookup-field${needsName ? "" : " lookup-phone-hero"}`}>
         <label>{t.phone}</label>
         <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="numeric" required />
         {phoneInvalid && <p className="rsvp-field-error">{t.phoneInvalid}</p>}
