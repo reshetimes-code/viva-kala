@@ -1232,7 +1232,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    enough to keep the gold text readable without washing the photo out. */
 .tpl-gold-night { color: #f3e6c4; }
 .tpl-gold-night .tpl-bg-overlay {
-  background: linear-gradient(180deg, rgba(8,8,10,0.6) 0%, rgba(8,8,10,0.22) 32%, rgba(8,8,10,0.32) 68%, rgba(8,8,10,0.78) 100%);
+  background: linear-gradient(180deg, rgba(8,8,10,0.45) 0%, rgba(8,8,10,0) 22%, rgba(8,8,10,0) 42%, rgba(8,8,10,0.7) 56%, #08080a 70%);
 }
 .tpl-gn-frame { display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%; }
 /* Text sits on a dark glass panel in the lower part of the photo instead of
@@ -1240,10 +1240,7 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
    faces stay visible. */
 .tpl-gold-night { display: flex; flex-direction: column; justify-content: flex-end; }
 .tpl-gold-night .tpl-gn-frame {
-  position: relative; margin: 0 auto 8%; width: 84%; box-sizing: border-box;
-  padding: 16px 14px 14px; border-radius: 18px; background: rgba(8,8,10,0.78);
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(217,185,105,0.4); box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+  position: relative; margin: 0 auto 6%; width: 90%; box-sizing: border-box; padding: 0;
 }
 .tpl-gold-night .tpl-gn-rings { margin-bottom: 8px; }
 .tpl-gold-night .tpl-gn-rings svg { width: 30px; height: 30px; }
