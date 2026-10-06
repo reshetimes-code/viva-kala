@@ -269,6 +269,11 @@ export default function AiDesignerChat({
 
   function declinePhoto() {
     setPhotoPhase("none");
+    const codedFields = buildPhotoTemplateFields(eventCategory as EventCategory | undefined, categoryFields, "");
+    if (codedFields) {
+      onGenerated("", pendingPrompt, { templateId: "navy-bold", templateFields: codedFields });
+      return;
+    }
     generateImage(pendingPrompt);
   }
 

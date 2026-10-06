@@ -280,7 +280,7 @@ function renderContent(templateId: string, fields: TemplateFields) {
             <p className="tpl-navy-subtitle">{fields.subtitle}</p>
             <h2 className="tpl-navy-title" style={titleStyle}>
               {fields.titleLine1}
-              <span className="tpl-navy-amp">&amp;</span>
+              {fields.titleLine2 && <span className="tpl-navy-amp">&amp;</span>}
               {fields.titleLine2}
             </h2>
             <div className="tpl-navy-divider" />
