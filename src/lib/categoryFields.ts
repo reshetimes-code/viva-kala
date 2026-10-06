@@ -250,6 +250,31 @@ export function buildGoldNightFields(
   };
 }
 
+/** Same photo-as-background gold-night layout for every category with a
+ *  named celebrant - text is real CSS (never AI-drawn), so the user's own
+ *  photo stays exactly as uploaded and the Hebrew stays spelled correctly. */
+export function buildPhotoTemplateFields(
+  category: EventCategory | undefined,
+  fields: Record<string, string> | undefined,
+  imageDataUrl: string
+) {
+  if (category === "חתונה") return buildGoldNightFields(fields, imageDataUrl);
+  const name = fields?.celebrantName?.trim() || fields?.familyName?.trim();
+  if (!category || !name) return null;
+  return {
+    titleLine1: name,
+    titleLine2: "",
+    subtitle: category,
+    dateText: fields?.eventDate ? formatEventDate(fields.eventDate) : "",
+    venueText: fields?.venue ?? "",
+    ceremonyTime: fields?.eventStart ?? "",
+    receptionTime: "",
+    footerNote: "",
+    imageDataUrl,
+    photoPlacement: "background" as const,
+  };
+}
+
 /** venue/eventDate/eventStart live under different keys depending on
  *  category (see CATEGORY_FIELD_DEFS above) - this reads them uniformly so
  *  callers (InvitePhotoCard, the create-flow preview) don't need a switch

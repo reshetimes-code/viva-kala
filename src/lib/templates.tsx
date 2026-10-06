@@ -444,7 +444,7 @@ function renderContent(templateId: string, fields: TemplateFields) {
           </span>
           <h2 className="tpl-gn-title" style={titleStyle}>
             {fields.titleLine1}
-            <span className="tpl-gn-amp">&amp;</span>
+            {fields.titleLine2 && <span className="tpl-gn-amp">&amp;</span>}
             {fields.titleLine2}
           </h2>
           {fields.subtitle && <p className="tpl-gn-subtitle">{fields.subtitle}</p>}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { buildGoldNightFields } from "@/lib/categoryFields";
+import { buildPhotoTemplateFields } from "@/lib/categoryFields";
+import type { EventCategory } from "@/lib/eventCategories";
 import type { TemplateFields } from "@/lib/templates";
 import { useLocale } from "@/lib/i18n/LanguageProvider";
 import type { Locale } from "@/lib/i18n/locale";
@@ -284,7 +285,7 @@ export default function AiDesignerChat({
       // AI entirely and use it directly with the guest's own photo as its
       // background, no placement question needed (gold-night only has the
       // one full-photo-background layout).
-      const goldNightFields = eventCategory === "חתונה" ? buildGoldNightFields(categoryFields, dataUrl) : null;
+      const goldNightFields = buildPhotoTemplateFields(eventCategory as EventCategory | undefined, categoryFields, dataUrl);
       if (goldNightFields) {
         setPhotoPhase("none");
         onGenerated(dataUrl, "", { templateId: "gold-night", templateFields: goldNightFields });
