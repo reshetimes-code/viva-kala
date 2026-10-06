@@ -1235,6 +1235,19 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
   background: linear-gradient(180deg, rgba(8,8,10,0.6) 0%, rgba(8,8,10,0.22) 32%, rgba(8,8,10,0.32) 68%, rgba(8,8,10,0.78) 100%);
 }
 .tpl-gn-frame { display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%; }
+/* Text sits on a dark glass panel in the lower part of the photo instead of
+   straight on top of the couple, so names and details stay readable and
+   faces stay visible. */
+.tpl-gold-night { display: flex; flex-direction: column; justify-content: flex-end; }
+.tpl-gold-night .tpl-gn-frame {
+  position: relative; margin: 0 auto 8%; width: 84%; box-sizing: border-box;
+  padding: 16px 14px 14px; border-radius: 18px; background: rgba(8,8,10,0.78);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(217,185,105,0.4); box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+}
+.tpl-gold-night .tpl-gn-rings { margin-bottom: 8px; }
+.tpl-gold-night .tpl-gn-rings svg { width: 30px; height: 30px; }
+.tpl-gold-night .tpl-gn-subtitle { margin: 6px 0 12px; }
 .tpl-gn-rings { color: #d9b969; margin-bottom: 14px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.55)); }
 .tpl-gn-rings svg { width: 40px; height: 40px; }
 /* Metallic gold fill via a gradient clipped to the text itself, instead of a
