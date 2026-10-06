@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { findInviteById, findUserById, getHallForUser } from "@/lib/store";
 import { getCurrentUser } from "@/lib/auth";
@@ -8,6 +7,7 @@ import type { TemplateFields } from "@/lib/templates";
 import { buildHeadline, headlineToString, buildShareGreeting } from "@/lib/categoryFields";
 import { TITLE, siteOpenGraph, siteTwitter } from "../../layout";
 import InviteView from "./InviteView";
+import ExpiredInvite from "@/components/ExpiredInvite";
 
 // The root layout's generic description ("סידורי הושבה - הזמנות דיגיטלית -
 // אישורי הגעה") makes sense on the marketing homepage, but on a shared invite
@@ -60,7 +60,7 @@ export default async function InvitePage({
   const invite = await findInviteById(id);
 
   if (!invite) {
-    notFound();
+    return <ExpiredInvite locale={await getServerLocale()} />;
   }
 
   // Same link a guest gets, but the owner viewing their own invite (logged

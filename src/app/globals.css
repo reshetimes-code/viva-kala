@@ -1753,6 +1753,92 @@ html[dir="rtl"] .gm-add-guest-input[type="tel"] { direction: rtl; text-align: ri
 .lookup-field:nth-of-type(3) { animation-delay: .3s; }
 
 /* =========================================================================
+   EXPIRED / UNAVAILABLE INVITE — promo page shown instead of a 404
+   ========================================================================= */
+.expired-page {
+  position: relative; min-height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  padding: 24px 16px; font-family: 'Assistant', sans-serif; color: #fff; text-align: center;
+  background: radial-gradient(circle at 50% 0%, #2e8b93, #1c3d4a 55%, #0d1f29 100%);
+  background-size: 160% 160%; animation: expired-bg-drift 14s ease-in-out infinite alternate;
+}
+@keyframes expired-bg-drift {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 100% 100%; }
+}
+.expired-orb {
+  position: absolute; border-radius: 50%; filter: blur(60px); opacity: .55; pointer-events: none;
+}
+.expired-orb-a { width: 340px; height: 340px; top: -90px; right: -80px; background: #d4af7a; animation: expired-float 9s ease-in-out infinite; }
+.expired-orb-b { width: 280px; height: 280px; bottom: -70px; left: -60px; background: #e8649a; animation: expired-float 11s ease-in-out infinite reverse; }
+@keyframes expired-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(24px, -30px) scale(1.08); }
+}
+.expired-ring {
+  position: absolute; left: 50%; top: 50%; border-radius: 50%; pointer-events: none;
+  border: 1.5px dashed rgba(212,175,122,.35); transform: translate(-50%, -50%);
+}
+.expired-ring-outer { width: 520px; height: 520px; animation: expired-spin 40s linear infinite; }
+.expired-ring-inner { width: 360px; height: 360px; border-style: solid; border-color: rgba(255,255,255,.08); animation: expired-spin 26s linear infinite reverse; }
+@keyframes expired-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+.expired-sparkle {
+  position: absolute; color: #f5d78e; pointer-events: none; animation: expired-twinkle 2.8s ease-in-out infinite;
+  text-shadow: 0 0 12px rgba(245,215,142,.9);
+}
+@keyframes expired-twinkle {
+  0%, 100% { opacity: .15; transform: scale(.7) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.25) rotate(90deg); }
+}
+.expired-card {
+  position: relative; z-index: 1; width: 100%; max-width: 420px; padding: 40px 26px 32px; border-radius: 28px;
+  background: rgba(255,255,255,.08); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,.18); box-shadow: 0 30px 80px -20px rgba(0,0,0,.6);
+  animation: expired-card-in .9s cubic-bezier(.34,1.4,.64,1) both;
+}
+@keyframes expired-card-in {
+  from { opacity: 0; transform: translateY(40px) scale(.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.expired-eyebrow {
+  display: inline-block; font-size: .85rem; font-weight: 700; letter-spacing: .5px; color: #1c3d4a;
+  background: #d4af7a; padding: 6px 14px; border-radius: 999px; margin: 0 0 18px;
+  animation: expired-pulse-soft 2.4s ease-in-out infinite;
+}
+@keyframes expired-pulse-soft {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212,175,122,.6); }
+  50% { box-shadow: 0 0 0 10px rgba(212,175,122,0); }
+}
+.expired-title {
+  font-size: clamp(1.6rem, 6vw, 2.1rem); font-weight: 800; line-height: 1.3; margin: 0 0 14px;
+  background: linear-gradient(90deg, #f5d78e, #ffffff, #d4af7a, #ffffff, #f5d78e);
+  background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: expired-shimmer 5s linear infinite;
+}
+@keyframes expired-shimmer { to { background-position: -300% 0; } }
+.expired-question { font-size: 1.25rem; font-weight: 700; margin: 0 0 12px; color: #f5d78e; }
+.expired-body { font-size: 1rem; line-height: 1.7; margin: 0 0 28px; color: rgba(255,255,255,.85); }
+.expired-actions { display: flex; flex-direction: column; gap: 14px; }
+.expired-cta {
+  display: block; padding: 16px 20px; border-radius: 999px; font-weight: 800; font-size: 1.05rem;
+  text-decoration: none; transition: transform .2s ease;
+}
+.expired-cta:hover { transform: translateY(-3px) scale(1.02); }
+.expired-cta-primary {
+  color: #1c3d4a; background: linear-gradient(135deg, #f5d78e, #d4af7a 60%, #b8860b);
+  box-shadow: 0 0 0 0 rgba(245,215,142,.7); animation: expired-glow 2s ease-in-out infinite;
+}
+@keyframes expired-glow {
+  0%, 100% { box-shadow: 0 10px 30px -8px rgba(245,215,142,.6); }
+  50% { box-shadow: 0 10px 40px 4px rgba(245,215,142,.9); }
+}
+.expired-cta-secondary { color: #fff; border: 1.5px solid rgba(255,255,255,.5); background: rgba(255,255,255,.05); }
+.expired-tagline { margin: 26px 0 0; font-size: .85rem; letter-spacing: .5px; color: rgba(255,255,255,.55); }
+@media (prefers-reduced-motion: reduce) {
+  .expired-page, .expired-orb, .expired-ring, .expired-sparkle, .expired-card, .expired-eyebrow,
+  .expired-title, .expired-cta-primary { animation: none !important; }
+}
+
+/* =========================================================================
    ADMIN — super-admin panel (user management + leads)
    ========================================================================= */
 /* Admin pages render as a plain full-width page (no phone-frame mockup,
