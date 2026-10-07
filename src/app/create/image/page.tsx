@@ -11,6 +11,9 @@ import CategoryFieldsForm from "@/components/CategoryFieldsForm";
 import InvitePhotoCard from "@/components/InvitePhotoCard";
 import ImageCropModal from "@/components/ImageCropModal";
 import { TemplateCard, type TemplateFields } from "@/lib/templates";
+
+const TEMPLATE_PLACEHOLDER_IMAGE =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 import { EVENT_CATEGORIES, isEventCategory, eventCategoryLabel, type EventCategory } from "@/lib/eventCategories";
 import { CATEGORY_FIELD_DEFS, hasCustomFields, findMissingRequiredField, readCommonFields, buildHeadline, buildExtraDetailLines, formatEventDate } from "@/lib/categoryFields";
 import { computeTextStyleFromCanvas, DEFAULT_TEXT_STYLE, type TextStyle } from "@/lib/textStyleHeuristic";
@@ -561,8 +564,15 @@ export default function CreateInvitePage({
                   // real CSS/SVG text - no AI drawing involved, so none of
                   // the AI-regeneration staleness tracking below applies.
                   setCodedTemplate(codedTemplateResult);
-                  setImageDataUrl(url);
-                  setImageHasBakedText(false);
+                  // No photo (the "no, create an original design" path) hands
+                  // back "" - but the whole preview/submit flow here is gated
+                  // on imageDataUrl being truthy, so an empty one dropped the
+                  // user straight back to the bare form with no design shown.
+                  // The template renders from templateFields and the server
+                  // ignores imageDataUrl in template mode, so a 1x1 stand-in
+                  // is enough to unlock the preview.
+                  setImageDataUrl(url || TEMPLATE_PLACEHOLDER_IMAGE);
+                  setImageHasBakedText(!url);
                   Swal.close();
                   return;
                 }
