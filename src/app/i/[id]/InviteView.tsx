@@ -889,16 +889,10 @@ export default function InviteView({
   if (desktopWrap) {
     return (
       <div className="desktop-wrapper">
-        <div className="mobile-frame">
-          <div className="desktop-title">{t.desktopTitle}</div>
-          <div className="side-button-right" />
-          <div className="side-button-left-1" />
-          <div className="side-button-left-2" />
-          <div className="side-button-left-3" />
+        <div className="mobile-frame mobile-frame-plain">
           <div className="mobile-screen">
             {iframeSrc && <iframe src={iframeSrc} allowFullScreen />}
           </div>
-          <div className="powered-by">Powered by VIVA</div>
         </div>
       </div>
     );

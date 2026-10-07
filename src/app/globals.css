@@ -1511,6 +1511,15 @@ input:checked + .slider.round:before { transform: translateX(-26px); }
 .side-button-left-1 { position: absolute; left: -3px; top: 100px; width: 3px; height: 30px; background: #2c2c2e; border-radius: 2px 0 0 2px; }
 .side-button-left-2 { position: absolute; left: -3px; top: 150px; width: 3px; height: 50px; background: #2c2c2e; border-radius: 2px 0 0 2px; }
 .side-button-left-3 { position: absolute; left: -3px; top: 210px; width: 3px; height: 50px; background: #2c2c2e; border-radius: 2px 0 0 2px; }
+/* Guest invite view on desktop: same footprint as the phone mockup, but no
+   phone shape at all - the invite fills the whole frame edge to edge. */
+.mobile-frame.mobile-frame-plain {
+  height: min(812px, calc(100vh - 40px)); width: auto; aspect-ratio: 375 / 812;
+  padding: 0; background: transparent; border-radius: 0; box-shadow: none;
+}
+.mobile-frame-plain::before, .mobile-frame-plain::after { display: none; }
+.mobile-frame-plain .mobile-screen, .mobile-frame-plain .mobile-screen iframe { border-radius: 0; }
+.desktop-wrapper:has(.mobile-frame-plain) { padding: 20px; }
 .desktop-title {
   position: absolute; top: -50px; left: 50%; transform: translateX(-50%); color: #fff;
   font-family: 'Heebo', sans-serif; font-size: 22px; font-weight: 600; text-align: center;
