@@ -268,12 +268,11 @@ export default function AiDesignerChat({
   }
 
   function declinePhoto() {
+    // Always the real AI design built from the chat answers - an earlier
+    // version short-circuited to a plain coded navy template here, which
+    // threw away every answer the guest just gave and showed a bare white
+    // card instead of a designed invitation.
     setPhotoPhase("none");
-    const codedFields = buildPhotoTemplateFields(eventCategory as EventCategory | undefined, categoryFields, "");
-    if (codedFields) {
-      onGenerated("", pendingPrompt, { templateId: "navy-bold", templateFields: codedFields });
-      return;
-    }
     generateImage(pendingPrompt);
   }
 
