@@ -75,6 +75,13 @@ export const CATEGORY_FIELD_DEFS: Partial<Record<EventCategory, FieldDef[]>> = {
     { key: "eventStart", label: "שעת התחלה", labelEn: "Start time", type: "time" },
     { key: "venue", label: "מיקום האירוע", labelEn: "Event venue", type: "text", required: true },
   ],
+  "ברית": [
+    { key: "celebrantName", label: "שם התינוק", labelEn: "Baby's name", type: "text", required: true },
+    { key: "parentsNames", label: "שמות ההורים (לא חובה)", labelEn: "Parents' names (optional)", type: "text" },
+    { key: "eventDate", label: "תאריך", labelEn: "Date", type: "date", required: true },
+    { key: "eventStart", label: "שעת התחלה", labelEn: "Start time", type: "time" },
+    { key: "venue", label: "מיקום האירוע", labelEn: "Event venue", type: "text", required: true },
+  ],
 };
 
 export function hasCustomFields(category: EventCategory | undefined): boolean {
@@ -115,6 +122,7 @@ const CATEGORY_INTRO: Partial<Record<EventCategory, string>> = {
   "בר מצווה": "בשמחה רבה אנו מזמינים אתכם לחגוג עמנו",
   "בת מצווה": "בשמחה רבה אנו מזמינים אתכם לחגוג עמנו",
   "חינה": "מזמינים אתכם לחגוג עמנו את ליל החינה",
+  "ברית": "בשמחה והודיה אנו מזמינים אתכם לחגוג עמנו את ברית בננו היקר",
 };
 
 /** Builds the "who/what" headline from structured category fields, for the
@@ -139,7 +147,8 @@ export function buildHeadline(
     }
     case "בר/בת מצווה":
     case "בר מצווה":
-    case "בת מצווה": {
+    case "בת מצווה":
+    case "ברית": {
       if (!fields.celebrantName) return null;
       return {
         line1: fields.celebrantName,
@@ -160,6 +169,7 @@ export function headlineToString(parts: HeadlineParts | null): string {
 const CATEGORY_SHARE_PHRASE: Partial<Record<EventCategory, string>> = {
   "חתונה": "לחתונה של",
   "חינה": "לחינה של",
+  "ברית": "לברית של",
   "בר/בת מצווה": "לבר/בת המצווה של",
   "בר מצווה": "לבר המצווה של",
   "בת מצווה": "לבת המצווה של",

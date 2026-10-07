@@ -12,15 +12,15 @@
 // an invite saved before this split keeps loading/rendering exactly as it
 // always did - CATEGORY_FIELD_DEFS/buildHeadline in categoryFields.ts still
 // have an entry for it.
-export type EventCategory = "חתונה" | "בר/בת מצווה" | "בר מצווה" | "בת מצווה" | "חינה" | "יום הולדת" | "אחר";
+export type EventCategory = "חתונה" | "בר/בת מצווה" | "בר מצווה" | "בת מצווה" | "חינה" | "ברית" | "יום הולדת" | "אחר";
 
-export const EVENT_CATEGORIES: EventCategory[] = ["חתונה", "בר מצווה", "בת מצווה", "חינה", "יום הולדת", "אחר"];
+export const EVENT_CATEGORIES: EventCategory[] = ["חתונה", "בר מצווה", "בת מצווה", "חינה", "ברית", "יום הולדת", "אחר"];
 
 // Every value that has ever been a real EventCategory, including the
 // retired combined one - this is what actually validates an incoming
 // value (e.g. an existing invite's stored category), NOT the picker list
 // above (which only offers new choices going forward).
-const ALL_EVENT_CATEGORIES: EventCategory[] = ["חתונה", "בר/בת מצווה", "בר מצווה", "בת מצווה", "חינה", "יום הולדת", "אחר"];
+const ALL_EVENT_CATEGORIES: EventCategory[] = ["חתונה", "בר/בת מצווה", "בר מצווה", "בת מצווה", "חינה", "ברית", "יום הולדת", "אחר"];
 
 export function isEventCategory(value: unknown): value is EventCategory {
   return typeof value === "string" && (ALL_EVENT_CATEGORIES as string[]).includes(value);
@@ -38,6 +38,7 @@ const EVENT_CATEGORY_LABEL_EN: Record<EventCategory, string> = {
   "בר מצווה": "Bar Mitzvah",
   "בת מצווה": "Bat Mitzvah",
   "חינה": "Henna",
+  "ברית": "Brit / Baby celebration",
   "יום הולדת": "Birthday",
   "אחר": "Other",
 };
