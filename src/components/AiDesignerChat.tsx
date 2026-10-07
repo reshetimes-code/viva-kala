@@ -1,11 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { buildPhotoTemplateFields } from "@/lib/categoryFields";
-import type { EventCategory } from "@/lib/eventCategories";
 import type { TemplateFields } from "@/lib/templates";
 import { useLocale } from "@/lib/i18n/LanguageProvider";
-import type { Locale } from "@/lib/i18n/locale";
 
 // UI copy only. PLACEMENT_CHOICES' `instruction` strings, the tweakAgain()
 // chat messages, and everything sent to /api/ai-designer/chat or
@@ -77,13 +74,6 @@ interface ChatTurn {
   imagePrompt?: string;
 }
 
-/** Where the guest's own uploaded photo sits within the AI-designed image -
- *  each maps to an explicit English placement instruction folded into the
- *  same prompt (with all the style answers already in it) that would
- *  otherwise have generated a from-scratch design - so the photo becomes
- *  part of ONE AI-composed image, not a separate box glued on afterward. */
-type UploadedPhotoPlacement = "round" | "half" | "quarter-top" | "quarter-bottom";
-
 // The quality bar the client showed as a reference (a premium AI-made
 // wedding invitation: a real couple photo blended into a night scene,
 // a floral/string-light garland framing the WHOLE card - photo and text
@@ -94,88 +84,17 @@ type UploadedPhotoPlacement = "round" | "half" | "quarter-top" | "quarter-bottom
 const PREMIUM_FINISH =
   "Keep the people/subject in the photo clearly recognizable and unaltered, but do subtly relight/color-grade the photo (tone, warmth, contrast) so it reads as naturally part of the same scene as the rest of the design instead of a flat pasted rectangle - the reference quality bar here is a real couple photo blended into a warm evening setting, not a raw unedited crop. Critically, the photo's edges must NOT be a hard cut: blend them into the surrounding design with a soft graduated fade/vignette (the photo gradually dissolving into the background color/texture at its border), the same way a professional poster composites a photo into its background - a visible straight rectangular edge around the photo is a failure. Frame the photo and the text together as ONE cohesive piece with a single decorative border wrapping the whole card (e.g. a floral garland with soft string lights for a romantic wedding, or a fitting motif for the event type) - not a decorated text area sitting separately below/beside a plain photo. Also match a premium, professionally-designed finish: a deep dark background (unless the user's own answers clearly asked for something light/pastel instead), an elegant metallic-gold Hebrew title with a subtle gradient/shine rather than flat color, thin gold hairline dividers between sections, and the event details laid out as small clean icon-plus-text rows (a small calendar icon before the date, a small location-pin icon before the venue, etc.) rather than plain paragraphs. Generous negative space, refined high-end typography throughout.";
 
-const PLACEMENT_CHOICES: { value: UploadedPhotoPlacement; label: string; instruction: string }[] = [
-  {
-    value: "round",
-    label: "עיגול במרכז ההזמנה",
-    instruction: `Place the attached photo as a circular framed inset near the top-center of the design, and build the rest of the design (decorative elements, all the event text) around it. ${PREMIUM_FINISH}`,
-  },
-  {
-    value: "half",
-    label: "חצי תמונה, חצי טקסט",
-    instruction: `Fill the top half of the image with the attached photo edge-to-edge, and design the bottom half with all the event text. ${PREMIUM_FINISH}`,
-  },
-  {
-    value: "quarter-top",
-    label: "רצועת תמונה למעלה",
-    instruction: `Fill roughly the top quarter of the image with the attached photo as a wide banner strip, and design the rest below it with all the event text. ${PREMIUM_FINISH}`,
-  },
-  {
-    value: "quarter-bottom",
-    label: "רצועת תמונה למטה",
-    instruction: `Fill roughly the bottom quarter of the image with the attached photo as a wide banner strip, and design the rest above it with all the event text. ${PREMIUM_FINISH}`,
-  },
-];
-
-/** Display label for a PLACEMENT_CHOICES entry - the choice's own `label`
- *  field stays Hebrew (it's just an internal identity/default), the actual
- *  rendered text comes from COPY so it follows the dashboard's UI language.
- *  The `instruction` sent to the AI is separate and always English/Hebrew
- *  prompt content regardless of locale - untouched here. */
-function placementLabel(value: UploadedPhotoPlacement, locale: Locale): string {
-  const t = COPY[locale];
-  switch (value) {
-    case "round":
-      return t.placementRound;
-    case "half":
-      return t.placementHalf;
-    case "quarter-top":
-      return t.placementQuarterTop;
-    case "quarter-bottom":
-      return t.placementQuarterBottom;
+// The guest's photo is blended INTO the designed scene by the model - the
+// subject is cut out / faded into the artwork, never a pasted rectangle. How
+// depends on the event, matching the client's reference invitations.
+function photoBlendInstruction(category: string | undefined): string {
+  if (category === "חתונה") {
+    return `Use the attached photo of the couple as the hero of the invitation: place them in the top third of the card, softly masked and faded at the bottom edge so they dissolve seamlessly into the dark night garden/aisle scene below (string lights, white flowers, candles) - no rectangle, no hard edge, no frame around the photo. Keep both faces exactly as in the photo. The interlocking gold rings sit right under the couple, then the title. ${PREMIUM_FINISH}`;
   }
-}
-
-/** Tiny sketch of each layout - a card outline with a filled block standing
- *  in for the photo and a few lines standing in for the text, so the option
- *  reads at a glance instead of needing the label alone to carry it. */
-function PlacementIcon({ placement }: { placement: UploadedPhotoPlacement }) {
-  const lineProps = { stroke: "currentColor", strokeWidth: 1.4, strokeLinecap: "round" as const };
-  return (
-    <svg viewBox="0 0 32 40" width="30" height="38" fill="none">
-      <rect x="1" y="1" width="30" height="38" rx="4" stroke="currentColor" strokeWidth="1.4" />
-      {placement === "round" && (
-        <>
-          <circle cx="16" cy="13" r="7" fill="currentColor" opacity="0.35" />
-          <line x1="8" y1="26" x2="24" y2="26" {...lineProps} />
-          <line x1="10" y1="31" x2="22" y2="31" {...lineProps} />
-        </>
-      )}
-      {placement === "half" && (
-        <>
-          <rect x="1" y="1" width="30" height="19" rx="4" fill="currentColor" opacity="0.35" />
-          <line x1="7" y1="27" x2="25" y2="27" {...lineProps} />
-          <line x1="9" y1="32" x2="23" y2="32" {...lineProps} />
-        </>
-      )}
-      {placement === "quarter-top" && (
-        <>
-          <rect x="1" y="1" width="30" height="9" rx="3" fill="currentColor" opacity="0.35" />
-          <line x1="7" y1="19" x2="25" y2="19" {...lineProps} />
-          <line x1="9" y1="24" x2="23" y2="24" {...lineProps} />
-          <line x1="10" y1="29" x2="22" y2="29" {...lineProps} />
-        </>
-      )}
-      {placement === "quarter-bottom" && (
-        <>
-          <line x1="7" y1="9" x2="25" y2="9" {...lineProps} />
-          <line x1="9" y1="14" x2="23" y2="14" {...lineProps} />
-          <line x1="10" y1="19" x2="22" y2="19" {...lineProps} />
-          <rect x="1" y="30" width="30" height="9" rx="3" fill="currentColor" opacity="0.35" />
-        </>
-      )}
-    </svg>
-  );
+  if (category === "בר מצווה" || category === "בת מצווה" || category === "בר/בת מצווה") {
+    return `Use the attached photo of the celebrant as the hero: cut the person out cleanly (full figure or three-quarter) and stand them naturally inside the designed scene on one side of the card, overlapping the decorative elements so they are part of the artwork (soft shadow, matching light and color grade), with the arched translucent text panel and all the event text beside/over the other side. No rectangular photo box. Keep the face exactly as in the photo. ${PREMIUM_FINISH}`;
+  }
+  return `Use the attached photo as the hero of the invitation, cut out or softly masked and blended seamlessly into the designed scene (matching light, shadow and color grade) with the event text elegantly arranged around it. No rectangular photo box or hard edges. Keep every face exactly as in the photo. ${PREMIUM_FINISH}`;
 }
 
 /** The AI's own option text often ends with a parenthetical clarifying
@@ -236,9 +155,8 @@ export default function AiDesignerChat({
   // in it) and sends the uploaded photo along as the base image, so the
   // result is one AI-composed design with the real photo in it - not a
   // separate design plus a plain box glued onto the photo afterward.
-  const [photoPhase, setPhotoPhase] = useState<"none" | "ask" | "upload" | "placement">("none");
+  const [photoPhase, setPhotoPhase] = useState<"none" | "ask" | "upload">("none");
   const [pendingPrompt, setPendingPrompt] = useState("");
-  const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
 
   async function askChat(nextMessages: ChatMessage[]) {
     setLoading(true);
@@ -282,30 +200,10 @@ export default function AiDesignerChat({
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result as string;
-      // For a wedding, the coded "gold-night" template is a proven,
-      // reference-quality match (real CSS/SVG text and icons, so - unlike
-      // the AI-generation path below - there is zero risk of the model
-      // hallucinating/misspelling a Hebrew word into the image) - skip the
-      // AI entirely and use it directly with the guest's own photo as its
-      // background, no placement question needed (gold-night only has the
-      // one full-photo-background layout).
-      const goldNightFields = buildPhotoTemplateFields(eventCategory as EventCategory | undefined, categoryFields, dataUrl);
-      if (goldNightFields) {
-        setPhotoPhase("none");
-        onGenerated(dataUrl, "", { templateId: "gold-night", templateFields: goldNightFields });
-        return;
-      }
-      setUploadedPhoto(dataUrl);
-      setPhotoPhase("placement");
+      setPhotoPhase("none");
+      generateImage(`${pendingPrompt} ${photoBlendInstruction(eventCategory)}`, dataUrl);
     };
     reader.readAsDataURL(file);
-  }
-
-  function choosePlacement(placement: UploadedPhotoPlacement) {
-    if (!uploadedPhoto) return;
-    setPhotoPhase("none");
-    const instruction = PLACEMENT_CHOICES.find((c) => c.value === placement)?.instruction ?? "";
-    generateImage(`${pendingPrompt} ${instruction}`, uploadedPhoto);
   }
 
   async function generateImage(prompt: string, baseImage?: string) {
@@ -411,27 +309,6 @@ export default function AiDesignerChat({
         >
           {t.back}
         </button>
-      </div>
-    );
-  }
-
-  if (photoPhase === "placement") {
-    return (
-      <div className="ai-invite-form">
-        <p className="ai-chat-question">{t.howToPlace}</p>
-        <div className="ai-placement-grid">
-          {PLACEMENT_CHOICES.map((choice) => (
-            <button
-              key={choice.value}
-              type="button"
-              className="ai-placement-btn"
-              onClick={() => choosePlacement(choice.value)}
-            >
-              <PlacementIcon placement={choice.value} />
-              <span>{placementLabel(choice.value, locale)}</span>
-            </button>
-          ))}
-        </div>
       </div>
     );
   }
