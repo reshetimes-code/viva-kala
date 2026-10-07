@@ -133,7 +133,7 @@ export async function POST(req: Request) {
         // matches real devices far more closely - this instruction runs
         // LAST and wins over whatever ratio the chat step's own drafted
         // prompt mentioned.
-        "Portrait orientation, tall smartphone-screen aspect ratio of approximately 9:19.5 (notably taller than a standard 9:16) so the design fills a modern phone screen edge-to-edge, high-end professional graphic design.",
+        "Portrait orientation, very tall aspect ratio of approximately 9:19.5 (notably taller than a standard 9:16), high-end professional graphic design. The output is ONLY the flat invitation artwork itself, extending full-bleed to all four edges of the canvas: do NOT draw any phone, smartphone, device bezel, dynamic island, notch, camera cutout, status bar, rounded device corners, drop shadow around the card, or white/blank border strips - no mockup of any kind.",
         // The guest view (InviteView.tsx) displays this image with
         // object-fit:cover so it always fills the screen completely with
         // zero empty gaps on any device, the same as a plain photo invite -
